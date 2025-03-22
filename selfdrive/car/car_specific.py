@@ -170,11 +170,9 @@ class CarSpecificEvents:
     #if CS.seatbeltUnlatched:
       #events.add(EventName.seatbeltNotLatched)
     if CS.gearShifter not in {GearShifter.drive, GearShifter.unknown}:
-    events.add(EventName.wrongGear)
-
-    # gearShifter가 조건에 맞을 때마다 해당 정보를 txt 파일에 기록
-    with open('gear_shifter_log.txt', 'a') as file:
-        file.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - Gear Shifter: {CS.gearShifter}\n")
+        events.add(EventName.wrongGear)
+        with open('gear_shifter_log.txt', 'a') as file:
+            file.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - Gear Shifter: {CS.gearShifter}\n")
 
                              
     if CS.gearShifter == GearShifter.reverse:
