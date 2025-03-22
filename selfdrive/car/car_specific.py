@@ -171,7 +171,8 @@ class CarSpecificEvents:
       #events.add(EventName.seatbeltNotLatched)
     if CS.gearShifter not in {GearShifter.drive, GearShifter.unknown}:
         events.add(EventName.wrongGear)
-        with open('gear_shifter_log.txt', 'a') as file:
+        log_file_path = "/data/openpilot/selfdrive/gear_shifter_log.txt"  # 저장 경로 설정
+        with open(log_file_path, 'a') as file:
             file.write(f"Gear Shifter: {CS.gearShifter}\n")
 
                              
