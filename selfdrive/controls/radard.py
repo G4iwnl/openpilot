@@ -109,7 +109,10 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
     return prob_d * prob_y * prob_v * weight_v
 
   track = max(tracks.values(), key=prob, default=None)
-  return track if track and prob(track) > -1e6 else None
+  if int(Params().get("HDPuse")) == 1:
+    return None
+  else:
+    return track if track and prob(track) > -1e6 else None
 
 
 def get_RadarState_from_vision(md, lead_msg: capnp._DynamicStructReader, v_ego: float, model_v_ego: float):
