@@ -95,10 +95,10 @@ def download_dcamera(route, segment):
 
 def upload_folder_to_ftp(local_folder, directory, remote_path):
     from tqdm import tqdm  # tqdm���� ���� �� ǥ��
-    ftp_server = "shind0.synology.me"
-    ftp_port = 8021
-    ftp_username = "carrotpilot"
-    ftp_password = "Ekdrmsvkdlffjt7710"
+    ftp_server = "g4nas.my"
+    ftp_port = 21
+    ftp_username = "sorento"    
+    ftp_password = "Thfpsxh1111"
     ftp = FTP()
     ftp.connect(ftp_server, ftp_port)
     ftp.login(ftp_username, ftp_password)
