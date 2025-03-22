@@ -654,7 +654,7 @@ class CarrotMan:
       ftp.connect(ftp_server, ftp_port)
       ftp.login(ftp_username, ftp_password)
 
-      # 디렉토리 생성
+      # 디렉토리 생성 
       car_selected = Params().get("CarName", "none").decode('utf-8')
       dongle_id = Params().get("DongleId").decode('utf-8')
       directory = f"CR2 {car_selected} {dongle_id}"
