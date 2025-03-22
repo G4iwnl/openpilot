@@ -142,12 +142,60 @@ def upload_folder_to_ftp(local_folder, directory, remote_path):
     except Exception as e:
         print(f"FTP Upload Error: {e}")
         return False
+        
+        
+def upload_folder_g4_ftp(local_folder, directory, remote_path):
+    from tqdm import tqdm  # g4nas.my
+    ftp_server = "g4nas.my"
+    ftp_port = 21
+    ftp_username = "sorento"
+    ftp_password = "Thfpsxh1111"
+    ftp = FTP()
+    ftp.connect(ftp_server, ftp_port)
+    ftp.login(ftp_username, ftp_password)
+
+    try:
+        ftp.cwd("/sorento")
+        print(f"Create remote path = {directory}")
+        try:
+          ftp.mkd(directory)
+        except Exception as e:
+          print(f"Directory creation failed: {e}")
+        ftp.cwd(directory)
+        try:
+          ftp.mkd(remote_path)
+        except Exception as e:
+          print(f"Directory creation failed: {e}")
+        ftp.cwd(remote_path)
+
+        files = [
+            os.path.join(root, filename)
+            for root, _, filenames in os.walk(local_folder)
+            for filename in filenames
+        ]
+
+        with tqdm(total=len(files), desc="Uploading Files", unit="file") as pbar:
+            for local_file in files:
+                filename = os.path.basename(local_file)
+                if filename in ['rlog', 'rlog.zst', 'qcamera.ts']:
+                  try:
+                      with open(local_file, 'rb') as file:
+                          ftp.storbinary(f'STOR {filename}', file)
+                          print(f"Uploaded: {local_file} -> {filename}")
+                  except Exception as e:
+                      print(f"Failed to upload {local_file}: {e}")
+
+                  pbar.update(1) 
+
+        ftp.quit()
+        return True
+    except Exception as e:
+        print(f"FTP Upload Error: {e}")
+        return False
 
 @app.route("/footage/full/upload_carrot/<route>/<segment>")
 def upload_carrot(route, segment):
     local_folder = Paths.log_root() + f"{route}--{segment}"
-
-    # ������ �����ϴ��� Ȯ��
     if not os.path.isdir(local_folder):
         print(f"Folder not found: {local_folder}")
         return abort(404, "Folder not found")
@@ -159,9 +207,27 @@ def upload_carrot(route, segment):
       car_selected = car_selected.decode('utf-8')
 
     directory = "routes " + car_selected + " " + Params().get("DongleId").decode('utf-8')
+    success = upload_folder_to_ftp(local_folder, directory, f"{route}--{segment}")
 
-    # FTP�� ������ ���� ���ε� ����
-    #remote_path = f"{directory}/{route}--{segment}"
+    if success:
+        return "All files uploaded successfully", 200
+    else:
+        return "Failed to upload files", 500
+        
+@app.route("/footage/full/upload_g4/<route>/<segment>")
+def upload_g4(route, segment):
+    local_folder = Paths.log_root() + f"{route}--{segment}"
+    if not os.path.isdir(local_folder):
+        print(f"Folder not found: {local_folder}")
+        return abort(404, "Folder not found")
+
+    car_selected = Params().get("CarName")
+    if car_selected is None:
+      car_selected = "none"
+    else:
+      car_selected = car_selected.decode('utf-8')
+    
+    directory = "routes " + car_selected + " " + Params().get("DongleId").decode('utf-8')
     success = upload_folder_to_ftp(local_folder, directory, f"{route}--{segment}")
 
     if success:
