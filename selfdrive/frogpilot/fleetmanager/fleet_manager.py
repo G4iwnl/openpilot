@@ -228,7 +228,7 @@ def upload_g4(route, segment):
       car_selected = car_selected.decode('utf-8')
     
     directory = "routes " + car_selected + " " + Params().get("DongleId").decode('utf-8')
-    success = upload_folder_to_ftp(local_folder, directory, f"{route}--{segment}")
+    success = upload_folder_g4_ftp(local_folder, directory, f"{route}--{segment}")
 
     if success:
         return "All files uploaded successfully", 200
