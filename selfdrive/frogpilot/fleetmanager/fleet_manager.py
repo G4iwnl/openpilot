@@ -104,7 +104,6 @@ def upload_folder_to_ftp(local_folder, directory, remote_path):
     ftp.login(ftp_username, ftp_password)
 
     try:
-        ftp.cwd("/sorento")
         print(f"Create remote path = {directory}")
         try:
           ftp.mkd(directory)
