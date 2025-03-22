@@ -172,7 +172,7 @@ class CarSpecificEvents:
     if CS.gearShifter not in {GearShifter.drive, GearShifter.unknown}:
         events.add(EventName.wrongGear)
         with open('gear_shifter_log.txt', 'a') as file:
-            file.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - Gear Shifter: {CS.gearShifter}\n")
+            file.write(f"Gear Shifter: {CS.gearShifter}\n")
 
                              
     if CS.gearShifter == GearShifter.reverse:
