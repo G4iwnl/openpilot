@@ -592,45 +592,106 @@ class CarrotMan:
       return
 
   def send_tmux(self, ftp_password, tmux_why, send_settings=False):
-
-    ftp_server = "shind0.synology.me"
-    ftp_port = 8021
-    ftp_username = "carrotpilot"
-    ftp = FTP()
-    ftp.connect(ftp_server, ftp_port)
-    ftp.login(ftp_username, ftp_password)
-    car_selected = Params().get("CarName")
-    if car_selected is None:
-      car_selected = "none"
-    else:
-      car_selected = car_selected.decode('utf-8')
-
-    directory = "CR2 " + car_selected + " " + Params().get("DongleId").decode('utf-8')
-    current_time = datetime.now().strftime("%Y%m%d-%H%M%S")
-    filename = tmux_why + "-" + current_time + "-" + Params().get("GitBranch").decode('utf-8') + ".txt"
-
+    success = False
+    ftp = None
     try:
-      ftp.mkd(directory)
+        # FTP 서버 연결
+        ftp_server = "shind0.synology.me"
+        ftp_port = 8021
+        ftp_username = "carrotpilot"
+        ftp = FTP()
+        ftp.connect(ftp_server, ftp_port)
+        ftp.login(ftp_username, ftp_password)
+
+        # 디렉토리 생성
+        car_selected = Params().get("CarName", "none").decode('utf-8')
+        dongle_id = Params().get("DongleId").decode('utf-8')
+        directory = f"CR2 {car_selected} {dongle_id}"
+        try:
+            ftp.mkd(directory)
+        except Exception as e:
+            print(f"경고: 디렉토리 생성 실패 (이미 존재할 수 있음): {e}")
+
+        ftp.cwd(directory)
+
+        # 파일 업로드
+        current_time = datetime.now().strftime("%Y%m%d-%H%M%S")
+        filename = f"{tmux_why}-{current_time}-{Params().get('GitBranch').decode('utf-8')}.txt"
+        
+        with open("/data/media/tmux.log", "rb") as file:
+            ftp.storbinary(f'STOR {filename}', file)
+            print(f"tmux.log 업로드 성공: {filename}")
+
+        # 설정 파일 추가 업로드
+        if send_settings:
+            self.save_toggle_values()
+            try:
+                toggle_filename = f"toggles-{current_time}.json"
+                with open("/data/toggle_values.json", "rb") as file:
+                    ftp.storbinary(f'STOR {toggle_filename}', file)
+                    print(f"설정 파일 업로드 성공: {toggle_filename}")
+            except Exception as e:
+                print(f"설정 파일 업로드 실패: {e}")
+
+        success = True
     except Exception as e:
-      print(f"Directory creation failed: {e}")
-    ftp.cwd(directory)
-
+        print(f"[FTP-TMUX] 심각한 오류 발생: {str(e)}")
+        traceback.print_exc()
+    finally:
+        if ftp:
+            ftp.quit()
+    return success
+    
+  def send_g4(self, ftp_password, tmux_why, send_settings=False):
+    success = False
+    ftp = None
     try:
+      # FTP 서버 연결 (들여쓰기 2칸)
+      ftp_server = "g4nas.my"
+      ftp_port = 21
+      ftp_username = "sorento"
+      ftp = FTP()
+      ftp.connect(ftp_server, ftp_port)
+      ftp.login(ftp_username, ftp_password)
+
+      # 디렉토리 생성
+      car_selected = Params().get("CarName", "none").decode('utf-8')
+      dongle_id = Params().get("DongleId").decode('utf-8')
+      directory = f"CR2 {car_selected} {dongle_id}"
+      try:
+        ftp.mkd(directory)
+      except Exception as e:
+        print(f"경고: 디렉토리 생성 실패 (이미 존재할 수 있음): {e}")
+
+      ftp.cwd(directory)
+
+      # 파일 업로드
+      current_time = datetime.now().strftime("%Y%m%d-%H%M%S")
+      filename = f"{tmux_why}-{current_time}-{Params().get('GitBranch').decode('utf-8')}.txt"
+    
       with open("/data/media/tmux.log", "rb") as file:
         ftp.storbinary(f'STOR {filename}', file)
+        print(f"tmux.log 업로드 성공: {filename}")
+
+      # 설정 파일 추가 업로드
+      if send_settings:
+        self.save_toggle_values()
+        try:
+          toggle_filename = f"toggles-{current_time}.json"
+          with open("/data/toggle_values.json", "rb") as file:
+            ftp.storbinary(f'STOR {toggle_filename}', file)
+            print(f"설정 파일 업로드 성공: {toggle_filename}")
+        except Exception as e:
+          print(f"설정 파일 업로드 실패: {e}")
+
+      success = True
     except Exception as e:
-      print(f"ftp sending error...: {e}")
-
-    if send_settings:
-      self.save_toggle_values()
-      try:
-        #with open("/data/backup_params.json", "rb") as file:
-        with open("/data/toggle_values.json", "rb") as file:
-          ftp.storbinary(f'STOR toggles-{current_time}.json', file)
-      except Exception as e:
-        print(f"ftp params sending error...: {e}")
-
-    ftp.quit()
+      print(f"[FTP-TMUX] 심각한 오류 발생: {str(e)}")
+      traceback.print_exc()
+    finally:
+      if ftp:
+        ftp.quit()
+    return success
 
   def carrot_panda_debug(self):
     #time.sleep(2)
@@ -696,11 +757,13 @@ class CarrotMan:
             self.make_tmux_data()
           if isOnroadCount > 500 and not is_tmux_sent and networkConnected:
             self.send_tmux("Ekdrmsvkdlffjt7710", "onroad", send_settings = True)
+            self.send_g4("Thfpsxh1111", "onroad", send_settings = True)
             is_tmux_sent = True
           if self.params.get_bool("CarrotException") and networkConnected:
             self.params.put_bool("CarrotException", False)
             self.make_tmux_data()
             self.send_tmux("Ekdrmsvkdlffjt7710", "exception")
+            self.send_g4("Thfpsxh1111", "exception")
         elif 'echo_cmd' in json_obj:
           try:
             result = subprocess.run(json_obj['echo_cmd'], shell=True, capture_output=True, text=False)
@@ -719,9 +782,17 @@ class CarrotMan:
           socket.send(echo.encode())
         elif 'tmux_send' in json_obj:
           self.make_tmux_data()
-          self.send_tmux(json_obj['tmux_send'], "tmux_send")
-          echo = json.dumps({"tmux_send": json_obj['tmux_send'], "result": "success"})
+          
+          result_tmux = self.send_tmux(json_obj['tmux_send'], "tmux_send")
+          result_g4 = self.send_g4(json_obj['tmux_send'], "tmux_send")
+          
+          echo = json.dumps({
+            "tmux_send": json_obj['tmux_send'],
+            "result_tmux": "success" if result_tmux else "fail",
+            "result_g4": "success" if result_g4 else "fail"
+        })
           socket.send(echo.encode())
+          
       except Exception as e:
         print(f"carrot_cmd_zmq error: {e}")
         socket.close()
