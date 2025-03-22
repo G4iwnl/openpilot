@@ -813,10 +813,10 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.NO_ENTRY: NoEntryAlert("Door Open"),
   },
 
-  #EventName.seatbeltNotLatched: {
-  #  ET.SOFT_DISABLE: user_soft_disable_alert("Seatbelt Unlatched"),
-  #  ET.NO_ENTRY: NoEntryAlert("Seatbelt Unlatched"),
-  #},
+  EventName.seatbeltNotLatched: {
+    ET.SOFT_DISABLE: user_soft_disable_alert("Seatbelt Unlatched"),
+    ET.NO_ENTRY: NoEntryAlert("Seatbelt Unlatched"),
+  },
 
   EventName.espDisabled: {
     ET.SOFT_DISABLE: soft_disable_alert("Electronic Stability Control Disabled"),
