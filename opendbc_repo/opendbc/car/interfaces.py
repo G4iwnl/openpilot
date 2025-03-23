@@ -423,6 +423,7 @@ class MyTrack:
         
   def update(self, radar_point):
     self.vLead = radar_point.vLead
+    """
     if abs(radar_point.dRel - self.dRel) > 3.0 or abs(self.vRel - radar_point.vRel) > 20.0 * self.dt:
       self.cnt = 0
       self.jLead = 0.0
@@ -431,6 +432,7 @@ class MyTrack:
       self.aLead_avg.x = self.aLead
       self.jLead_avg.x = self.jLead
       self.vLead_averaged = self.vLead
+    """
 
     self.yRel = radar_point.yRel
 
