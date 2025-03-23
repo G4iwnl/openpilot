@@ -55,7 +55,9 @@ class RadarInterface(RadarInterfaceBase):
       self.trigger_msg = 416 if self.canfd else 0x420
 
     # 50Hz (SCC), 20Hz (RadarTracks)
-    self.vRel_filter = MyMovingAverage(13) # for SCC radar 0.1 unit
+    self.vLead_filter = MyMovingAverage(13) # for SCC radar 0.1 unit
+    self.vRel_last = 0
+    self.dRel_last = 0
 
 
   def update(self, can_strings):
@@ -125,17 +127,20 @@ class RadarInterface(RadarInterfaceBase):
     if self.canfd:
       dRel = cpt["SCC_CONTROL"]['ACC_ObjDist']
       vRel = cpt["SCC_CONTROL"]['ACC_ObjRelSpd']
+      new_pts = abs(dRel - self.dRel_last) > 3 or abs(vRel - self.vRel_last) > 1
+      vLead = vRel + self.v_ego
       valid = 0 < dRel < 150 #cpt["SCC_CONTROL"]['OBJ_STATUS'] and dRel < 150
       for ii in range(1):
         if valid:
-          if ii not in self.pts:
+          if ii not in self.pts or new_pts:
             self.pts[ii] = structs.RadarData.RadarPoint()
-            self.pts[ii].trackId = 0 #self.track_id
-            self.vRel_filter.set_all(vRel)
+            self.pts[ii].trackId = self.track_id
+            self.track_id = min(1 - self.track_id, 1)
+            self.vLead_filter.set_all(vLead)
           self.pts[ii].dRel = dRel
           self.pts[ii].yRel = 0
-          self.pts[ii].vRel = self.vRel_filter.process(vRel)
-          self.pts[ii].vLead = self.pts[ii].vRel + self.v_ego
+          self.pts[ii].vRel = vRel
+          self.pts[ii].vLead = self.vLead_filter.process(vLead)
           self.pts[ii].aRel = 0 #float('nan')
           self.pts[ii].yvRel = float('nan')
           self.pts[ii].measured = True
@@ -145,17 +150,20 @@ class RadarInterface(RadarInterfaceBase):
     else:
       dRel = cpt["SCC11"]['ACC_ObjDist']
       vRel = cpt["SCC11"]['ACC_ObjRelSpd']
+      new_pts = abs(dRel - self.dRel_last) > 3 or abs(vRel - self.vRel_last) > 1
+      vLead = vRel + self.v_ego
       valid = cpt["SCC11"]['ACC_ObjStatus'] and dRel < 150
       for ii in range(1):
         if valid:
-          if ii not in self.pts:
+          if ii not in self.pts or new_pts:
             self.pts[ii] = structs.RadarData.RadarPoint()
-            self.pts[ii].trackId = 0 #self.track_id
-            self.vRel_filter.set_all(vRel)
+            self.pts[ii].trackId = self.track_id
+            self.track_id = min(1 - self.track_id, 1)
+            self.vLead_filter.set_all(vLead)
           self.pts[ii].dRel = dRel
           self.pts[ii].yRel = -cpt["SCC11"]['ACC_ObjLatPos']  # in car frame's y axis, left is negative
-          self.pts[ii].vRel = self.vRel_filter.process(vRel)
-          self.pts[ii].vLead = self.pts[ii].vRel + self.v_ego
+          self.pts[ii].vRel = vRel
+          self.pts[ii].vLead = self.vLead_filter.process(vLead)
           self.pts[ii].aRel = 0 #float('nan')
           self.pts[ii].yvRel = float('nan')
           self.pts[ii].measured = True
@@ -163,6 +171,8 @@ class RadarInterface(RadarInterfaceBase):
           if ii in self.pts:
             del self.pts[ii]
 
+    self.dRel_last = dRel
+    self.vRel_last = vRel
     ret.points = list(self.pts.values())
     ret.errors = errors
     return ret
