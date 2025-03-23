@@ -16,6 +16,19 @@
     },
     {
       "group": "조향튜닝",
+      "name": "CenterToFront",
+      "title": "CenterToFront(40)",
+      "descr": "중앙복원력",
+      "egroup": "LAT",
+      "etitle": "CenterToFront(0)",
+      "edescr": "",
+      "min": 1,
+      "max": 100,
+      "default": 40,
+      "unit": 1
+    },
+    {
+      "group": "조향튜닝",
       "name": "LateralTorqueCustom",
       "title": "_LateralTorqueCustom(0)",
       "descr": "0:LiveTorque, 1:CustomTorque",
