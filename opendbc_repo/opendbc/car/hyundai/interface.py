@@ -146,8 +146,9 @@ class CarInterface(CarInterfaceBase):
         print("$$$HAS_SCC14")
 
     # Common lateral control setup
-
-    ret.centerToFront = ret.wheelbase * 0.4
+    
+    ctfint = params.get_int("CenterToFront") * 0.01
+    ret.centerToFront = ret.wheelbase * ctfint
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.4
     if ret.flags & HyundaiFlags.ANGLE_CONTROL:
