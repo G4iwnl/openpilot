@@ -757,6 +757,19 @@
     },
     {
       "group": "시작",
+      "name": "VisionOnly",
+      "title": "비전온리",
+      "descr": "0: 비전 + 레이더, 1: 비전온리",
+      "egroup": "START",
+      "etitle": "VisionOnly",
+      "edescr": "0: Vision + Radar, 1: VisionOnly",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "unit": 1
+    },
+    {
+      "group": "시작",
       "name": "MapboxStyle",
       "title": "맵박스 스타일",
       "descr": "",
