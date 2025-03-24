@@ -19,44 +19,94 @@
     </div>
     <br>
     <div class="download-section">
-        <a download="{{ route }}-{{ query_type }}.mp4" href="/footage/full/{{ query_type }}/{{ route }}" class="btn btn-success">
-            Download Full Route ({{ query_type }})
-        </a>
-        <div class="mt-2">
-            Downloads:
-            <a href="/footage/full/rlog/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">rlog</a>
-            <a href="/footage/full/qcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">qcamera</a>
-            <a href="/footage/full/fcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">fcamera</a>
-            <a href="/footage/full/dcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">dcamera</a>
-            <a href="/footage/full/ecamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">ecamera</a>
-        </div>
-    </div>
+		<!-- Full Route Download Buttons Group -->
+		<div class="btn-group mb-3" role="group" aria-label="Full route downloads">
+			{% set cameras = ['qcamera', 'fcamera', 'dcamera', 'ecamera'] %}
+			{% for cam in cameras %}
+			<a download="{{ route }}-{{ cam }}.mp4" 
+			   href="/footage/full/{{ cam }}/{{ route }}" 
+			   class="btn btn-{{ 'success' if cam == query_type else 'outline-success' }} position-relative px-4"
+			   style="min-width: 160px">
+				{{ cam|upper }}
+				{% if cam == query_type %}
+				<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger pulse-badge">
+					NOW
+					<span class="visually-hidden">current view</span>
+				</span>
+				{% endif %}
+			</a>
+			{% endfor %}
+		</div>
 
-    <div class="segment-controls mt-4">
-        <h3>Segment List</h3>
-        <div class="d-flex align-items-center mb-3">
-            <button onclick="toggleAllSegments()" class="btn btn-sm btn-outline-secondary me-2">전체 선택/해제</button>
-            <div id="selectedCount" class="text-muted">0 segments selected</div>
-        </div>
-        
-        
-        <div class="segment-list" style="max-height: 400px; overflow-y: auto;">
-            {% for segment in segments.split(',') %}
-            {% set clean_segment = segment.strip().strip("'") %}
-            {% if clean_segment %}
-            <div class="segment-item d-flex align-items-center py-2 border-bottom ps-2">
-                <input type="checkbox" 
-                       name="selected_segments" 
-                       value="{{ clean_segment }}" 
-                       class="form-check-input me-3 segment-checkbox"
-                       style="transform: scale(1.5)">
-                <a href="{{ route }}?{{ clean_segment.split('--')[2] }},{{ query_type }}" class="text-decoration-none">
-                    {{ clean_segment }}
-                </a>
-            </div>
-            {% endif %}
-            {% endfor %}
-        </div>
+		<!-- Individual Camera Downloads -->
+		<div class="mt-3">
+			<h5 class="text-muted mb-2">Individual Downloads:</h5>
+			<div class="d-flex flex-wrap gap-2">
+				{% for cam in ['rlog', 'qcamera', 'fcamera', 'dcamera', 'ecamera'] %}
+				<a href="/footage/full/{{ cam }}/{{ route }}/{{query_segment}}" 
+				   class="btn btn-sm btn-outline-primary d-flex align-items-center"
+				   style="min-width: 90px">
+					<i class="fas fa-download me-2"></i>
+					{{ cam|upper }}
+				</a>
+				{% endfor %}
+			</div>
+		</div>
+	</div>
+
+	<div class="segment-controls mt-4">
+		<h3 class="border-bottom pb-2 mb-3">Segment List</h3>
+		<div class="d-flex align-items-center mb-3">
+			<button onclick="toggleAllSegments()" 
+					class="btn btn-sm btn-outline-secondary me-2 d-flex align-items-center">
+				<i class="fas fa-check-double me-2"></i>
+				전체 선택/해제
+			</button>
+			<div id="selectedCount" class="text-muted small">0 segments selected</div>
+		</div>
+
+		<div class="segment-list" style="max-height: 400px; overflow-y: auto;">
+			{% for segment in segments.split(',') %}
+			{% set clean_segment = segment.strip().strip("'") %}
+			{% if clean_segment %}
+			<div class="segment-item d-flex align-items-center py-2 border-bottom ps-2 hover-light">
+				<input type="checkbox" 
+					   name="selected_segments" 
+					   value="{{ clean_segment }}" 
+					   class="form-check-input me-3 segment-checkbox"
+					   style="transform: scale(1.25)">
+				<a href="{{ route }}?{{ clean_segment.split('--')[2] }},{{ query_type }}" 
+				   class="text-decoration-none text-truncate"
+				   title="{{ clean_segment }}">
+					{{ clean_segment|truncate(55) }}
+				</a>
+			</div>
+			{% endif %}
+			{% endfor %}
+		</div>
+
+    <style>
+        .hover-light:hover {
+            background-color: rgba(0,0,0,0.05);
+            cursor: pointer;
+        }
+        .pulse-badge {
+            animation: pulse-badge 1.5s infinite;
+        }
+        @keyframes pulse-badge {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.15); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+        .btn-group .btn {
+            transition: all 0.2s ease;
+            border-right: 1px solid #dee2e6 !important;
+        }
+        .btn-group .btn:last-child {
+            border-right: none !important;
+        }
+    </style>
+</div>
 
         
         <div class="mt-4">
