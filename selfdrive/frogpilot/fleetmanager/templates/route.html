@@ -32,36 +32,28 @@
         </div>
     </div>
 
-<!--	
-	<div class="camera-views mt-3">
-        <span class="text-muted me-2">Camera Views:</span>
-        <div class="d-inline-block">
-            <a href="{{ route }}?{{ query_segment }},qcamera" class="btn btn-sm btn-outline-secondary">qcamera</a>
-            <a href="{{ route }}?{{ query_segment }},fcamera" class="btn btn-sm btn-outline-secondary">fcamera</a>
-            <a href="{{ route }}?{{ query_segment }},dcamera" class="btn btn-sm btn-outline-secondary">dcamera</a>
-            <a href="{{ route }}?{{ query_segment }},ecamera" class="btn btn-sm btn-outline-secondary">ecamera</a>
-        </div>
-    </div>
-    
     <div class="segment-controls mt-4">
         <h3>Segment List</h3>
-        <div id="selectedCount" class="text-muted mb-2">0 segments selected</div>
-		
-		-->
+        <div class="d-flex align-items-center mb-3">
+            <button onclick="toggleAll()" class="btn btn-sm btn-outline-secondary me-2">전체 선택/해제</button>
+            <div id="selectedCount" class="text-muted">0 segments selected</div>
+        </div>
         
         <!-- 체크박스가 포함된 세그먼트 목록 -->
         <div class="segment-list" style="max-height: 400px; overflow-y: auto;">
-            {% for segment in segments %}
+            {% for segment in segments.split(',') %}
+            {% if segment.strip(" '") %}
             <div class="segment-item d-flex align-items-center py-2 border-bottom">
                 <input type="checkbox" 
                        name="selected_segments" 
-                       value="{{ segment }}" 
+                       value="{{ segment.strip(" '") }}" 
                        class="form-check-input me-3"
                        style="transform: scale(1.5)">
-                <a href="{{ route }}?{{ segment.split('--')[2] }},{{ query_type }}" class="text-decoration-none">
-                    {{ segment }}
+                <a href="{{ route }}?{{ segment.strip(" '").split('--')[2] }},{{ query_type }}" class="text-decoration-none">
+                    {{ segment.strip(" '") }}
                 </a>
             </div>
+            {% endif %}
             {% endfor %}
         </div>
 
@@ -80,7 +72,7 @@
         var video = document.getElementById('video');
         var segments = [{{ segments }}];
         var q_segment = {{ query_segment }};
-        var q_index = segments.findIndex(seg => parseInt(seg.split('--')[2]) === q_segment);
+        var q_index = segments.findIndex(seg => parseInt(seg.split('--')[2]) === q_segment;
 
         const tracks = {
             list: segments,
@@ -110,6 +102,16 @@
         function updateSelectionCount() {
             const count = document.querySelectorAll('input[name="selected_segments"]:checked').length;
             document.getElementById('selectedCount').textContent = `${count} segments selected`;
+        }
+
+        function toggleAll() {
+            const checkboxes = document.querySelectorAll('input[name="selected_segments"]');
+            const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = !allChecked;
+            });
+            updateSelectionCount();
         }
 
         document.querySelectorAll('input[name="selected_segments"]').forEach(checkbox => {
