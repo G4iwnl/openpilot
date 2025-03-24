@@ -193,6 +193,40 @@ def upload_folder_g4_ftp(local_folder, directory, remote_path):
         print(f"FTP Upload Error: {e}")
         return False
 
+@app.route("/upload_selected_routes", methods=["POST"])
+def upload_selected_routes():
+    data = request.get_json()
+    routes = data.get("routes", [])
+
+    if not routes:
+        return jsonify({"message": "No routes selected"}), 400
+
+    errors = []
+    for route in routes:
+        local_folder = Paths.log_root() + route
+        if not os.path.isdir(local_folder):
+            errors.append(f"Folder not found: {route}")
+            continue
+
+        car_selected = Params().get("CarName")
+        if car_selected is None:
+            car_selected = "none"
+        else:
+            car_selected = car_selected.decode("utf-8")
+
+        directory = "routes " + car_selected + " " + Params().get("DongleId").decode("utf-8")
+        success = upload_folder_g4_ftp(local_folder, directory, route)
+
+        if not success:
+            errors.append(f"Failed to upload: {route}")
+
+    if errors:
+        return jsonify({"message": "Some routes failed to upload", "errors": errors}), 500
+
+    return jsonify({"message": "All selected routes uploaded successfully"}), 200
+
+
+
 @app.route("/footage/full/upload_carrot/<route>/<segment>")
 def upload_carrot(route, segment):
     local_folder = Paths.log_root() + f"{route}--{segment}"
