@@ -147,8 +147,8 @@ class CarInterface(CarInterfaceBase):
 
     # Common lateral control setup
     
-    ctfint = params.get_int("CenterToFront") * 0.01
-    ret.centerToFront = ret.wheelbase * ctfint
+    
+    ret.centerToFront = ret.wheelbase * 0.4
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.4
     if ret.flags & HyundaiFlags.ANGLE_CONTROL:
