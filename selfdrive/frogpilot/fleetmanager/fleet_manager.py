@@ -46,7 +46,7 @@ sm = messaging.SubMaster(['carState'])
 
 app = Flask(__name__)
 
-SCREENRECORD_DIR = '/path/to/screenrecords'
+SCREENRECORD_DIR = '/data/media/0/videos/'
 @app.route("/screenrecords", endpoint='screenrecords_list')
 @app.route("/screenrecords/<path:clip>", endpoint='screenrecords_detail')
 def screenrecords(clip=None):
