@@ -10,11 +10,10 @@
     <h1>Dashcam Segments (one per minute)</h1>
     <br>
     <video id="video" width="640" height="480" controls autoplay style="background:black">
-        <source src="/footage/{{ query_type }}/{{ route }}--{{ '%02d' % query_segment|int }}" type="video/mp4">
     </video>
     <br><br>
     <div class="video-info">
-        current segment: <span id="currentsegment" class="badge bg-primary">{{ '%02d' % query_segment|int }}</span>
+        current segment: <span id="currentsegment" class="badge bg-primary">{{ current_segment }}</span>
         <br>
         current view: <span id="currentview" class="badge bg-secondary">{{ query_type }}</span>
     </div>
@@ -25,11 +24,11 @@
         </a>
         <div class="mt-2">
             Downloads:
-            <a href="/footage/full/rlog/{{ route }}/{{ '%02d' % query_segment|int }}" class="btn btn-sm btn-outline-primary">rlog</a>
-            <a href="/footage/full/qcamera/{{ route }}/{{ '%02d' % query_segment|int }}" class="btn btn-sm btn-outline-primary">qcamera</a>
-            <a href="/footage/full/fcamera/{{ route }}/{{ '%02d' % query_segment|int }}" class="btn btn-sm btn-outline-primary">fcamera</a>
-            <a href="/footage/full/dcamera/{{ route }}/{{ '%02d' % query_segment|int }}" class="btn btn-sm btn-outline-primary">dcamera</a>
-            <a href="/footage/full/ecamera/{{ route }}/{{ '%02d' % query_segment|int }}" class="btn btn-sm btn-outline-primary">ecamera</a>
+            <a href="/footage/full/rlog/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">rlog</a>
+            <a href="/footage/full/qcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">qcamera</a>
+            <a href="/footage/full/fcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">fcamera</a>
+            <a href="/footage/full/dcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">dcamera</a>
+            <a href="/footage/full/ecamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">ecamera</a>
         </div>
     </div>
     
@@ -37,6 +36,7 @@
         <h3>Segment List</h3>
         <div id="selectedCount" class="text-muted mb-2">0 segments selected</div>
         
+        <!-- 수정된 세그먼트 목록 부분 -->
         <div class="segment-list" style="max-height: 400px; overflow-y: auto;">
             {% for segment in segments %}
             {% set seg_num = segment.split('--')[2] %}
@@ -53,6 +53,7 @@
             {% endfor %}
         </div>
 
+        <!-- 업로드 버튼 -->
         <div class="mt-4">
             <button class="btn btn-danger" onclick="uploadSelected()">
                 <i class="bi bi-upload me-2"></i>
@@ -63,31 +64,20 @@
     </div>
 
     <script>
-        // 세그먼트 데이터 처리
+        // 세그먼트 데이터 처리 (JSON 파싱)
         var segments = {{ segments | tojson | safe }};
-        var currentSegment = "{{ route }}--{{ '%02d' % query_segment|int }}";
-        var queryType = "{{ query_type }}";
-        
-        // 비디오 요소 초기화
-        const video = document.getElementById('video');
+        var q_segment = "{{ query_segment }}";
         
         // tracks 객체 초기화
         const tracks = {
             list: segments,
-            index: segments.findIndex(seg => seg === currentSegment),
+            index: segments.findIndex(seg => seg.endsWith("--" + q_segment)),
             next() {
                 this.index = (this.index + 1) % this.list.length;
             },
             play() {
-                return "/footage/" + queryType + "/" + this.list[this.index];
+                return "{{ query_type }}/" + this.list[this.index];
             }
-        }
-
-        // 현재 상태 표시 업데이트
-        function updateVideoInfo() {
-            const segNum = tracks.list[tracks.index].split('--')[2];
-            document.getElementById("currentsegment").textContent = segNum;
-            document.getElementById("currentview").textContent = queryType;
         }
 
         // 비디오 이벤트 리스너
@@ -99,11 +89,13 @@
             video.play();
         });
 
-        // 초기화
-        video.src = tracks.play();
-        updateVideoInfo();
+        // 기타 함수들
+        function updateVideoInfo() {
+            const currentSeg = tracks.list[tracks.index].split('--')[2];
+            document.getElementById("currentsegment").textContent = currentSeg;
+            document.getElementById("currentview").textContent = "{{ query_type }}";
+        }
 
-        // 나머지 함수들 (기존과 동일)
         function updateSelectionCount() {
             const count = document.querySelectorAll('input[name="selected_segments"]:checked').length;
             document.getElementById('selectedCount').textContent = `${count} segments selected`;
@@ -145,6 +137,7 @@
             setTimeout(() => statusDiv.classList.add('fade'), 3000);
         }
 
+        // 초기화
         document.querySelectorAll('input[name="selected_segments"]').forEach(checkbox => {
             checkbox.addEventListener('change', updateSelectionCount);
         });
