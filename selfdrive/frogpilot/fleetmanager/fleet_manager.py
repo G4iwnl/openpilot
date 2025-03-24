@@ -230,7 +230,6 @@ def upload_g4(route, segment):
         return "No selected file", 400
 
     try:
-        # FTP 연결 설정 (기존 코드와 동일)
         ftp_server = "g4nas.my"
         ftp_port = 21
         ftp_username = "sorento"
@@ -238,8 +237,7 @@ def upload_g4(route, segment):
         ftp = FTP()
         ftp.connect(ftp_server, ftp_port)
         ftp.login(ftp_username, ftp_password)
-
-        # 디렉토리 생성 (기존 코드와 동일)
+        
         car_selected = Params().get("CarName", "none").decode('utf-8')
         directory = "routes " + car_selected + " " + Params().get("DongleId").decode('utf-8')
         
@@ -256,7 +254,6 @@ def upload_g4(route, segment):
             pass
         ftp.cwd(f"{route}--{segment}")
 
-        # 파일 업로드
         ftp.storbinary(f'STOR {file.filename}', file.stream)
         ftp.quit()
         
@@ -287,7 +284,6 @@ def route(route):
     if len(route) != 20:
         return render_template("error.html", error="route not found")
 
-    # 쿼리 스트링 파싱 개선
     query_params = request.query_string.decode('utf-8').split(',')
     if len(query_params) >= 2:
         query_segment = query_params[0]
