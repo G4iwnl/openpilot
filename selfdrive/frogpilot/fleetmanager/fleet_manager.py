@@ -251,29 +251,22 @@ def fcamera(cameratype, segment):
 
 @app.route("/footage/<route>")
 def route(route):
-    if len(route) != 20:
-        return render_template("error.html", error="route not found")
+  if len(route) != 20:
+    return render_template("error.html", error="route not found")
 
-    # Improved query parsing
-    query_str = request.query_string.decode('utf-8')
-    if not query_str:
-        query_segment = "0"
-        query_type = "qcamera"
-    else:
-        parts = query_str.split(',')
-        query_segment = parts[0]
-        query_type = parts[1] if len(parts) > 1 else "qcamera"
+  if str(request.query_string) == "b''":
+    query_segment = "0"
+    query_type = "qcamera"
+  else:
+    query_segment = (str(request.query_string).split(","))[0][2:]
+    query_type = (str(request.query_string).split(","))[1][:-1]
 
-    segments_list = fleet.segments_in_route(route)
-    segments_str = ",".join(f"'{seg}'" for seg in segments_list)
-
-    return render_template(
-        "route.html",
-        route=route,
-        query_type=query_type,
-        segments=segments_str,
-        query_segment=query_segment
-    )
+  links = ""
+  segments = ""
+  for segment in fleet.segments_in_route(route):
+    links += "<a href='"+route+"?"+segment.split("--")[2]+","+query_type+"'>"+segment+"</a><br>"
+    segments += "'"+segment+"',"
+  return render_template("route.html", route=route, query_type=query_type, links=links, segments=segments, query_segment=query_segment)
 
 
 @app.route("/footage/")

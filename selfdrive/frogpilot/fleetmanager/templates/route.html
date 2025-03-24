@@ -10,7 +10,7 @@
     <h1>Dashcam Segments (one per minute)</h1>
     <br>
     <video id="video" width="640" height="480" controls autoplay style="background:black">
-        <source src="/footage/{{ query_type }}/{{ segments.split(',')[0].strip(" '") }}" type="video/mp4">
+        <source src="{{ query_type }}/{{ segments.split(',')[0].strip(" '") }}" type="video/mp4">
     </video>
     <br><br>
     <div class="video-info">
@@ -70,13 +70,11 @@
     </div>
 
     <script>
-        // 초기화 로직 개선
-        const segments = {{ segments|safe }};
-        const currentSegmentIndex = segments.findIndex(seg => 
-            seg.includes("--{{ query_segment }}")
-        );
-        let currentSegmentIndex = currentSegmentIndex !== -1 ? currentSegmentIndex : 0;
+        // 비디오 세그먼트 관리
         const video = document.getElementById('video');
+        const segmentElements = Array.from(document.querySelectorAll('.segment-item a'));
+        const segments = segmentElements.map(el => el.textContent.trim());
+        let currentSegmentIndex = 0;
 
         // 비디오 재생 로직
         function playNextSegment() {
@@ -85,9 +83,10 @@
         }
 
         function updateVideoSource() {
-            const segment = segments[currentSegmentIndex].replace(/'/g, '');
-            video.src = `/footage/${"{{ query_type }}"}/${segment}`;
+            const segment = segments[currentSegmentIndex];
+            video.src = "{{ query_type }}/" + segment;
             document.getElementById("currentsegment").textContent = segment;
+            document.getElementById("currentview").textContent = "{{ query_type }}";
             video.load();
             video.play().catch(e => console.error("Video play error:", e));
         }
