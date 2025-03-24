@@ -255,6 +255,7 @@ def route(route):
     if len(route) != 20:
         return render_template("error.html", error="route not found")
 
+    # 쿼리 파라미터 처리
     if not request.query_string:
         query_segment = "0"
         query_type = "qcamera"
@@ -263,6 +264,7 @@ def route(route):
         query_segment = query_parts[0]
         query_type = query_parts[1] if len(query_parts) > 1 else "qcamera"
 
+    # 세그먼트 데이터 준비
     segments = list(fleet.segments_in_route(route))
     
     return render_template(
