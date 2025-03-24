@@ -4,150 +4,74 @@
     Dashcam Segments
 {% endblock %}
 
+
 {% block main %}
 {% autoescape false %}
     <br>
     <h1>Dashcam Segments (one per minute)</h1>
     <br>
-    <video id="video" width="640" height="480" controls autoplay="autoplay" style="background:black">
+    <video id="video" width="320" height="240" controls autoplay="autoplay" style="background:black">
     </video>
     <br><br>
-    <div class="video-info">
-        current segment: <span id="currentsegment" class="badge bg-primary"></span>
-        <br>
-        current view: <span id="currentview" class="badge bg-secondary"></span>
-    </div>
+    current segment: <span id="currentsegment"></span>
     <br>
-    <div class="download-section">
-        <a download="{{ route }}-{{ query_type }}.mp4" href="/footage/full/{{ query_type }}/{{ route }}" class="btn btn-success">
-            Download Full Route ({{ query_type }})
-        </a>
-        <div class="mt-2">
-            Individual Downloads:
-            <a href="/footage/full/rlog/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">rlog</a>
-            <a href="/footage/full/qcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">qcamera</a>
-            <a href="/footage/full/fcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">fcamera</a>
-            <a href="/footage/full/dcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">dcamera</a>
-        </div>
-    </div>
-    
-    <div class="segment-controls mt-4">
-        <h3>Segment List</h3>
-        <div id="selectedCount" class="text-muted mb-2">0 segments selected</div>
-        
-        <!-- 체크박스가 포함된 세그먼트 목록 -->
-        <div class="segment-list" style="max-height: 400px; overflow-y: auto;">
-            {% for segment in segments %}
-            <div class="segment-item d-flex align-items-center py-2 border-bottom">
-                <input type="checkbox" 
-                       name="selected_segments" 
-                       value="{{ segment }}" 
-                       class="form-check-input me-3"
-                       style="transform: scale(1.5)">
-                <a href="{{ route }}?{{ segment.split('--')[2] }},{{ query_type }}" class="text-decoration-none">
-                    {{ segment }}
-                </a>
-            </div>
-            {% endfor %}
-        </div>
-
-        <!-- 업로드 버튼 그룹 -->
-        <div class="mt-4">
-            <button class="btn btn-danger" onclick="uploadSelected()">
-                <i class="bi bi-upload me-2"></i>
-                Upload All Selected Routes To G4 Server
-            </button>
-            <div id="uploadStatus" class="mt-2"></div>
-        </div>
-    </div>
-
+    current view: <span id="currentview"></span>
+    <br>
+    <a download="{{ route }}-{{ query_type }}.mp4" href="/footage/full/{{ query_type }}/{{ route }}">download full route {{ query_type }}</a><br>
+    download: 
+    <a href="/footage/full/rlog/{{ route }}/{{query_segment}}">rlog</a>
+    <a href="/footage/full/qcamera/{{ route }}/{{query_segment}}">qcamera</a>
+    <a href="/footage/full/fcamera/{{ route }}/{{query_segment}}">fcamera</a>
+    <a href="/footage/full/dcamera/{{ route }}/{{query_segment}}">dcamera</a>
+    <br>
+    <a href="/footage/full/upload_carrot/{{ route }}/{{query_segment}}">UPLOAD ROUTE to carrot server</a>
+	<br><br> 
+    <a href="/footage/full/upload_g4/{{ route }}/{{query_segment}}">UPLOAD ROUTE to G4 server</a>
+    <br>
+    <a href="{{ route }}?{{ query_segment }},qcamera">qcamera</a> -
+    <a href="{{ route }}?{{ query_segment }},fcamera">fcamera</a> -
+    <a href="{{ route }}?{{ query_segment }},dcamera">dcamera</a> -
+    <a href="{{ route }}?{{ query_segment }},ecamera">ecamera</a>
+    <br><br>
+    {{ links }}
     <script>
-        // 비디오 세그먼트 관리
-        var video = document.getElementById('video');
-        var segments = [{{ segments }}];
-        var q_segment = {{ query_segment }};
-        var q_index = segments.findIndex(seg => parseInt(seg.split('--')[2]) === q_segment);
-
-        const tracks = {
-            list: segments,
-            index: q_index >= 0 ? q_index : 0,
-            next() {
-                this.index = (this.index + 1) % this.list.length;
-            },
-            play() {
-                return "{{ query_type }}/" + this.list[this.index];
-            }
+    var video = document.getElementById('video');
+    var segments = [{{ segments  }}];
+    var q_segment = {{ query_segment }};
+    var q_index = 0;
+    for (var i = 0; i < segments.length; i++) {
+          var segment = segments[i];
+          var q_val = segment.split('--').slice(2).join('--');
+          if (parseInt(q_val) === q_segment) {
+            q_index = i;
+            break
+          }
         }
-
-        video.addEventListener('ended', () => {
-            tracks.next();
-            video.src = tracks.play();
-            updateVideoInfo();
-            video.load();
-            video.play();
-        });
-
-        function updateVideoInfo() {
-            document.getElementById("currentsegment").textContent = video.src.split("/")[5];
-            document.getElementById("currentview").textContent = video.src.split("/")[4];
+    var tracks = {
+      list: segments,
+      index: q_index,
+      next: function() {
+        if (this.index == this.list.length - 1) this.index = 0;
+        else {
+            this.index += 1;
         }
-
-        // 체크박스 관련 기능
-        function updateSelectionCount() {
-            const count = document.querySelectorAll('input[name="selected_segments"]:checked').length;
-            document.getElementById('selectedCount').textContent = `${count} segments selected`;
-        }
-
-        document.querySelectorAll('input[name="selected_segments"]').forEach(checkbox => {
-            checkbox.addEventListener('change', updateSelectionCount);
-        });
-
-        // 업로드 기능
-        async function uploadSelected() {
-            const selected = Array.from(document.querySelectorAll('input[name="selected_segments"]:checked'))
-                                .map(checkbox => checkbox.value);
-            
-            if(selected.length === 0) {
-                showUploadStatus('No segments selected!', 'danger');
-                return;
-            }
-
-            try {
-                showUploadStatus('Uploading...', 'info');
-                
-                const response = await fetch('/footage/full/upload_g4', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        route: "{{ route }}",
-                        segments: selected,
-                        type: "{{ query_type }}"
-                    })
-                });
-
-                if(!response.ok) throw new Error('Upload failed');
-                
-                const result = await response.json();
-                showUploadStatus(`Successfully uploaded ${result.uploaded_count} segments!`, 'success');
-            } catch (error) {
-                showUploadStatus(`Error: ${error.message}`, 'danger');
-            }
-        }
-
-        function showUploadStatus(message, type) {
-            const statusDiv = document.getElementById('uploadStatus');
-            statusDiv.className = `alert alert-${type} mt-2`;
-            statusDiv.innerHTML = message;
-            setTimeout(() => statusDiv.classList.add('fade'), 3000);
-        }
-
-        // 초기화
-        video.src = tracks.play();
-        updateVideoInfo();
-        updateSelectionCount();
+      },
+      play: function() {
+        return ( "{{ query_type }}/" + this.list[this.index] );
+      }
+    }
+    video.addEventListener('ended', function(e) {
+      tracks.next();
+      video.src = tracks.play();
+      document.getElementById("currentsegment").textContent=video.src.split("/")[5];
+      document.getElementById("currentview").textContent=video.src.split("/")[4];
+      video.load();
+      video.play();
+    });
+    video.src = tracks.play();
+    document.getElementById("currentsegment").textContent=video.src.split("/")[5];
+    document.getElementById("currentview").textContent=video.src.split("/")[4];
     </script>
 {% endautoescape %}
-<br><br>
+    <br><br>
 {% endblock %}
