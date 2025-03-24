@@ -249,31 +249,25 @@ def fcamera(cameratype, segment):
   return Response(fleet.ffmpeg_mp4_wrap_process_builder(file_name).stdout.read(), status=200, mimetype='video/mp4')
 
 
-
 @app.route("/footage/<route>")
 def route(route):
-    if len(route) != 20:
-        return render_template("error.html", error="route not found")
+  if len(route) != 20:
+    return render_template("error.html", error="route not found")
 
-    # 쿼리 파라미터 처리
-    if not request.query_string:
-        query_segment = "0"
-        query_type = "qcamera"
-    else:
-        query_parts = request.query_string.decode().split(',')
-        query_segment = query_parts[0]
-        query_type = query_parts[1] if len(query_parts) > 1 else "qcamera"
+  if str(request.query_string) == "b''":
+    query_segment = "0"
+    query_type = "qcamera"
+  else:
+    query_segment = (str(request.query_string).split(","))[0][2:]
+    query_type = (str(request.query_string).split(","))[1][:-1]
 
-    # 세그먼트 데이터 준비
-    segments = list(fleet.segments_in_route(route))
-    
-    return render_template(
+  segments = list(fleet.segments_in_route(route)) 
+  return render_template(
         "route.html",
         route=route,
         query_type=query_type,
         segments=segments,
-        query_segment=query_segment,
-        current_segment=f"{route}--{query_segment.zfill(2)}"  # 추가된 부분
+        query_segment=query_segment
     )
 
 
