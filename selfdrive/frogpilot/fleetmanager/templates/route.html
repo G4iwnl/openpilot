@@ -228,11 +228,12 @@
 				successAlert.textContent = `Upload complete! ${selectedSegmentsCount} segments uploaded`;
 				statusDiv.prepend(successAlert);
 
-				// 5초 후 진행률 UI 숨기기
-				setTimeout(() => {
-					const progressElements = document.querySelectorAll('.upload-progress, #uploadProgressBar, #uploadProgressText, #uploadSpeed, #uploadFileInfo');
-					progressElements.forEach(el => el.remove());
-				}, 5000);
+				// 즉시 초기 알림 및 진행률 UI 제거
+				const initialAlert = statusDiv.querySelector('.alert-info'); // info 타입 알림 찾기
+				if (initialAlert) initialAlert.remove();
+				
+				const progressElements = document.querySelectorAll('.upload-progress, #uploadProgressBar, #uploadProgressText, #uploadSpeed, #uploadFileInfo');
+				progressElements.forEach(el => el.remove());
 
 			} catch (error) {
 				console.error('Upload failed:', error);
