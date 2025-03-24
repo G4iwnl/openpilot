@@ -40,9 +40,7 @@ import time
 from functools import wraps
 from openpilot.opendbc_repo.opendbc.car.interfaces import CarInterfaceBase
 from openpilot.opendbc_repo.opendbc.car.values import PLATFORMS
-from flask_socketio import SocketIO, emit
 
-socketio = SocketIO(app)
 # Initialize messaging
 sm = messaging.SubMaster(['carState'])
 
@@ -96,7 +94,7 @@ def download_dcamera(route, segment):
 
 
 def upload_folder_to_ftp(local_folder, directory, remote_path):
-    from tqdm import tqdm
+    from tqdm import tqdm  # tqdm���� ���� �� ǥ��
     ftp_server = "shind0.synology.me"
     ftp_port = 8021
     ftp_username = "carrotpilot"
@@ -106,33 +104,38 @@ def upload_folder_to_ftp(local_folder, directory, remote_path):
     ftp.login(ftp_username, ftp_password)
 
     try:
-        ftp.mkd(directory)
+        print(f"Create remote path = {directory}")
+        try:
+          ftp.mkd(directory)
+        except Exception as e:
+          print(f"Directory creation failed: {e}")
         ftp.cwd(directory)
-        ftp.mkd(remote_path)
+        try:
+          ftp.mkd(remote_path)
+        except Exception as e:
+          print(f"Directory creation failed: {e}")
         ftp.cwd(remote_path)
 
+        # ���� ������ ��� ���� ��������
         files = [
             os.path.join(root, filename)
             for root, _, filenames in os.walk(local_folder)
             for filename in filenames
         ]
 
-        total_files = len(files)
-        uploaded_files = 0
-
-        with tqdm(total=total_files, desc="Uploading Files", unit="file") as pbar:
+        # tqdm�� ����� ���� �� ǥ��
+        with tqdm(total=len(files), desc="Uploading Files", unit="file") as pbar:
             for local_file in files:
                 filename = os.path.basename(local_file)
                 if filename in ['rlog', 'rlog.zst', 'qcamera.ts']:
-                    try:
-                        with open(local_file, 'rb') as file:
-                            ftp.storbinary(f'STOR {filename}', file)
-                            uploaded_files += 1
-                            progress = (uploaded_files / total_files) * 100
-                            socketio.emit('upload_progress', {'progress': progress})
-                    except Exception as e:
-                        print(f"Failed to upload {local_file}: {e}")
-                    pbar.update(1)
+                  try:
+                      with open(local_file, 'rb') as file:
+                          ftp.storbinary(f'STOR {filename}', file)
+                          print(f"Uploaded: {local_file} -> {filename}")
+                  except Exception as e:
+                      print(f"Failed to upload {local_file}: {e}")
+
+                  pbar.update(1)  # ���� �� ������Ʈ
 
         ftp.quit()
         return True
@@ -142,7 +145,7 @@ def upload_folder_to_ftp(local_folder, directory, remote_path):
         
         
 def upload_folder_g4_ftp(local_folder, directory, remote_path):
-    from tqdm import tqdm
+    from tqdm import tqdm  # g4nas.my
     ftp_server = "g4nas.my"
     ftp_port = 21
     ftp_username = "sorento"
@@ -152,9 +155,17 @@ def upload_folder_g4_ftp(local_folder, directory, remote_path):
     ftp.login(ftp_username, ftp_password)
 
     try:
-        ftp.mkd(directory)
+        ftp.cwd("/sorento")
+        print(f"Create remote path = {directory}")
+        try:
+          ftp.mkd(directory)
+        except Exception as e:
+          print(f"Directory creation failed: {e}")
         ftp.cwd(directory)
-        ftp.mkd(remote_path)
+        try:
+          ftp.mkd(remote_path)
+        except Exception as e:
+          print(f"Directory creation failed: {e}")
         ftp.cwd(remote_path)
 
         files = [
@@ -163,22 +174,18 @@ def upload_folder_g4_ftp(local_folder, directory, remote_path):
             for filename in filenames
         ]
 
-        total_files = len(files)
-        uploaded_files = 0
-
-        with tqdm(total=total_files, desc="Uploading Files", unit="file") as pbar:
+        with tqdm(total=len(files), desc="Uploading Files", unit="file") as pbar:
             for local_file in files:
                 filename = os.path.basename(local_file)
                 if filename in ['rlog', 'rlog.zst', 'qcamera.ts']:
-                    try:
-                        with open(local_file, 'rb') as file:
-                            ftp.storbinary(f'STOR {filename}', file)
-                            uploaded_files += 1
-                            progress = (uploaded_files / total_files) * 100
-                            socketio.emit('upload_progress', {'progress': progress})
-                    except Exception as e:
-                        print(f"Failed to upload {local_file}: {e}")
-                    pbar.update(1)
+                  try:
+                      with open(local_file, 'rb') as file:
+                          ftp.storbinary(f'STOR {filename}', file)
+                          print(f"Uploaded: {local_file} -> {filename}")
+                  except Exception as e:
+                      print(f"Failed to upload {local_file}: {e}")
+
+                  pbar.update(1) 
 
         ftp.quit()
         return True
