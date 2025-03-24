@@ -265,10 +265,17 @@ def upload_g4(route, segment):
 @app.template_filter('datetimeformat')
 def datetimeformat_filter(filename):
     try:
-        date_str = filename.split('_')[0]
-        time_str = filename.split('_')[1].split('.')[0]
-        dt = datetime.strptime(f"{date_str}_{time_str}", "%Y-%m-%d_%H-%M-%S")
-        return dt.strftime("%Y년 %m월 %d일 %H시 %M분")
+        date_part = filename[:8]
+        time_part = filename[9:15]
+        
+        year = date_part[:4]
+        month = date_part[4:6]
+        day = date_part[6:8]
+        
+        hour = time_part[:2]
+        minute = time_part[2:4]
+        
+        return f"{year}년 {month}월 {day}일 {hour}시 {minute}분"
     except:
         return filename
         
@@ -355,13 +362,26 @@ def preserved():
 def screenrecords():
   rows = fleet.list_file(fleet.SCREENRECORD_PATH)
   if not rows:
-    return render_template("error.html", error="no screenrecords found at:<br><br>" + fleet.SCREENRECORD_PATH)
-  return render_template("screenrecords.html", rows=rows, clip=rows[0])
+    return render_template("error.html", error="no screenrecords found")
+  files_with_size = []
+  for file in rows:
+    file_path = os.path.join(fleet.SCREENRECORD_PATH, file)
+    size_bytes = os.path.getsize(file_path) if os.path.exists(file_path) else 0
+    files_with_size.append((file, size_bytes))
+  
+  return render_template("screenrecords.html", rows=files_with_size, clip=rows[0])
 
 
 @app.route("/screenrecords/<clip>")
 def screenrecord(clip):
-  return render_template("screenrecords.html", rows=fleet.list_files(fleet.SCREENRECORD_PATH), clip=clip)
+  rows = fleet.list_file(fleet.SCREENRECORD_PATH)
+  files_with_size = []
+  for file in rows:
+    file_path = os.path.join(fleet.SCREENRECORD_PATH, file)
+    size_bytes = os.path.getsize(file_path) if os.path.exists(file_path) else 0
+    files_with_size.append((file, size_bytes))
+  
+  return render_template("screenrecords.html", rows=files_with_size, clip=clip)
 
 
 @app.route("/screenrecords/play/pipe/<file>")

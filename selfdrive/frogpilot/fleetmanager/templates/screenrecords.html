@@ -37,20 +37,21 @@
                 <div class="card-body">
                     <div class="list-group">
                         {% for row in rows %}
-                        <a href="/screenrecords/{{ row }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                            <div>
-                                <i class="fas fa-file-video me-3 text-primary"></i>
-                                {{ row|replace('.mp4', '')|replace('_', ' ') }}
-                            </div>
-                            <small class="text-muted">
-								{% if row.split('.')[-1] == 'mp4' %}
-									{{ row|datetimeformat }}
-								{% else %}
-									{{ row }}
-								{% endif %}
-							</small>
-                        </a>
-                        {% endfor %}
+						<a href="/screenrecords/{{ row[0] }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+							<div>
+								<i class="fas fa-file-video me-3 text-primary"></i>
+								{{ row[0]|replace('.mp4', '')|replace('_', ' ') }}
+							</div>
+							<div class="text-end">
+								<small class="text-muted d-block">
+									{{ row[0]|datetimeformat }}
+								</small>
+								<small class="text-muted">
+									{{ (row[1] / 1024 / 1024)|round(2) }} MB
+								</small>
+							</div>
+						</a>
+						{% endfor %}
                     </div>
                 </div>
             </div>
