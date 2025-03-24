@@ -47,11 +47,13 @@ sm = messaging.SubMaster(['carState'])
 app = Flask(__name__)
 
 SCREENRECORD_DIR = '/path/to/screenrecords'
-@app.route("/screenrecords", endpoint='screenrecords_list')
-@app.route("/screenrecords/<path:clip>", endpoint='screenrecords_detail')
-def screenrecords(clip=None):
-    rows = sorted([f for f in os.listdir(SCREENRECORD_DIR) if f.endswith('.mp4')], reverse=True)
-    clip = clip or (rows[0] if rows else None)
+@app.route('/screenrecords')
+def screenrecords():
+    rows = sorted(
+        [f for f in os.listdir(SCREENRECORD_DIR) if f.endswith('.mp4')],
+        reverse=True
+    )
+    clip = request.args.get('clip', rows[0] if rows else None)
     return render_template("screenrecords.html", rows=rows, clip=clip)
     
     
