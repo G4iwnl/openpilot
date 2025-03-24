@@ -167,8 +167,9 @@
 				}
 
 				// 2. 업로드 시작
+				const selectedSegmentsCount = selected.length;
 				document.getElementById('uploadProgressText').textContent = 
-					`Uploading ${uploads.length} files (${routeCount} routes) ${formatBytes(totalSize)}...`;
+					`Uploading ${uploads.length} files (${selectedSegmentsCount} Segments) ${formatBytes(totalSize)}...`;
 				document.getElementById('uploadFileInfo').textContent = 
 					`${routeCount} routes | ${uploads.length} files | ${formatBytes(totalSize)}`;
 
