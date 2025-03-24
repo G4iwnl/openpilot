@@ -7,7 +7,7 @@
 {% block main %}
 <div class="container-fluid px-4">
     <div class="d-flex justify-content-between align-items-center mb-5">
-        <h1 class="display-5 fw-bold text-light">Dashcam Recordings</h1>
+        <h1 class="display-5 fw-bold text-white text-shadow-bold">Dashcam Recordings</h1>
         <i class="fas fa-video fa-2x text-primary"></i>
     </div>
 
@@ -29,9 +29,9 @@
                 
                 <div class="card-body bg-dark-gradient">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="card-title text-truncate mb-0">{{ row }}</h5>
+                        <h5 class="card-title text-truncate mb-0 text-white">{{ row }}</h5>
                         <a href="/footage/{{ row }}" 
-                           class="btn btn-primary btn-sm rounded-pill px-3">
+                           class="btn btn-primary btn-sm rounded-pill px-3 hover-grow">
                             <i class="fas fa-play me-2"></i>View
                         </a>
                     </div>
@@ -65,17 +65,24 @@
 
     .bg-dark-gradient {
         background: linear-gradient(to bottom, #2a2e32, #1f2327);
-        border-bottom-left-radius: 12px!important;
-        border-bottom-right-radius: 12px!important;
+    }
+
+    .text-shadow-bold {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+
+    .hover-grow {
+        transition: transform 0.2s ease-in-out;
+    }
+
+    .hover-grow:hover {
+        transform: scale(1.05);
+        opacity: 0.9;
     }
 
     .object-fit-cover {
         object-fit: cover;
         object-position: center;
-    }
-
-    .text-light {
-        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
     }
 </style>
 {% endblock %}
