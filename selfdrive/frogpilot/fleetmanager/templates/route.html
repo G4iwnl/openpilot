@@ -69,7 +69,7 @@
     </div>
 
 	<script>
-        // 1. 정확한 세그먼트 초기화 
+        // 1. 정확한 세그먼트 초기화
         const segments = [{{ segments }}];
         const currentSegment = "{{ route }}--{{ query_segment }}";
         let currentSegmentIndex = segments.findIndex(seg => seg === currentSegment);
@@ -91,7 +91,7 @@
             window.location.href = `{{ route }}?${segNum},{{ query_type }}`;
         });
 
-        // 4. 체크박스 관리 함수 (기존 코드 유지)
+        // 4. 체크박스 관리 함수
         function toggleAllSegments() {
             const checkboxes = document.querySelectorAll('.segment-checkbox');
             const allChecked = Array.from(checkboxes).every(cb => cb.checked);
@@ -104,7 +104,7 @@
             document.getElementById('selectedCount').textContent = `${count} segments selected`;
         }
 
-        // 5. 업로드 함수 (기존 코드 유지)
+        // 5. 업로드 함수 (진행률 표시 추가)
         async function uploadSelectedSegments() {
             const selected = Array.from(document.querySelectorAll('.segment-checkbox:checked'))
                                 .map(cb => cb.value);
@@ -114,28 +114,136 @@
                 return;
             }
 
+            // 진행률 표시 UI 생성
+            const progressUI = `
+                <div class="upload-progress mt-3">
+                    <div class="progress mb-2">
+                        <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 text-start">
+                            <small id="uploadProgressText">Preparing upload...</small>
+                        </div>
+                        <div class="col-6 text-end">
+                            <small id="uploadSpeed">-</small>
+                        </div>
+                    </div>
+                    <div class="row mt-1">
+                        <div class="col-12">
+                            <small id="uploadFileInfo" class="text-muted">-</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('uploadStatus').innerHTML = progressUI;
+
             try {
-                showUploadStatus('Uploading...', 'info');
-                
+                let totalSize = 0;
+                let uploadedSize = 0;
+                const startTime = Date.now();
+                const uploads = [];
+
+                // 1. 전체 크기 계산
+                showUploadStatus('Calculating total size...', 'info');
                 for (const segment of selected) {
                     const segmentNum = segment.split('--')[2];
-                    const response = await fetch(`/footage/full/upload_g4/{{ route }}/${segmentNum}`, {
-                        method: 'GET'
-                    });
-
-                    if(!response.ok) throw new Error(`Upload failed for ${segment}`);
+                    const files = ['rlog.zst', 'qcamera.ts'];
+                    
+                    for (const file of files) {
+                        try {
+                            const response = await fetch(`/file-size?path=/data/media/0/realdata/{{ route }}--${segmentNum}/${file}`);
+                            const { size } = await response.json();
+                            if (size) {
+                                totalSize += size;
+                                uploads.push({ segmentNum, file, size });
+                            }
+                        } catch (e) {
+                            console.warn(`Size check failed for ${file}`, e);
+                        }
+                    }
                 }
-                
-                showUploadStatus(`Successfully uploaded ${selected.length} segments!`, 'success');
+
+                // 2. 실제 업로드 수행
+                showUploadStatus(`Uploading ${uploads.length} files (${formatBytes(totalSize)})...`, 'info');
+                document.getElementById('uploadFileInfo').textContent = 
+                    `${selected.length} segments | ${uploads.length} files | ${formatBytes(totalSize)}`;
+
+                for (const { segmentNum, file, size } of uploads) {
+                    try {
+                        const filePath = `/data/media/0/realdata/{{ route }}--${segmentNum}/${file}`;
+                        document.getElementById('uploadFileInfo').textContent = 
+                            `Uploading: ${file} (${formatBytes(size)})`;
+                        
+                        const formData = new FormData();
+                        const blob = await fetch(filePath).then(r => r.blob());
+                        formData.append('file', blob, file);
+                        formData.append('segment', segmentNum);
+
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('POST', `/footage/full/upload_g4/{{ route }}/${segmentNum}`, true);
+
+                        xhr.upload.onprogress = function(e) {
+                            if (e.lengthComputable && totalSize > 0) {
+                                const loaded = uploadedSize + e.loaded;
+                                const percent = Math.round(loaded / totalSize * 100);
+                                const elapsed = (Date.now() - startTime) / 1000;
+                                const speed = elapsed > 0 ? loaded / (1024 * 1024 * elapsed) : 0;
+                                
+                                document.getElementById('uploadProgressBar').style.width = `${percent}%`;
+                                document.getElementById('uploadProgressText').textContent = 
+                                    `${percent}% (${formatBytes(loaded)}/${formatBytes(totalSize)})`;
+                                document.getElementById('uploadSpeed').textContent = 
+                                    `${speed.toFixed(2)} MB/s`;
+                            }
+                        };
+
+                        await new Promise((resolve, reject) => {
+                            xhr.onload = () => {
+                                if (xhr.status === 200) {
+                                    uploadedSize += size;
+                                    resolve();
+                                } else {
+                                    reject(new Error(`Upload failed: ${xhr.statusText}`));
+                                }
+                            };
+                            xhr.onerror = () => reject(new Error('Upload failed'));
+                            xhr.send(formData);
+                        });
+                    } catch (error) {
+                        console.error(`Upload error for ${file}:`, error);
+                        showUploadStatus(`Error: ${error.message}`, 'danger', false);
+                        throw error;
+                    }
+                }
+
+                showUploadStatus(`Upload complete! ${selected.length} segments uploaded`, 'success');
+                document.getElementById('uploadProgressBar').classList.remove('progress-bar-animated');
+                document.getElementById('uploadProgressBar').classList.add('bg-success');
             } catch (error) {
-                showUploadStatus(`Error: ${error.message}`, 'danger');
+                console.error('Upload failed:', error);
+                showUploadStatus(`Upload failed: ${error.message}`, 'danger', false);
+                document.getElementById('uploadProgressBar').classList.remove('progress-bar-animated');
+                document.getElementById('uploadProgressBar').classList.add('bg-danger');
             }
         }
 
-        function showUploadStatus(message, type) {
+        function showUploadStatus(message, type, append = false) {
             const statusDiv = document.getElementById('uploadStatus');
-            statusDiv.className = `alert alert-${type} mt-2`;
-            statusDiv.textContent = message;
+            if (!append) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type} mb-2`;
+                alertDiv.textContent = message;
+                statusDiv.prepend(alertDiv);
+            }
+        }
+
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
         }
 
         // 초기화
@@ -144,3 +252,18 @@
 {% endautoescape %}
 <br><br>
 {% endblock %}
+
+<style>
+    .upload-progress {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 10px;
+        margin-top: 10px;
+    }
+    .progress {
+        height: 20px;
+    }
+    .progress-bar {
+        transition: width 0.3s ease;
+    }
+</style>

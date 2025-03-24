@@ -220,26 +220,59 @@ def upload_carrot(route, segment):
     else:
         return "Failed to upload files", 500
         
-@app.route("/footage/full/upload_g4/<route>/<segment>")
+@app.route("/footage/full/upload_g4/<route>/<segment>", methods=['POST'])
 def upload_g4(route, segment):
-    local_folder = Paths.log_root() + f"{route}--{segment}"
-    if not os.path.isdir(local_folder):
-        print(f"Folder not found: {local_folder}")
-        return abort(404, "Folder not found")
-
-    car_selected = Params().get("CarName")
-    if car_selected is None:
-      car_selected = "none"
-    else:
-      car_selected = car_selected.decode('utf-8')
+    if 'file' not in request.files:
+        return "No file part", 400
     
-    directory = "routes " + car_selected + " " + Params().get("DongleId").decode('utf-8')
-    success = upload_folder_g4_ftp(local_folder, directory, f"{route}--{segment}")
+    file = request.files['file']
+    if file.filename == '':
+        return "No selected file", 400
 
-    if success:
-        return "All files uploaded successfully", 200
-    else:
-        return "Failed to upload files", 500
+    try:
+        # FTP 연결 설정 (기존 코드와 동일)
+        ftp_server = "g4nas.my"
+        ftp_port = 21
+        ftp_username = "sorento"
+        ftp_password = "Thfpsxh1111"
+        ftp = FTP()
+        ftp.connect(ftp_server, ftp_port)
+        ftp.login(ftp_username, ftp_password)
+
+        # 디렉토리 생성 (기존 코드와 동일)
+        car_selected = Params().get("CarName", "none").decode('utf-8')
+        directory = "routes " + car_selected + " " + Params().get("DongleId").decode('utf-8')
+        
+        try:
+            ftp.cwd("/sorento")
+            ftp.mkd(directory)
+        except:
+            pass
+            
+        ftp.cwd(directory)
+        try:
+            ftp.mkd(f"{route}--{segment}")
+        except:
+            pass
+        ftp.cwd(f"{route}--{segment}")
+
+        # 파일 업로드
+        ftp.storbinary(f'STOR {file.filename}', file.stream)
+        ftp.quit()
+        
+        return "File uploaded successfully", 200
+    except Exception as e:
+        print(f"FTP Upload Error: {e}")
+        return f"Failed to upload file: {str(e)}", 500
+        
+@app.route("/file-size")
+def get_file_size():
+    path = request.args.get('path')
+    try:
+        size = os.path.getsize(path)
+        return jsonify({'size': size, 'status': 'success'})
+    except Exception as e:
+        return jsonify({'size': 0, 'status': str(e)}), 404
 
 @app.route("/footage/<cameratype>/<segment>")
 def fcamera(cameratype, segment):
