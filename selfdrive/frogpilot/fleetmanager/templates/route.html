@@ -15,7 +15,7 @@
     <div class="video-info">
         current segment: <span id="currentsegment" class="badge bg-primary"></span>
         <br>
-        current view: <span id="currentview" class="badge bg-secondary"></span>
+        current view: <span id="currentview" class="badge bg-secondary">{{ query_type }}</span>
     </div>
     <br>
     <div class="download-section">
@@ -39,18 +39,18 @@
             <div id="selectedCount" class="text-muted">0 segments selected</div>
         </div>
         
-        <!-- 체크박스가 포함된 세그먼트 목록 -->
         <div class="segment-list" style="max-height: 400px; overflow-y: auto;">
             {% for segment in segments.split(',') %}
             {% set clean_segment = segment.strip().strip("'") %}
             {% if clean_segment %}
+            {% set segment_num = clean_segment.split('--')[2] %}
             <div class="segment-item d-flex align-items-center py-2 border-bottom">
                 <input type="checkbox" 
                        name="selected_segments" 
                        value="{{ clean_segment }}" 
                        class="form-check-input me-3 segment-checkbox"
                        style="transform: scale(1.5)">
-                <a href="{{ route }}?{{ clean_segment.split('--')[2] }},{{ query_type }}" class="text-decoration-none">
+                <a href="{{ route }}?{{ segment_num }},{{ query_type }}" class="text-decoration-none">
                     {{ clean_segment }}
                 </a>
             </div>
@@ -58,7 +58,6 @@
             {% endfor %}
         </div>
 
-        <!-- 업로드 버튼 그룹 -->
         <div class="mt-4">
             <button class="btn btn-danger" onclick="uploadSelectedSegments()">
                 <i class="bi bi-upload me-2"></i>
@@ -69,7 +68,7 @@
     </div>
 
     <script>
-        // 세그먼트 데이터 초기화
+        // 1. 세그먼트 데이터 초기화
         const segments = [
             {% for segment in segments.split(',') %}
             {% set clean_segment = segment.strip().strip("'") %}
@@ -77,98 +76,86 @@
             {% endfor %}
         ];
 
-        // URL에서 현재 세그먼트 번호 추출
+        // 2. 현재 세그먼트 번호 추출 (URL에서 ?1,qcamera 부분의 1)
         const urlParams = new URLSearchParams(window.location.search);
-        const currentSegmentNum = urlParams.get('0') || '0'; // 기본값 0
-        let currentSegmentIndex = segments.findIndex(seg => seg.endsWith(`--${currentSegmentNum}`));
+        const requestedSegmentNum = urlParams.keys().next().value; // '1' 추출
+        let currentSegmentIndex = segments.findIndex(seg => {
+            const segNum = seg.split('--')[2];
+            return segNum === requestedSegmentNum;
+        });
+        if (currentSegmentIndex === -1) currentSegmentIndex = 0;
 
-        // 비디오 요소와 UI 요소
+        // 3. 비디오 요소 초기화
         const video = document.getElementById('video');
         const currentSegmentSpan = document.getElementById('currentsegment');
-        const currentViewSpan = document.getElementById('currentview');
 
-        // 초기 비디오 소스 설정
-        function initVideo() {
-            if (currentSegmentIndex === -1) currentSegmentIndex = 0;
-            updateVideoSource();
+        // 4. 비디오 재생 함수
+        function playSegment(index) {
+            if (index >= 0 && index < segments.length) {
+                const segment = segments[index];
+                video.src = `/footage/{{ query_type }}/${segment}`;
+                currentSegmentSpan.textContent = segment;
+                video.load();
+                video.play().catch(e => console.error("Video play error:", e));
+            }
         }
 
-        // 비디오 소스 업데이트
-        function updateVideoSource() {
-            const segment = segments[currentSegmentIndex];
-            video.src = "/footage/{{ query_type }}/" + segment;
-            currentSegmentSpan.textContent = segment;
-            currentViewSpan.textContent = "{{ query_type }}";
-            
-            video.load();
-            video.play().catch(e => console.error("Video play error:", e));
-        }
-
-        // 다음 세그먼트 재생
-        function playNextSegment() {
+        // 5. 다음 세그먼트 자동 재생
+        video.addEventListener('ended', () => {
             currentSegmentIndex = (currentSegmentIndex + 1) % segments.length;
-            updateVideoSource();
-        }
+            playSegment(currentSegmentIndex);
+        });
 
-        // 이벤트 리스너 설정
-        video.addEventListener('ended', playNextSegment);
-
-        // 체크박스 관련 기능
+        // 6. 체크박스 관리 기능
         function updateSelectionCount() {
-            const count = document.querySelectorAll('.segment-checkbox:checked').length;
-            document.getElementById('selectedCount').textContent = `${count} segments selected`;
+            const checkedBoxes = document.querySelectorAll('.segment-checkbox:checked').length;
+            document.getElementById('selectedCount').textContent = `${checkedBoxes} segments selected`;
         }
 
         function toggleAllSegments() {
             const checkboxes = document.querySelectorAll('.segment-checkbox');
-            const allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(checkbox => checkbox.checked);
-            
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = !allChecked;
-            });
+            const allChecked = checkboxes.length > 0 && 
+                              Array.from(checkboxes).every(cb => cb.checked);
+            checkboxes.forEach(cb => cb.checked = !allChecked);
             updateSelectionCount();
         }
 
-        document.querySelectorAll('.segment-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', updateSelectionCount);
+        document.querySelectorAll('.segment-checkbox').forEach(cb => {
+            cb.addEventListener('change', updateSelectionCount);
         });
 
-        // 업로드 기능
+        // 7. 업로드 기능
         async function uploadSelectedSegments() {
-            const selected = Array.from(document.querySelectorAll('.segment-checkbox:checked'))
-                                .map(checkbox => checkbox.value);
-            
-            if(selected.length === 0) {
+            const selected = Array.from(
+                document.querySelectorAll('.segment-checkbox:checked')
+            ).map(cb => cb.value);
+
+            if (!selected.length) {
                 showUploadStatus('No segments selected!', 'danger');
                 return;
             }
 
             try {
                 showUploadStatus('Uploading...', 'info');
-                
                 for (const segment of selected) {
-                    const segmentNum = segment.split('--')[2];
-                    const response = await fetch(`/footage/full/upload_g4/{{ route }}/${segmentNum}`, {
-                        method: 'GET'
-                    });
-
-                    if(!response.ok) throw new Error(`Upload failed for ${segment}`);
+                    const segNum = segment.split('--')[2];
+                    const res = await fetch(`/footage/full/upload_g4/{{ route }}/${segNum}`);
+                    if (!res.ok) throw new Error(`Upload failed for ${segment}`);
                 }
-                
-                showUploadStatus(`Successfully uploaded ${selected.length} segments!`, 'success');
+                showUploadStatus(`Uploaded ${selected.length} segments!`, 'success');
             } catch (error) {
                 showUploadStatus(`Error: ${error.message}`, 'danger');
             }
         }
 
-        function showUploadStatus(message, type) {
+        function showUploadStatus(msg, type) {
             const statusDiv = document.getElementById('uploadStatus');
             statusDiv.className = `alert alert-${type} mt-2`;
-            statusDiv.textContent = message;
+            statusDiv.textContent = msg;
         }
 
-        // 초기화
-        initVideo();
+        // 8. 초기 실행
+        playSegment(currentSegmentIndex);
         updateSelectionCount();
     </script>
 {% endautoescape %}
