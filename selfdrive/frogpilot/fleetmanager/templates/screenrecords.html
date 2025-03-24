@@ -42,7 +42,13 @@
                                 <i class="fas fa-file-video me-3 text-primary"></i>
                                 {{ row|replace('.mp4', '')|replace('_', ' ') }}
                             </div>
-                            <small class="text-muted">{{ row|datetimeformat }}</small>
+                            <small class="text-muted">
+								{% if row.split('.')[-1] == 'mp4' %}
+									{{ row|datetimeformat }}
+								{% else %}
+									{{ row }}
+								{% endif %}
+							</small>
                         </a>
                         {% endfor %}
                     </div>

@@ -5,168 +5,82 @@ Tools
 {% endblock %}
 
 {% block main %}
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-12 col-lg-8">
-            <div class="card shadow-lg">
-                <div class="card-header bg-dark text-white">
-                    <h3 class="mb-0">
-                        <i class="fas fa-toggle-on me-2"></i>Toggle Values Manager
-                    </h3>
-                </div>
-                
-                <div class="card-body">
-                    <div class="mb-4">
-                        <div class="input-group">
-                            <textarea 
-                                id="toggleValuesBox" 
-                                class="form-control code-editor"
-                                placeholder='Paste JSON here (예: {"feature1": true, "feature2": false})'
-                                spellcheck="false"
-                            ></textarea>
-                        </div>
-                    </div>
-
-                    <div class="d-flex justify-content-between gap-3 flex-wrap">
-                        <button 
-                            type="button" 
-                            id="retrieveButton"
-                            class="btn btn-primary flex-fill"
-                        >
-                            <i class="fas fa-download me-2"></i>Retrieve Toggle Values
-                        </button>
-                        
-                        <button 
-                            type="button" 
-                            id="submitButton"
-                            class="btn btn-success flex-fill"
-                        >
-                            <i class="fas fa-upload me-2"></i>Submit New Values
-                        </button>
-                    </div>
-
-                    <div id="statusMessage" class="mt-3"></div>
-                </div>
-            </div>
+<div class="container">
+    <h1 class="my-4">Toggle Values Manager</h1>
+    
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <textarea 
+                id="toggleValuesBox" 
+                class="form-control" 
+                style="height: 300px; font-family: monospace;"
+                placeholder='Enter JSON here...'
+            ></textarea>
         </div>
+    </div>
+
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+        <button 
+            id="retrieveButton" 
+            class="btn btn-primary"
+            onclick="fetchToggleValues()"
+        >
+            <i class="fas fa-download me-2"></i>Get Values
+        </button>
+        <button 
+            id="submitButton" 
+            class="btn btn-success"
+            onclick="saveToggleValues()"
+        >
+            <i class="fas fa-upload me-2"></i>Save Values
+        </button>
     </div>
 </div>
 
-<style>
-    .code-editor {
-        font-family: 'Fira Code', monospace;
-        min-height: 250px;
-        border-radius: 8px;
-        padding: 1rem;
-        font-size: 0.9rem;
-        line-height: 1.5;
-        background-color: #f8f9fa;
-        border: 2px solid #dee2e6;
-        transition: all 0.3s ease;
-    }
-
-    .code-editor:focus {
-        background-color: #fff;
-        border-color: #86b7fe;
-        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-    }
-
-    #statusMessage {
-        min-height: 50px;
-        padding: 1rem;
-        border-radius: 6px;
-    }
-
-    .success-message {
-        background-color: #d1e7dd;
-        color: #0f5132;
-        border: 1px solid #badbcc;
-    }
-
-    .error-message {
-        background-color: #f8d7da;
-        color: #842029;
-        border: 1px solid #f5c2c7;
-    }
-</style>
-
 <script>
-    const toggleValuesBox = document.getElementById('toggleValuesBox');
-    const retrieveButton = document.getElementById('retrieveButton');
-    const submitButton = document.getElementById('submitButton');
-    const statusMessage = document.getElementById('statusMessage');
-
-    const showStatus = (message, type = 'success') => {
-        statusMessage.className = `${type}-message`;
-        statusMessage.innerHTML = `
-            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'} me-2"></i>
-            ${message}
-        `;
-        setTimeout(() => statusMessage.innerHTML = '', 5000);
-    };
-
-    // JSON 구문 강조
-    const highlightJSON = (json) => {
-        return JSON.stringify(JSON.parse(json), null, 2)
-            .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, 
-            match => {
-                let cls = 'text-dark';
-                if (/^"/.test(match)) {
-                    if (/:$/.test(match)) {
-                        cls = 'text-primary';
-                    } else {
-                        cls = 'text-success';
-                    }
-                } else if (/true|false/.test(match)) {
-                    cls = 'text-warning';
-                } else if (/null/.test(match)) {
-                    cls = 'text-danger';
-                }
-                return `<span class="${cls}">${match}</span>`;
-            });
-    };
-
-    // 값 불러오기
-    retrieveButton.addEventListener('click', async () => {
+    async function fetchToggleValues() {
         try {
-            retrieveButton.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>불러오는 중...`;
             const response = await fetch('/get_toggle_values');
             const data = await response.json();
-            toggleValuesBox.innerHTML = highlightJSON(JSON.stringify(data, null, 2));
-            showStatus('값을 성공적으로 불러왔습니다');
+            document.getElementById('toggleValuesBox').value = 
+                JSON.stringify(data, null, 2);
         } catch (error) {
-            console.error('Error:', error);
-            showStatus('값 불러오기 실패: 서버 오류 발생', 'error');
-        } finally {
-            retrieveButton.innerHTML = `<i class="fas fa-download me-2"></i>값 불러오기`;
+            alert('Error fetching values');
         }
-    });
+    }
 
-    submitButton.addEventListener('click', async () => {
+    async function saveToggleValues() {
+        const textarea = document.getElementById('toggleValuesBox');
         try {
-            const inputData = JSON.parse(toggleValuesBox.value);
-            submitButton.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>저장 중...`;
+            const jsonData = JSON.parse(textarea.value);
             
             const response = await fetch('/store_toggle_values', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(inputData),
+                body: JSON.stringify(jsonData),
             });
 
-            const result = await response.json();
             if (response.ok) {
-                showStatus('값이 성공적으로 저장되었습니다');
+                alert('Successfully saved!');
             } else {
-                throw new Error(result.error || 'Unknown error');
+                throw new Error('Save failed');
             }
         } catch (error) {
-            console.error('Error:', error);
-            showStatus(`저장 실패: ${error.message}`, 'error');
-            toggleValuesBox.classList.add('is-invalid');
-        } finally {
-            submitButton.innerHTML = `<i class="fas fa-upload me-2"></i>값 저장하기`;
-            setTimeout(() => toggleValuesBox.classList.remove('is-invalid'), 2000);
+            alert('Invalid JSON format!');
+            textarea.classList.add('is-invalid');
+            setTimeout(() => textarea.classList.remove('is-invalid'), 2000);
         }
-    });
+    }
 </script>
+
+<style>
+    .card {
+        border-radius: 12px;
+    }
+    textarea {
+        white-space: pre;
+        overflow-wrap: normal;
+        overflow-x: auto;
+    }
+</style>
 {% endblock %}

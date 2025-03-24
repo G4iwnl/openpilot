@@ -262,6 +262,16 @@ def upload_g4(route, segment):
         print(f"FTP Upload Error: {e}")
         return f"Failed to upload file: {str(e)}", 500
         
+@app.template_filter('datetimeformat')
+def datetimeformat_filter(filename):
+    try:
+        date_str = filename.split('_')[0]
+        time_str = filename.split('_')[1].split('.')[0]
+        dt = datetime.strptime(f"{date_str}_{time_str}", "%Y-%m-%d_%H-%M-%S")
+        return dt.strftime("%Y년 %m월 %d일 %H시 %M분")
+    except:
+        return filename
+        
 @app.route("/file-size")
 def get_file_size():
     path = request.args.get('path')
