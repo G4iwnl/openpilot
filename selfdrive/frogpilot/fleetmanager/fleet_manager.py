@@ -93,7 +93,7 @@ def download_dcamera(route, segment):
   return send_from_directory(file_name, "dcamera.hevc", as_attachment=True)
   
 @app.route("/footage/full/ecamera/<route>/<segment>")
-def download_dcamera(route, segment):
+def download_ecamera(route, segment):
   file_name = Paths.log_root() + route + "--" + segment + "/"
   print("download_route=", route, file_name, segment)
   return send_from_directory(file_name, "ecamera.hevc", as_attachment=True)
