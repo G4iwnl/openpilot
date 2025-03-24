@@ -4,6 +4,7 @@
     Dashcam Segments
 {% endblock %}
 
+
 {% block main %}
 {% autoescape false %}
     <br>
@@ -33,11 +34,9 @@
     <a href="{{ route }}?{{ query_segment }},ecamera">ecamera</a>
     <br><br>
     {{ links }}
-    <br><br>
-    <div id="segmentList"></div>
     <script>
     var video = document.getElementById('video');
-    var segments = [{{ segments }}];
+    var segments = [{{ segments  }}];
     var q_segment = {{ query_segment }};
     var q_index = 0;
     for (var i = 0; i < segments.length; i++) {
@@ -45,9 +44,9 @@
           var q_val = segment.split('--').slice(2).join('--');
           if (parseInt(q_val) === q_segment) {
             q_index = i;
-            break;
+            break
           }
-    }
+        }
     var tracks = {
       list: segments,
       index: q_index,
@@ -58,7 +57,7 @@
         }
       },
       play: function() {
-        return ("{{ query_type }}/" + this.list[this.index]);
+        return ( "{{ query_type }}/" + this.list[this.index] );
       }
     }
     video.addEventListener('ended', function(e) {
@@ -72,21 +71,6 @@
     video.src = tracks.play();
     document.getElementById("currentsegment").textContent=video.src.split("/")[5];
     document.getElementById("currentview").textContent=video.src.split("/")[4];
-
-    var container = document.getElementById("segmentList");
-    segments.forEach(function(segment) {
-        var q_val = segment.split('--').slice(2).join('--');
-        var label = document.createElement("label");
-        var checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.value = q_val;
-        
-        label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(" " + q_val));
-        
-        container.appendChild(label);
-        container.appendChild(document.createElement("br"));
-    });
     </script>
 {% endautoescape %}
     <br><br>
