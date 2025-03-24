@@ -72,7 +72,7 @@ def full(cameratype, route):
 def download_rlog(route, segment):
   file_name = Paths.log_root() + route + "--" + segment + "/"
   print("download_route=", route, file_name, segment)
-  return send_from_directory(file_name, "rlog", as_attachment=True)
+  return send_from_directory(file_name, "rlog.zst", as_attachment=True)
 
 @app.route("/footage/full/qcamera/<route>/<segment>")
 def download_qcamera(route, segment):
@@ -91,6 +91,12 @@ def download_dcamera(route, segment):
   file_name = Paths.log_root() + route + "--" + segment + "/"
   print("download_route=", route, file_name, segment)
   return send_from_directory(file_name, "dcamera.hevc", as_attachment=True)
+  
+@app.route("/footage/full/ecamera/<route>/<segment>")
+def download_dcamera(route, segment):
+  file_name = Paths.log_root() + route + "--" + segment + "/"
+  print("download_route=", route, file_name, segment)
+  return send_from_directory(file_name, "ecamera.hevc", as_attachment=True)
 
 
 def upload_folder_to_ftp(local_folder, directory, remote_path):
