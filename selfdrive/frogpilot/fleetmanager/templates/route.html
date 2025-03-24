@@ -13,9 +13,11 @@
     <video id="video" width="320" height="240" controls autoplay="autoplay" style="background:black">
     </video>
     <br><br>
-    current segment: <span id="currentsegment"></span>
-    <br>
-    current view: <span id="currentview"></span>
+	<div class="video-info">
+		current segment: <span id="currentsegment" class="badge bg-primary"></span>
+		<br>
+		current view: <span id="currentview" class="badge bg-secondary"></span>
+	</div>
     <br>
     <a download="{{ route }}-{{ query_type }}.mp4" href="/footage/full/{{ query_type }}/{{ route }}">download full route {{ query_type }}</a><br>
     download: 
@@ -23,7 +25,7 @@
     <a href="/footage/full/qcamera/{{ route }}/{{query_segment}}">qcamera</a>
     <a href="/footage/full/fcamera/{{ route }}/{{query_segment}}">fcamera</a>
     <a href="/footage/full/dcamera/{{ route }}/{{query_segment}}">dcamera</a>
-    <br>
+    <br> 
     <a href="/footage/full/upload_carrot/{{ route }}/{{query_segment}}">UPLOAD ROUTE to carrot server</a>
 	<br><br> 
     <a href="/footage/full/upload_g4/{{ route }}/{{query_segment}}">UPLOAD ROUTE to G4 server</a>
