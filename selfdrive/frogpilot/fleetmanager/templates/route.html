@@ -44,7 +44,7 @@
             {% for segment in segments.split(',') %}
             {% set clean_segment = segment.strip().strip("'") %}
             {% if clean_segment %}
-            <div class="segment-item d-flex align-items-center py-2 border-bottom">
+            <div class="segment-item d-flex align-items-center py-2 border-bottom ps-2">
                 <input type="checkbox" 
                        name="selected_segments" 
                        value="{{ clean_segment }}" 
