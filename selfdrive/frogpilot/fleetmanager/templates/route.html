@@ -10,11 +10,10 @@
     <h1>Dashcam Segments (one per minute)</h1>
     <br>
     <video id="video" width="640" height="480" controls autoplay style="background:black">
-        <source src="/footage/{{ query_type }}/{{ current_segment }}" type="video/mp4">
     </video>
     <br><br>
     <div class="video-info">
-        current segment: <span id="currentsegment" class="badge bg-primary">{{ route }}--{{ query_segment }}</span>
+        current segment: <span id="currentsegment" class="badge bg-primary">{{ current_segment }}</span>
         <br>
         current view: <span id="currentview" class="badge bg-secondary">{{ query_type }}</span>
     </div>
