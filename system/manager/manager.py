@@ -154,7 +154,6 @@ def get_default_params():
     ("DisableDM", "0"),
     ("RecordRoadCam", "0"),
     ("HDPuse", "0"),
-    ("CenterToFront", "40"),
     ("VisionOnly", "0"),
     ("CruiseOnDist", "400"),
     ("HotspotOnBoot", "0"),
