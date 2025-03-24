@@ -368,7 +368,6 @@ def screenrecords():
     file_path = os.path.join(fleet.SCREENRECORD_PATH, file)
     size_bytes = os.path.getsize(file_path) if os.path.exists(file_path) else 0
     files_with_size.append((file, size_bytes))
-  
   return render_template("screenrecords.html", rows=files_with_size, clip=rows[0])
 
 
