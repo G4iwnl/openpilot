@@ -141,7 +141,7 @@ def upload_folder_to_ftp(local_folder, directory, remote_path):
                   except Exception as e:
                       print(f"Failed to upload {local_file}: {e}")
 
-                  pbar.update(1)  # ���� �� ������Ʈ
+                  pbar.update(1)  # ���� �� ������
 
         ftp.quit()
         return True
