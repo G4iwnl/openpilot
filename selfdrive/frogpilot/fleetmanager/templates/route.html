@@ -31,29 +31,38 @@
             <a href="/footage/full/ecamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">ecamera</a>
         </div>
     </div>
+	
+	<div class="camera-views mt-3">
+        <span class="text-muted me-2">Camera Views:</span>
+        <div class="d-inline-block">
+            <a href="{{ route }}?{{ query_segment }},qcamera" class="btn btn-sm btn-outline-secondary">qcamera</a>
+            <a href="{{ route }}?{{ query_segment }},fcamera" class="btn btn-sm btn-outline-secondary">fcamera</a>
+            <a href="{{ route }}?{{ query_segment }},dcamera" class="btn btn-sm btn-outline-secondary">dcamera</a>
+            <a href="{{ route }}?{{ query_segment }},ecamera" class="btn btn-sm btn-outline-secondary">ecamera</a>
+        </div>
+    </div>
     
     <div class="segment-controls mt-4">
         <h3>Segment List</h3>
         <div id="selectedCount" class="text-muted mb-2">0 segments selected</div>
         
-        <!-- 수정된 세그먼트 목록 부분 -->
+        <!-- 체크박스가 포함된 세그먼트 목록 -->
         <div class="segment-list" style="max-height: 400px; overflow-y: auto;">
             {% for segment in segments %}
-            {% set seg_num = segment.split('--')[2] %}
             <div class="segment-item d-flex align-items-center py-2 border-bottom">
                 <input type="checkbox" 
                        name="selected_segments" 
                        value="{{ segment }}" 
                        class="form-check-input me-3"
                        style="transform: scale(1.5)">
-                <a href="{{ route }}?{{ seg_num }},{{ query_type }}" class="text-decoration-none">
+                <a href="{{ route }}?{{ segment.split('--')[2] }},{{ query_type }}" class="text-decoration-none">
                     {{ segment }}
                 </a>
             </div>
             {% endfor %}
         </div>
 
-        <!-- 업로드 버튼 -->
+        <!-- 업로드 버튼 그룹 -->
         <div class="mt-4">
             <button class="btn btn-danger" onclick="uploadSelected()">
                 <i class="bi bi-upload me-2"></i>
@@ -64,14 +73,15 @@
     </div>
 
     <script>
-        // 세그먼트 데이터 처리 (JSON 파싱)
-        var segments = {{ segments | tojson | safe }};
-        var q_segment = "{{ query_segment }}";
-        
-        // tracks 객체 초기화
+        // 비디오 세그먼트 관리
+        var video = document.getElementById('video');
+        var segments = [{{ segments }}];
+        var q_segment = {{ query_segment }};
+        var q_index = segments.findIndex(seg => parseInt(seg.split('--')[2]) === q_segment);
+
         const tracks = {
             list: segments,
-            index: segments.findIndex(seg => seg.endsWith("--" + q_segment)),
+            index: q_index >= 0 ? q_index : 0,
             next() {
                 this.index = (this.index + 1) % this.list.length;
             },
@@ -80,7 +90,6 @@
             }
         }
 
-        // 비디오 이벤트 리스너
         video.addEventListener('ended', () => {
             tracks.next();
             video.src = tracks.play();
@@ -89,18 +98,22 @@
             video.play();
         });
 
-        // 기타 함수들
         function updateVideoInfo() {
-            const currentSeg = tracks.list[tracks.index].split('--')[2];
-            document.getElementById("currentsegment").textContent = currentSeg;
-            document.getElementById("currentview").textContent = "{{ query_type }}";
+            document.getElementById("currentsegment").textContent = video.src.split("/")[5];
+            document.getElementById("currentview").textContent = video.src.split("/")[4];
         }
 
+        // 체크박스 관련 기능
         function updateSelectionCount() {
             const count = document.querySelectorAll('input[name="selected_segments"]:checked').length;
             document.getElementById('selectedCount').textContent = `${count} segments selected`;
         }
 
+        document.querySelectorAll('input[name="selected_segments"]').forEach(checkbox => {
+            checkbox.addEventListener('change', updateSelectionCount);
+        });
+
+        // 업로드 기능
         async function uploadSelected() {
             const selected = Array.from(document.querySelectorAll('input[name="selected_segments"]:checked'))
                                 .map(checkbox => checkbox.value);
@@ -112,17 +125,21 @@
 
             try {
                 showUploadStatus('Uploading...', 'info');
+                
                 const response = await fetch('/footage/full/upload_g4', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
                     body: JSON.stringify({
                         route: "{{ route }}",
                         segments: selected,
                         type: "{{ query_type }}"
                     })
                 });
-                
+
                 if(!response.ok) throw new Error('Upload failed');
+                
                 const result = await response.json();
                 showUploadStatus(`Successfully uploaded ${result.uploaded_count} segments!`, 'success');
             } catch (error) {
@@ -138,9 +155,8 @@
         }
 
         // 초기화
-        document.querySelectorAll('input[name="selected_segments"]').forEach(checkbox => {
-            checkbox.addEventListener('change', updateSelectionCount);
-        });
+        video.src = tracks.play();
+        updateVideoInfo();
         updateSelectionCount();
     </script>
 {% endautoescape %}
