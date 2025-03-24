@@ -22,45 +22,81 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
-from flask import Flask, jsonify, render_template, Response, request, send_from_directory, redirect, url_for, abort
-from flask_socketio import SocketIO, emit
 import os
 import secrets
-import traceback
-from ftplib import FTP
-from tqdm import tqdm
+
+from flask import Flask, jsonify, render_template, Response, request, send_from_directory, redirect, url_for, abort
 from openpilot.common.realtime import set_core_affinity
 import openpilot.selfdrive.frogpilot.fleetmanager.helpers as fleet
 from openpilot.system.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog
+import traceback
+from ftplib import FTP
+
 from openpilot.common.params import Params
 from cereal import log, messaging
+from cereal import log, messaging
+import time
 from functools import wraps
 from openpilot.opendbc_repo.opendbc.car.interfaces import CarInterfaceBase
 from openpilot.opendbc_repo.opendbc.car.values import PLATFORMS
+from flask_socketio import SocketIO, emit
 
+socketio = SocketIO(app)
 # Initialize messaging
 sm = messaging.SubMaster(['carState'])
 
-# Create Flask app instance
 app = Flask(__name__)
-
-# Initialize SocketIO with the Flask app
-socketio = SocketIO(app)
 
 @app.route("/")
 def home_page():
-    return render_template("index.html")
+  return render_template("index.html")
 
 @app.errorhandler(500)
 def internal_error(exception):
-    print('500 error caught')
-    tberror = traceback.format_exc()
-    return render_template("error.html", error=tberror)
+  print('500 error caught')
+  tberror = traceback.format_exc()
+  return render_template("error.html", error=tberror)
 
-# Define other routes and functions...
+@app.route("/footage/full/<cameratype>/<route>")
+def full(cameratype, route):
+  chunk_size = 1024 * 512  # 5KiB
+  file_name = cameratype + (".ts" if cameratype == "qcamera" else ".hevc")
+  vidlist = "|".join(Paths.log_root() + "/" + segment + "/" + file_name for segment in fleet.segments_in_route(route))
+
+  def generate_buffered_stream():
+    with fleet.ffmpeg_mp4_concat_wrap_process_builder(vidlist, cameratype, chunk_size) as process:
+      for chunk in iter(lambda: process.stdout.read(chunk_size), b""):
+        yield bytes(chunk)
+  return Response(generate_buffered_stream(), status=200, mimetype='video/mp4')
+
+@app.route("/footage/full/rlog/<route>/<segment>")
+def download_rlog(route, segment):
+  file_name = Paths.log_root() + route + "--" + segment + "/"
+  print("download_route=", route, file_name, segment)
+  return send_from_directory(file_name, "rlog", as_attachment=True)
+
+@app.route("/footage/full/qcamera/<route>/<segment>")
+def download_qcamera(route, segment):
+  file_name = Paths.log_root() + route + "--" + segment + "/"
+  print("download_route=", route, file_name, segment)
+  return send_from_directory(file_name, "qcamera.ts", as_attachment=True)
+
+@app.route("/footage/full/fcamera/<route>/<segment>")
+def download_fcamera(route, segment):
+  file_name = Paths.log_root() + route + "--" + segment + "/"
+  print("download_route=", route, file_name, segment)
+  return send_from_directory(file_name, "fcamera.hevc", as_attachment=True)
+
+@app.route("/footage/full/dcamera/<route>/<segment>")
+def download_dcamera(route, segment):
+  file_name = Paths.log_root() + route + "--" + segment + "/"
+  print("download_route=", route, file_name, segment)
+  return send_from_directory(file_name, "dcamera.hevc", as_attachment=True)
+
 
 def upload_folder_to_ftp(local_folder, directory, remote_path):
+    from tqdm import tqdm
     ftp_server = "shind0.synology.me"
     ftp_port = 8021
     ftp_username = "carrotpilot"
@@ -103,8 +139,10 @@ def upload_folder_to_ftp(local_folder, directory, remote_path):
     except Exception as e:
         print(f"FTP Upload Error: {e}")
         return False
-
+        
+        
 def upload_folder_g4_ftp(local_folder, directory, remote_path):
+    from tqdm import tqdm
     ftp_server = "g4nas.my"
     ftp_port = 21
     ftp_username = "sorento"
@@ -114,7 +152,6 @@ def upload_folder_g4_ftp(local_folder, directory, remote_path):
     ftp.login(ftp_username, ftp_password)
 
     try:
-        ftp.cwd("/sorento")
         ftp.mkd(directory)
         ftp.cwd(directory)
         ftp.mkd(remote_path)
