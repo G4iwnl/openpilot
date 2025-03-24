@@ -46,6 +46,30 @@ sm = messaging.SubMaster(['carState'])
 
 app = Flask(__name__)
 
+SCREENRECORD_DIR = '/path/to/screenrecords'
+@app.route('/screenrecords')
+def screenrecords():
+    rows = sorted(
+        [f for f in os.listdir(SCREENRECORD_DIR) if f.endswith('.mp4')],
+        reverse=True
+    )
+    clip = request.args.get('clip', rows[0] if rows else None)
+    return render_template("screenrecords.html", rows=rows, clip=clip)
+    
+    
+@app.template_filter('filesizeformat')
+def filesize_format_filter(filename):
+    try:
+        size = os.path.getsize(os.path.join(SCREENRECORD_DIR, filename))
+        suffixes = ['B', 'KB', 'MB', 'GB']
+        i = 0
+        while size >= 1024 and i < len(suffixes)-1:
+            size /= 1024.0
+            i += 1
+        return f"{size:.1f} {suffixes[i]}"
+    except:
+        return "N/A"
+        
 @app.route("/")
 def home_page():
   return render_template("index.html")
@@ -265,12 +289,16 @@ def upload_g4(route, segment):
 @app.template_filter('datetimeformat')
 def datetimeformat_filter(filename):
     try:
-        date_str = filename.split('_')[0]
-        time_str = filename.split('_')[1].split('.')[0]
-        dt = datetime.strptime(f"{date_str}_{time_str}", "%Y-%m-%d_%H-%M-%S")
+        base_name = filename.split('.')[0] 
+        date_part = base_name[:8] 
+        time_part = base_name[9:] 
+        
+        dt = datetime.strptime(f"{date_part}{time_part}", "%Y%m%d%H%M%S")
+  
         return dt.strftime("%Y년 %m월 %d일 %H시 %M분")
-    except:
-        return filename
+    except Exception as e:
+        print(f"Formatting error: {e}")
+        return base_name 
         
 @app.route("/file-size")
 def get_file_size():
