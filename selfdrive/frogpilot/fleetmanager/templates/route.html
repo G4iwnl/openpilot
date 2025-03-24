@@ -35,16 +35,53 @@
 
     <h3>Available Routes</h3>
     <form id="routesForm">
-        {% for segment in segments.split(',') %}
-            <input type="checkbox" name="routes" value="{{ segment.strip() }}">
-            <label>{{ segment.strip() }}</label><br>
-        {% endfor %}
+        {{ links | replace('<a href="', '<input type="checkbox" name="routes" value="') | replace('">', '"><a href="') }}
     </form>
 
-    <br>
     <button id="sendRoutes">Send All selected routes to G4 server</button>
 
     <script>
+    var video = document.getElementById('video');
+    var segments = [{{ segments  }}];
+    var q_segment = {{ query_segment }};
+    var q_index = 0;
+    
+    for (var i = 0; i < segments.length; i++) {
+          var segment = segments[i];
+          var q_val = segment.split('--').slice(2).join('--');
+          if (parseInt(q_val) === q_segment) {
+            q_index = i;
+            break
+          }
+        }
+    
+    var tracks = {
+      list: segments,
+      index: q_index,
+      next: function() {
+        if (this.index == this.list.length - 1) this.index = 0;
+        else {
+            this.index += 1;
+        }
+      },
+      play: function() {
+        return ( "{{ query_type }}/" + this.list[this.index] );
+      }
+    }
+    
+    video.addEventListener('ended', function(e) {
+      tracks.next();
+      video.src = tracks.play();
+      document.getElementById("currentsegment").textContent=video.src.split("/")[5];
+      document.getElementById("currentview").textContent=video.src.split("/")[4];
+      video.load();
+      video.play();
+    });
+    
+    video.src = tracks.play();
+    document.getElementById("currentsegment").textContent=video.src.split("/")[5];
+    document.getElementById("currentview").textContent=video.src.split("/")[4];
+
     document.getElementById('sendRoutes').addEventListener('click', function() {
         let selectedRoutes = [];
         document.querySelectorAll('input[name="routes"]:checked').forEach((checkbox) => {
