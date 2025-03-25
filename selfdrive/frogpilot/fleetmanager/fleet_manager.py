@@ -58,39 +58,15 @@ def internal_error(exception):
 
 @app.route("/footage/full/<cameratype>/<route>")
 def full(cameratype, route):
-    chunk_size = 1024 * 512  # 512KB 청크
-    
-    # 파일 확장자 결정
-    file_ext = ".ts" if cameratype == "qcamera" else ".hevc"
-    
-    # 세그먼트 파일 목록 생성
-    segments = fleet.segments_in_route(route)
-    vidlist = "|".join(
-        f"{Paths.log_root()}/{segment}/{cameratype}{file_ext}"
-        for segment in segments
-    )
-
-    # FFmpeg 프로세스 빌더에 H.264 변환 옵션 추가
-    def generate():
-        with fleet.ffmpeg_mp4_concat_wrap_process_builder(
-            vidlist, 
-            cameratype, 
-            chunk_size,
-            extra_args=[
-                '-c:v', 'libx264',       # H.264 코덱 사용
-                '-profile:v', 'high',     # 호환성 프로파일
-                '-level', '4.2',          # 지원 레벨
-                '-pix_fmt', 'yuv420p',    # 크롬 호환 픽셀 포맷
-                '-preset', 'fast'         # 인코딩 속도/화질 밸런스
-            ]
-        ) as process:
-            while True:
-                chunk = process.stdout.read(chunk_size)
-                if not chunk:
-                    break
-                yield chunk
-
-    return Response(generate(), mimetype='video/mp4')
+  chunk_size = 1024 * 512  
+  file_name = cameratype + (".ts" if cameratype == "qcamera" else ".hevc")
+  vidlist = "|".join(Paths.log_root() + "/" + segment + "/" + file_name for segment in fleet.segments_in_route(route))
+  
+  def generate_buffered_stream():
+    with fleet.ffmpeg_mp4_concat_wrap_process_builder(vidlist, cameratype, chunk_size) as process:
+      for chunk in iter(lambda: process.stdout.read(chunk_size), b""):
+        yield bytes(chunk)
+  return Response(generate_buffered_stream(), status=200, mimetype='video/mp4')
 
 @app.route("/footage/full/rlog/<route>/<segment>")
 def download_rlog(route, segment):
