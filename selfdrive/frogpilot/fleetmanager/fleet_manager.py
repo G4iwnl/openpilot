@@ -242,10 +242,15 @@ def get_folder_date():
         return jsonify({'error': 'Folder not found'}), 404
     
     try:
+        # 폴더 생성 시간 가져오기
         stat_info = os.stat(path)
         created_time = stat_info.st_ctime
+        
+        # 분을 뺄 경우 계산
         if subtract_minutes > 0:
             created_time -= subtract_minutes * 60
+        
+        # 날짜 포맷팅 (YYYY-MM-DD HH:MM:SS)
         formatted_date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(created_time))
         
         return jsonify({
@@ -305,15 +310,13 @@ def upload_carrot(route, segment):
 @app.route("/footage/full/upload_g4/<route>/<segment>", methods=['POST'])
 def upload_g4(route, segment):
     if 'file' not in request.files:
-        return "파일 부분 없음", 400
+        return "No file part", 400
     
     file = request.files['file']
     if file.filename == '':
-        return "선택된 파일 없음", 400
+        return "No selected file", 400
 
     try:
-        temp_path = os.path.join("/tmp", file.filename)
-        file.save(temp_path)
         ftp_server = "g4nas.my"
         ftp_port = 21
         ftp_username = "sorento"
@@ -321,6 +324,7 @@ def upload_g4(route, segment):
         ftp = FTP()
         ftp.connect(ftp_server, ftp_port)
         ftp.login(ftp_username, ftp_password)
+        
         car_selected = Params().get("CarName", "none").decode('utf-8')
         directory = "routes " + car_selected + " " + Params().get("DongleId").decode('utf-8')
         
@@ -336,17 +340,14 @@ def upload_g4(route, segment):
         except:
             pass
         ftp.cwd(f"{route}--{segment}")
-        with open(temp_path, 'rb') as f:
-            ftp.storbinary(f'STOR {file.filename}', f)
-        os.remove(temp_path)
+
+        ftp.storbinary(f'STOR {file.filename}', file.stream)
         ftp.quit()
         
-        return "파일 업로드 성공", 200
+        return "File uploaded successfully", 200
     except Exception as e:
-        print(f"FTP 업로드 오류: {e}")
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
-        return f"파일 업로드 실패: {str(e)}", 500
+        print(f"FTP Upload Error: {e}")
+        return f"Failed to upload file: {str(e)}", 500
         
 @app.template_filter('datetimeformat')
 def datetimeformat_filter(filename):
