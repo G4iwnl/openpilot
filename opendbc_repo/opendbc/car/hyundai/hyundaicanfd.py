@@ -544,7 +544,7 @@ def create_adrv_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
       if frame % 20 == 0: # 아직 시험중..
         if CS.hda_info_4a3 is not None:
           values = CS.hda_info_4a3
-          # SIGNAL_4: 7, SIGNAL_0: 0 으로 해도 .. 옆두부는 나오기도 함.. 아오5
+          # SIGNAL_4: 7, SIGNAL_0: 0 으로 해도 .. 옆두부는 나오기도 함.. 아오5 
           if canfd_debug == 1:
             test4 = 10
             test0 = 5
