@@ -235,6 +235,39 @@ def get_folder_info():
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+        
+@app.route("/folder-date")
+def get_folder_date():
+    path = request.args.get('path')
+    subtract_minutes = int(request.args.get('subtract_minutes', 0))
+    
+    if not path or not os.path.exists(path):
+        return jsonify({'error': 'Folder not found'}), 404
+    
+    try:
+        # 폴더 생성 시간 가져오기
+        stat_info = os.stat(path)
+        created_time = stat_info.st_ctime
+        
+        # 분을 뺄 경우 계산
+        if subtract_minutes > 0:
+            created_time -= subtract_minutes * 60
+        
+        # 날짜 포맷팅 (YYYY-MM-DD HH:MM:SS)
+        formatted_date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(created_time))
+        
+        return jsonify({
+            'date': formatted_date,
+            'status': 'success'
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route("/folder-exists")
+def check_folder_exists():
+    path = request.args.get('path')
+    exists = os.path.exists(path) if path else False
+    return jsonify({'exists': exists})
 
 @app.route("/footage/full/upload_carrot/<route>/<segment>")
 def upload_carrot(route, segment):
