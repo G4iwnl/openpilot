@@ -69,10 +69,13 @@ def full(cameratype, route):
 
     extra_args = [
         '-c:v', 'libx264',
-        '-profile:v', 'main',
-        '-pix_fmt', 'yuv420p',
-        '-movflags', 'frag_keyframe+empty_moov',
-        '-f', 'mp4'
+        '-profile:v', 'main',        # high → main (Chrome 호환)
+        '-level', '4.0',             # 4.2 → 4.0 (범용 지원)
+        '-pix_fmt', 'yuv420p',       # 필수
+        '-movflags', 'frag_keyframe+empty_moov',  # 스트리밍 필수
+        '-f', 'mp4',
+        '-vf', 'scale=iw:-2',        # 해상도 짝수 강제 (Chrome 버그 회피)
+        '-preset', 'ultrafast'       # 저지연 인코딩
     ]
 
     # HEVC 입력 시 코덱 지정
@@ -104,7 +107,10 @@ def full(cameratype, route):
 
             t.join()
 
-    return Response(generate(), mimetype='video/mp4')
+    return Response(
+        generate(), 
+        mimetype='video/mp4; codecs="avc1.640029, mp4a.40.2"'  # H.264 + AAC
+    )
 
 @app.route("/footage/full/rlog/<route>/<segment>")
 def download_rlog(route, segment):
