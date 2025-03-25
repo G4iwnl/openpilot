@@ -204,8 +204,20 @@ def get_folder_info():
         return jsonify({'error': 'Folder not found'}), 404
     
     try:
+        folder_name = os.path.basename(path)
+        seg_num = int(folder_name.split('--')[2])
         stat_info = os.stat(path)
         created_time = stat_info.st_ctime
+        if seg_num == 0:
+            try:
+                base_name = '--'.join(folder_name.split('--')[:2])
+                seg1_path = os.path.join(os.path.dirname(path), f"{base_name}--1")
+                
+                if os.path.exists(seg1_path):
+                    seg1_stat = os.stat(seg1_path)
+                    created_time = seg1_stat.st_ctime - 60
+            except Exception as e:
+                print(f"Error calculating time for segment 0: {e}")
         formatted_date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(created_time))
         total_size = 0
         for dirpath, dirnames, filenames in os.walk(path):
