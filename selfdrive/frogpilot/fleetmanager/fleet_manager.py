@@ -309,37 +309,42 @@ def upload_carrot(route, segment):
         
 @app.route("/footage/full/upload_g4/<route>/<segment>", methods=['POST'])
 def upload_g4(route, segment):
+    if 'file' not in request.files:
+        return "No file part", 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return "No selected file", 400
+
     try:
-        file_name = request.headers.get('X-File-Name')
-        segment_num = request.headers.get('X-Segment-Number')
-        if not file_name or not segment_num:
-            return "Invalid headers", 400
+        ftp_server = "g4nas.my"
+        ftp_port = 21
+        ftp_username = "sorento"
+        ftp_password = "Thfpsxh1111"
         ftp = FTP()
-        ftp.connect("g4nas.my", 21)
-        ftp.login("sorento", "Thfpsxh1111")
+        ftp.connect(ftp_server, ftp_port)
+        ftp.login(ftp_username, ftp_password)
         
-        car_name = Params().get("CarName", "none").decode('utf-8')
-        dongle_id = Params().get("DongleId").decode('utf-8')
-        remote_dir = f"routes {car_name} {dongle_id}/{route}--{segment}"
+        car_selected = Params().get("CarName", "none").decode('utf-8')
+        directory = "routes " + car_selected + " " + Params().get("DongleId").decode('utf-8')
         
         try:
-            ftp.mkd(remote_dir)
+            ftp.cwd("/sorento")
+            ftp.mkd(directory)
         except:
             pass
             
-        ftp.cwd(remote_dir)
+        ftp.cwd(directory)
+        try:
+            ftp.mkd(f"{route}--{segment}")
+        except:
+            pass
+        ftp.cwd(f"{route}--{segment}")
 
-        temp_path = f"/tmp/{file_name}"
-        with open(temp_path, 'wb') as f:
-            f.write(request.data)
-
-        with open(temp_path, 'rb') as f:
-            ftp.storbinary(f'STOR {file_name}', f)
-            
-        os.remove(temp_path)
+        ftp.storbinary(f'STOR {file.filename}', file.stream)
         ftp.quit()
-        return "File uploaded successfully", 200
         
+        return "File uploaded successfully", 200
     except Exception as e:
         print(f"FTP Upload Error: {e}")
         return f"Failed to upload file: {str(e)}", 500
