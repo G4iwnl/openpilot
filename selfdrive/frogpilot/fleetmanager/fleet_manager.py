@@ -58,10 +58,10 @@ def internal_error(exception):
 
 @app.route("/footage/full/<cameratype>/<route>")
 def full(cameratype, route):
-  chunk_size = 1024 * 512  # 5KiB
+  chunk_size = 1024 * 512  
   file_name = cameratype + (".ts" if cameratype == "qcamera" else ".hevc")
   vidlist = "|".join(Paths.log_root() + "/" + segment + "/" + file_name for segment in fleet.segments_in_route(route))
-
+  
   def generate_buffered_stream():
     with fleet.ffmpeg_mp4_concat_wrap_process_builder(vidlist, cameratype, chunk_size) as process:
       for chunk in iter(lambda: process.stdout.read(chunk_size), b""):
