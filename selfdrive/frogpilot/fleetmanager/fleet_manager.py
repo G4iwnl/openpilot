@@ -58,37 +58,51 @@ def internal_error(exception):
 
 @app.route("/footage/full/<cameratype>/<route>")
 def full(cameratype, route):
-    chunk_size = 1024 * 512  # 512KB 청크
-    
-    # 파일 확장자 결정
+    chunk_size = 1024 * 512
     file_ext = ".ts" if cameratype == "qcamera" else ".hevc"
     
-    # 세그먼트 파일 목록 생성
     segments = fleet.segments_in_route(route)
     vidlist = "|".join(
         f"{Paths.log_root()}/{segment}/{cameratype}{file_ext}"
         for segment in segments
     )
 
-    # FFmpeg 프로세스 빌더에 H.264 변환 옵션 추가
+    extra_args = [
+        '-c:v', 'libx264',
+        '-profile:v', 'main',
+        '-pix_fmt', 'yuv420p',
+        '-movflags', 'frag_keyframe+empty_moov',
+        '-f', 'mp4'
+    ]
+
+    # HEVC 입력 시 코덱 지정
+    if file_ext == '.hevc':
+        extra_args = ['-c:v', 'hevc'] + extra_args
+
     def generate():
         with fleet.ffmpeg_mp4_concat_wrap_process_builder(
             vidlist, 
-            cameratype, 
+            cameratype,
             chunk_size,
-            extra_args=[
-                '-c:v', 'libx264',       # H.264 코덱 사용
-                '-profile:v', 'high',     # 호환성 프로파일
-                '-level', '4.2',          # 지원 레벨
-                '-pix_fmt', 'yuv420p',    # 크롬 호환 픽셀 포맷
-                '-preset', 'fast'         # 인코딩 속도/화질 밸런스
-            ]
+            extra_args=extra_args
         ) as process:
+            # 오류 로그 수집
+            def log_stderr():
+                while True:
+                    line = process.stderr.readline()
+                    if not line: break
+                    print(f"FFmpeg: {line.decode().strip()}")
+            import threading
+            t = threading.Thread(target=log_stderr)
+            t.start()
+
+            # 데이터 스트리밍
             while True:
                 chunk = process.stdout.read(chunk_size)
-                if not chunk:
-                    break
+                if not chunk: break
                 yield chunk
+
+            t.join()
 
     return Response(generate(), mimetype='video/mp4')
 
