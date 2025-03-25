@@ -100,7 +100,7 @@ def download_ecamera(route, segment):
 
 
 def upload_folder_to_ftp(local_folder, directory, remote_path):
-    from tqdm import tqdm  # tqdm���� ���� �� ǥ��
+    from tqdm import tqdm 
     ftp_server = "shind0.synology.me"
     ftp_port = 8021
     ftp_username = "carrotpilot"
