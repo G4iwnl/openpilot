@@ -18,27 +18,31 @@
         current view: <span id="currentview" class="badge bg-secondary"></span>
     </div>
     <br>
-    <div class="download-section">
-		<div class="d-flex align-items-center flex-wrap gap-2">
-			</a>
-			<div class="d-flex align-items-center ms-2">
-				<span class="me-2">Full Downloads:</span>
-				<div class="btn-group">
-					<a download="{{ route }}-qcamera.mp4" href="/footage/full/qcamera/{{ route }}" class="btn btn-sm btn-outline-primary">qcamera</a>
-					<a download="{{ route }}-fcamera.mp4" href="/footage/full/fcamera/{{ route }}" class="btn btn-sm btn-outline-primary">fcamera</a>
-					<a download="{{ route }}-dcamera.mp4" href="/footage/full/dcamera/{{ route }}" class="btn btn-sm btn-outline-primary">dcamera</a>
-					<a download="{{ route }}-ecamera.mp4" href="/footage/full/ecamera/{{ route }}" class="btn btn-sm btn-outline-primary">ecamera</a>
+    <div class="download-section text-center">
+		<div class="d-flex flex-column align-items-center">
+			<div class="mb-3">
+				<div class="d-flex align-items-center justify-content-center gap-2">
+					<span class="me-2">Full Downloads:</span>
+					<div class="btn-group">
+						<a download="{{ route }}-qcamera.mp4" href="/footage/full/qcamera/{{ route }}" class="btn btn-sm btn-outline-primary">qcamera</a>
+						<a download="{{ route }}-fcamera.mp4" href="/footage/full/fcamera/{{ route }}" class="btn btn-sm btn-outline-primary">fcamera</a>
+						<a download="{{ route }}-dcamera.mp4" href="/footage/full/dcamera/{{ route }}" class="btn btn-sm btn-outline-primary">dcamera</a>
+						<a download="{{ route }}-ecamera.mp4" href="/footage/full/ecamera/{{ route }}" class="btn btn-sm btn-outline-primary">ecamera</a>
+					</div>
 				</div>
 			</div>
-		</div>
-		<div class="mt-2">
-			<span class="me-2">Segment Downloads:</span>
-			<div class="btn-group">
-				<a download="{{ route }}-rlog-{{query_segment}}.mp4" href="/footage/full/rlog/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">rlog</a>
-				<a download="{{ route }}-qcamera-{{query_segment}}.mp4" href="/footage/full/qcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">qcamera</a>
-				<a download="{{ route }}-fcamera-{{query_segment}}.mp4" href="/footage/full/fcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">fcamera</a>
-				<a download="{{ route }}-dcamera-{{query_segment}}.mp4" href="/footage/full/dcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">dcamera</a>
-				<a download="{{ route }}-ecamera-{{query_segment}}.mp4" href="/footage/full/ecamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">ecamera</a>
+
+			<div class="mt-2">
+				<div class="d-flex align-items-center justify-content-center gap-2">
+					<span class="me-2">Segment Downloads:</span>
+					<div class="btn-group">
+						<a download="{{ route }}-rlog-{{query_segment}}.mp4" href="/footage/full/rlog/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">rlog</a>
+						<a download="{{ route }}-qcamera-{{query_segment}}.mp4" href="/footage/full/qcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">qcamera</a>
+						<a download="{{ route }}-fcamera-{{query_segment}}.mp4" href="/footage/full/fcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">fcamera</a>
+						<a download="{{ route }}-dcamera-{{query_segment}}.mp4" href="/footage/full/dcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">dcamera</a>
+						<a download="{{ route }}-ecamera-{{query_segment}}.mp4" href="/footage/full/ecamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">ecamera</a>
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -299,4 +303,13 @@
         font-size: 0.9em;
         color: #666;
     }
+	.download-section .btn-group {
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 4px;
+	}
+	.download-section .d-flex.align-items-center {
+		flex-wrap: wrap;
+		row-gap: 8px;
+	}
 </style>
