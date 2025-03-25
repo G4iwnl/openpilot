@@ -157,41 +157,49 @@
         }
 
         async function updateCurrentFolderInfo() {
-            const folderPath = `/data/media/0/realdata/${currentSegment}`;
-            const info = await getFolderInfo(folderPath);
-            const dateElement = document.getElementById('folderDate');
-            
-            if (info && info.created_date) {
-                dateElement.textContent = formatDate(info.created_date);
-                if (info.size) {
-                    dateElement.textContent += ` (${formatBytes(info.size)})`;
-                }
-            } else {
-                dateElement.textContent = "Unknown";
-            }
-        }
+			const folderPath = `/data/media/0/realdata/${currentSegment}`;
+			const info = await getFolderInfo(folderPath);
+			const dateElement = document.getElementById('folderDate');
+			
+			if (info && info.created_date) {
+				dateElement.textContent = info.created_date; 
+				if (info.size) {
+					dateElement.textContent += ` • ${formatBytes(info.size)}`;
+				}
+			} else {
+				dateElement.textContent = "정보 없음";
+			}
+		}
 
-        async function updateSegmentListInfo() {
-            for (const segment of segments) {
-                const cleanSegment = segment.trim().replace(/'/g, '');
-                if (!cleanSegment) continue;
-                
-                const segNum = cleanSegment.split('--')[2];
-                const folderPath = `/data/media/0/realdata/${cleanSegment}`;
-                
-                const info = await getFolderInfo(folderPath);
-                if (info) {
-                    if (info.created_date) {
-                        document.getElementById(`segment-date-${segNum}`).textContent = formatDate(info.created_date);
-                    }
-                    if (info.size) {
-                        document.getElementById(`segment-size-${segNum}`).textContent = formatBytes(info.size);
-                    }
-                } else {
-                    document.getElementById(`segment-info-${segNum}`).textContent = "Info not available";
-                }
-            }
-        }
+		async function updateSegmentListInfo() {
+			for (const segment of segments) {
+				const cleanSegment = segment.trim().replace(/'/g, '');
+				if (!cleanSegment) continue;
+				
+				const segNum = cleanSegment.split('--')[2];
+				const folderPath = `/data/media/0/realdata/${cleanSegment}`;
+				
+				const info = await getFolderInfo(folderPath);
+				const dateElement = document.getElementById(`segment-date-${segNum}`);
+				const sizeElement = document.getElementById(`segment-size-${segNum}`);
+				
+				if (info) {
+					if (info.created_date) {
+						dateElement.textContent = info.created_date;
+					} else {
+						dateElement.textContent = "날짜 없음";
+					}
+					if (info.size) {
+						sizeElement.textContent = formatBytes(info.size);
+					} else {
+						sizeElement.textContent = "크기 없음";
+					}
+				} else {
+					dateElement.textContent = "정보 없음";
+					sizeElement.textContent = "정보 없음";
+				}
+			}
+		}
 
         async function uploadSelectedSegments() {
             const selected = Array.from(document.querySelectorAll('.segment-checkbox:checked'))

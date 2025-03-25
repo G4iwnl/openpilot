@@ -204,17 +204,20 @@ def get_folder_info():
         return jsonify({'error': 'Folder not found'}), 404
     
     try:
-        created_time = os.path.getctime(path)
-        created_date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(created_time))
+        stat_info = os.stat(path)
+        created_time = stat_info.st_ctime
+        formatted_date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(created_time))
         total_size = 0
         for dirpath, dirnames, filenames in os.walk(path):
             for f in filenames:
                 fp = os.path.join(dirpath, f)
-                if os.path.exists(fp):
+                try:
                     total_size += os.path.getsize(fp)
+                except OSError:
+                    continue
         
         return jsonify({
-            'created_date': created_date,
+            'created_date': formatted_date,
             'size': total_size,
             'status': 'success'
         })
