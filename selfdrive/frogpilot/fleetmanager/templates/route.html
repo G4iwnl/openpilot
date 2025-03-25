@@ -12,6 +12,12 @@
     <video id="video" width="640" height="480" controls autoplay style="background:black">
     </video>
     <br><br>
+    <div class="camera-switcher d-flex justify-content-center gap-2 mb-3">
+        <a href="{{ route }}?{{ query_segment }},qcamera" class="btn btn-outline-primary btn-sm">qcamera</a>
+        <a href="{{ route }}?{{ query_segment }},fcamera" class="btn btn-outline-primary btn-sm">fcamera</a>
+        <a href="{{ route }}?{{ query_segment }},dcamera" class="btn btn-outline-primary btn-sm">dcamera</a>
+        <a href="{{ route }}?{{ query_segment }},ecamera" class="btn btn-outline-primary btn-sm">ecamera</a>
+    </div>
     <div class="video-info">
         current segment: <span id="currentsegment" class="badge bg-primary"></span>
         <br>
@@ -46,14 +52,12 @@
 		</div>
 	</div>
 
-
     <div class="segment-controls mt-4">
         <h3>Segment List</h3>
         <div class="d-flex align-items-center mb-3">
             <button onclick="toggleAllSegments()" class="btn btn-sm btn-outline-secondary me-2">Select All</button>
             <div id="selectedCount" class="text-muted">0 segments selected</div>
         </div>
-        
         
         <div class="segment-list" style="max-height: 400px; overflow-y: auto;">
             {% for segment in segments.split(',') %}
@@ -73,7 +77,6 @@
             {% endfor %}
         </div>
 
-        
         <div class="mt-4">
             <button class="btn btn-danger" onclick="uploadSelectedSegments()">
                 <i class="bi bi-upload me-2"></i>
@@ -82,6 +85,7 @@
             <div id="uploadStatus" class="mt-2"></div>
         </div>
     </div>
+
 
 	<script>
 		
