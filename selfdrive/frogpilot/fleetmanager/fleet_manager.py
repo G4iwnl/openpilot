@@ -40,6 +40,7 @@ import time
 from functools import wraps
 from openpilot.opendbc_repo.opendbc.car.interfaces import CarInterfaceBase
 from openpilot.opendbc_repo.opendbc.car.values import PLATFORMS
+from tqdm import tqdm
 
 # Initialize messaging
 sm = messaging.SubMaster(['carState'])
@@ -148,49 +149,57 @@ def upload_folder_to_ftp(local_folder, directory, remote_path):
         
         
 def upload_folder_g4_ftp(local_folder, directory, remote_path):
-    from tqdm import tqdm  # g4nas.my
     ftp_server = "g4nas.my"
     ftp_port = 21
     ftp_username = "sorento"
     ftp_password = "Thfpsxh1111"
+
     ftp = FTP()
     ftp.connect(ftp_server, ftp_port)
     ftp.login(ftp_username, ftp_password)
 
     try:
         ftp.cwd("/sorento")
-        print(f"Create remote path = {directory}")
-        try:
-          ftp.mkd(directory)
-        except Exception as e:
-          print(f"Directory creation failed: {e}")
-        ftp.cwd(directory)
-        try:
-          ftp.mkd(remote_path)
-        except Exception as e:
-          print(f"Directory creation failed: {e}")
-        ftp.cwd(remote_path)
+
+        # Ensure remote directories exist
+        for sub_dir in [directory, remote_path]:
+            try:
+                ftp.mkd(sub_dir)
+            except Exception as e:
+                print(f"Directory creation failed (possibly exists): {e}")
+            ftp.cwd(sub_dir)
 
         files = [
             os.path.join(root, filename)
             for root, _, filenames in os.walk(local_folder)
             for filename in filenames
         ]
+
         with tqdm(total=len(files), desc="Uploading Files", unit="file") as pbar:
             for local_file in files:
                 filename = os.path.basename(local_file)
-                if filename in ['rlog', 'rlog.zst', 'qcamera.ts']:
-                  try:
-                      with open(local_file, 'rb') as file:
-                          ftp.storbinary(f'STOR {filename}', file)
-                          print(f"Uploaded: {local_file} -> {filename}")
-                  except Exception as e:
-                      print(f"Failed to upload {local_file}: {e}")
 
-                  pbar.update(1) 
+                if filename in ['rlog.zst', 'qcamera.ts']:
+                    try:
+                        with open(local_file, 'rb') as file:
+                            ftp.storbinary(f'STOR {filename}', file, 1024 * 1024)  # 1MB buffer
+                            print(f"Uploaded: {filename}")
+
+                            # Verify file size on server
+                            try:
+                                uploaded_size = ftp.size(filename)
+                                print(f"Server file size: {uploaded_size} bytes")
+                            except:
+                                print(f"Failed to verify server file size: {filename}")
+
+                    except Exception as e:
+                        print(f"Failed to upload file: {local_file}, error: {e}")
+
+                    pbar.update(1)
 
         ftp.quit()
         return True
+
     except Exception as e:
         print(f"FTP Upload Error: {e}")
         return False
@@ -324,30 +333,36 @@ def upload_g4(route, segment):
         ftp = FTP()
         ftp.connect(ftp_server, ftp_port)
         ftp.login(ftp_username, ftp_password)
-        
-        car_selected = Params().get("CarName", "none").decode('utf-8')
-        directory = "routes " + car_selected + " " + Params().get("DongleId").decode('utf-8')
-        
-        try:
-            ftp.cwd("/sorento")
-            ftp.mkd(directory)
-        except:
-            pass
-            
-        ftp.cwd(directory)
-        try:
-            ftp.mkd(f"{route}--{segment}")
-        except:
-            pass
-        ftp.cwd(f"{route}--{segment}")
 
-        ftp.storbinary(f'STOR {file.filename}', file.stream)
+        # Set remote directory
+        ftp.cwd("/sorento")
+        directory = f"routes_{route}"
+        segment_dir = f"{route}--{segment}"
+
+        for sub_dir in [directory, segment_dir]:
+            try:
+                ftp.mkd(sub_dir)
+            except:
+                pass  # Ignore if it already exists
+            ftp.cwd(sub_dir)
+
+        file.stream.seek(0)  # Reset file stream
+        ftp.storbinary(f'STOR {file.filename}', file.stream, 1024 * 1024)  # 1MB buffer
+        print(f"Uploaded: {file.filename}")
+
+        # Verify file size on server
+        try:
+            uploaded_size = ftp.size(file.filename)
+            print(f"Server file size: {uploaded_size} bytes")
+        except:
+            print(f"Failed to verify server file size: {file.filename}")
+
         ftp.quit()
-        
         return "File uploaded successfully", 200
+
     except Exception as e:
         print(f"FTP Upload Error: {e}")
-        return f"Failed to upload file: {str(e)}", 500
+        return f"File upload failed: {str(e)}", 500
         
 @app.template_filter('datetimeformat')
 def datetimeformat_filter(filename):
