@@ -210,6 +210,8 @@
 		}
 
         async function uploadSelectedSegments() {
+			const video = document.getElementById('video');
+			video.pause();
             const selected = Array.from(document.querySelectorAll('.segment-checkbox:checked'))
                                 .map(cb => cb.value);
             
@@ -342,6 +344,8 @@
         }
 		
 		async function uploadSelectedSegmentsCarrot() {
+			const video = document.getElementById('video');
+			video.pause();
             const selected = Array.from(document.querySelectorAll('.segment-checkbox:checked'))
                                 .map(cb => cb.value);
             
@@ -543,13 +547,12 @@
         font-size: 0.9em;
     }
 	.btn-orange {
-		background-color: #FFA500;
-		color: white;
-		border-color: #FFA500;
+		background-color: #FFA500 !important;
+		border-color: #FFA500 !important;
+		color: white !important;
 	}
-
 	.btn-orange:hover {
-		background-color: #FF8C00;
-		border-color: #FF8C00;
+		background-color: #FF8C00 !important;
+		border-color: #FF8C00 !important;
 	}
 </style>
