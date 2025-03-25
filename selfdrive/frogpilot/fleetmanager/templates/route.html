@@ -19,18 +19,32 @@
     </div>
     <br>
     <div class="download-section">
-        <a download="{{ route }}-{{ query_type }}.mp4" href="/footage/full/{{ query_type }}/{{ route }}" class="btn btn-success">
-            Download Full Route ({{ query_type }})
-        </a>
-        <div class="mt-2">
-            Downloads:
-            <a href="/footage/full/rlog/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">rlog</a>
-            <a href="/footage/full/qcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">qcamera</a>
-            <a href="/footage/full/fcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">fcamera</a>
-            <a href="/footage/full/dcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">dcamera</a>
-            <a href="/footage/full/ecamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">ecamera</a>
-        </div>
-    </div>
+		<div class="d-flex align-items-center flex-wrap gap-2">
+			<a download="{{ route }}-{{ query_type }}.mp4" href="/footage/full/{{ query_type }}/{{ route }}" class="btn btn-success">
+				Download Full Route ({{ query_type }})
+			</a>
+			<div class="d-flex align-items-center ms-2">
+				<span class="me-2">Full Downloads:</span>
+				<div class="btn-group">
+					<a download="{{ route }}-qcamera.mp4" href="/footage/full/qcamera/{{ route }}" class="btn btn-sm btn-outline-primary">qcamera</a>
+					<a download="{{ route }}-fcamera.mp4" href="/footage/full/fcamera/{{ route }}" class="btn btn-sm btn-outline-primary">fcamera</a>
+					<a download="{{ route }}-dcamera.mp4" href="/footage/full/dcamera/{{ route }}" class="btn btn-sm btn-outline-primary">dcamera</a>
+					<a download="{{ route }}-ecamera.mp4" href="/footage/full/ecamera/{{ route }}" class="btn btn-sm btn-outline-primary">ecamera</a>
+				</div>
+			</div>
+		</div>
+		<div class="mt-2">
+			<span class="me-2">Segment Downloads:</span>
+			<div class="btn-group">
+				<a download="{{ route }}-rlog-{{query_segment}}.mp4" href="/footage/full/rlog/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">rlog</a>
+				<a download="{{ route }}-qcamera-{{query_segment}}.mp4" href="/footage/full/qcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">qcamera</a>
+				<a download="{{ route }}-fcamera-{{query_segment}}.mp4" href="/footage/full/fcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">fcamera</a>
+				<a download="{{ route }}-dcamera-{{query_segment}}.mp4" href="/footage/full/dcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">dcamera</a>
+				<a download="{{ route }}-ecamera-{{query_segment}}.mp4" href="/footage/full/ecamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">ecamera</a>
+			</div>
+		</div>
+	</div>
+
 
     <div class="segment-controls mt-4">
         <h3>Segment List</h3>
@@ -278,5 +292,13 @@
     }
     .progress-bar {
         transition: width 0.3s ease;
+    }
+    .download-section .btn-group .btn {
+        border-radius: 20px !important;
+        margin: 0 2px;
+    }
+    .download-section span.me-2 {
+        font-size: 0.9em;
+        color: #666;
     }
 </style>
