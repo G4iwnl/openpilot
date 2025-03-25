@@ -19,43 +19,16 @@
     </div>
     <br>
     <div class="download-section">
-        <div class="row g-3">
-            <div class="col-md-12">
-                <a download="{{ route }}-{{ query_type }}.mp4" href="/footage/full/{{ query_type }}/{{ route }}" class="btn btn-success">
-                    <i class="bi bi-download me-2"></i>
-                    Download Full Route ({{ query_type }})
-                </a>
-            </div>
-            <div class="col-md-3">
-                <a download="{{ route }}-rlog.mp4" href="/footage/full/rlog/{{ route }}/{{query_segment}}" class="btn btn-primary w-100">
-                    <i class="bi bi-camera-reels me-2"></i>
-                    RLOG
-                </a>
-            </div>
-            <div class="col-md-3">
-                <a download="{{ route }}-qcamera.mp4" href="/footage/full/qcamera/{{ route }}/{{query_segment}}" class="btn btn-info w-100 text-white">
-                    <i class="bi bi-record-circle me-2"></i>
-                    QCamera
-                </a>
-            </div>
-            <div class="col-md-3">
-                <a download="{{ route }}-fcamera.mp4" href="/footage/full/fcamera/{{ route }}/{{query_segment}}" class="btn btn-warning w-100">
-                    <i class="bi bi-camera-video me-2"></i>
-                    FCamera
-                </a>
-            </div>
-            <div class="col-md-3">
-                <a download="{{ route }}-dcamera.mp4" href="/footage/full/dcamera/{{ route }}/{{query_segment}}" class="btn btn-danger w-100">
-                    <i class="bi bi-camera2 me-2"></i>
-                    DCamera
-                </a>
-            </div>
-            <div class="col-md-3">
-                <a download="{{ route }}-ecamera.mp4" href="/footage/full/ecamera/{{ route }}/{{query_segment}}" class="btn btn-dark w-100">
-                    <i class="bi bi-ev-front me-2"></i>
-                    ECamera
-                </a>
-            </div>
+        <a download="{{ route }}-{{ query_type }}.mp4" href="/footage/full/{{ query_type }}/{{ route }}" class="btn btn-success">
+            Download Full Route ({{ query_type }})
+        </a>
+        <div class="mt-2">
+            Downloads:
+            <a href="/footage/full/rlog/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">rlog</a>
+            <a href="/footage/full/qcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">qcamera</a>
+            <a href="/footage/full/fcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">fcamera</a>
+            <a href="/footage/full/dcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">dcamera</a>
+            <a href="/footage/full/ecamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-primary">ecamera</a>
         </div>
     </div>
 
