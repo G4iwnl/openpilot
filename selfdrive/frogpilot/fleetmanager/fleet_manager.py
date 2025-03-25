@@ -148,7 +148,7 @@ def upload_folder_to_ftp(local_folder, directory, remote_path):
         
         
 def upload_folder_g4_ftp(local_folder, directory, remote_path):
-    from tqdm import tqdm  # g4nas.my
+    from tqdm import tqdm
     ftp_server = "g4nas.my"
     ftp_port = 21
     ftp_username = "sorento"
@@ -159,35 +159,32 @@ def upload_folder_g4_ftp(local_folder, directory, remote_path):
 
     try:
         ftp.cwd("/sorento")
-        print(f"Create remote path = {directory}")
-        try:
-          ftp.mkd(directory)
-        except Exception as e:
-          print(f"Directory creation failed: {e}")
-        ftp.cwd(directory)
-        try:
-          ftp.mkd(remote_path)
-        except Exception as e:
-          print(f"Directory creation failed: {e}")
-        ftp.cwd(remote_path)
 
-        files = [
-            os.path.join(root, filename)
-            for root, _, filenames in os.walk(local_folder)
-            for filename in filenames
-        ]
+        def create_path(path):
+            try:
+                ftp.mkd(path)
+            except:
+                pass
+            ftp.cwd(path)
+
+        for part in [directory, remote_path]:
+            create_path(part)
+
+        files = []
+        for root, _, filenames in os.walk(local_folder):
+            for filename in filenames:
+                if filename in ['rlog.zst', 'qcamera.ts']:
+                    files.append(os.path.join(root, filename))
+
         with tqdm(total=len(files), desc="Uploading Files", unit="file") as pbar:
             for local_file in files:
                 filename = os.path.basename(local_file)
-                if filename in ['rlog', 'rlog.zst', 'qcamera.ts']:
-                  try:
-                      with open(local_file, 'rb') as file:
-                          ftp.storbinary(f'STOR {filename}', file)
-                          print(f"Uploaded: {local_file} -> {filename}")
-                  except Exception as e:
-                      print(f"Failed to upload {local_file}: {e}")
-
-                  pbar.update(1) 
+                try:
+                    with open(local_file, 'rb') as f:
+                        ftp.storbinary(f'STOR {filename}', f)
+                    pbar.update(1)
+                except Exception as e:
+                    print(f"Failed to upload {local_file}: {e}")
 
         ftp.quit()
         return True
@@ -242,15 +239,12 @@ def get_folder_date():
         return jsonify({'error': 'Folder not found'}), 404
     
     try:
-        # 폴더 생성 시간 가져오기
         stat_info = os.stat(path)
         created_time = stat_info.st_ctime
         
-        # 분을 뺄 경우 계산
         if subtract_minutes > 0:
             created_time -= subtract_minutes * 60
         
-        # 날짜 포맷팅 (YYYY-MM-DD HH:MM:SS)
         formatted_date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(created_time))
         
         return jsonify({
@@ -309,45 +303,21 @@ def upload_carrot(route, segment):
         
 @app.route("/footage/full/upload_g4/<route>/<segment>", methods=['POST'])
 def upload_g4(route, segment):
-    if 'file' not in request.files:
-        return "No file part", 400
+    local_folder = os.path.join(Paths.log_root(), f"{route}--{segment}")
     
-    file = request.files['file']
-    if file.filename == '':
-        return "No selected file", 400
+    if not os.path.isdir(local_folder):
+        return abort(404, "Folder not found")
 
-    try:
-        ftp_server = "g4nas.my"
-        ftp_port = 21
-        ftp_username = "sorento"
-        ftp_password = "Thfpsxh1111"
-        ftp = FTP()
-        ftp.connect(ftp_server, ftp_port)
-        ftp.login(ftp_username, ftp_password)
-        
-        car_selected = Params().get("CarName", "none").decode('utf-8')
-        directory = "routes " + car_selected + " " + Params().get("DongleId").decode('utf-8')
-        
-        try:
-            ftp.cwd("/sorento")
-            ftp.mkd(directory)
-        except:
-            pass
-            
-        ftp.cwd(directory)
-        try:
-            ftp.mkd(f"{route}--{segment}")
-        except:
-            pass
-        ftp.cwd(f"{route}--{segment}")
+    car_selected = Params().get("CarName", "none").decode('utf-8')
+    dongle_id = Params().get("DongleId", "unknown").decode('utf-8')
+    directory = f"routes {car_selected} {dongle_id}"
 
-        ftp.storbinary(f'STOR {file.filename}', file.stream)
-        ftp.quit()
-        
-        return "File uploaded successfully", 200
-    except Exception as e:
-        print(f"FTP Upload Error: {e}")
-        return f"Failed to upload file: {str(e)}", 500
+    success = upload_folder_g4_ftp(local_folder, directory, f"{route}--{segment}")
+
+    if success:
+        return "All files uploaded successfully", 200
+    else:
+        return "Failed to upload files", 500
         
 @app.template_filter('datetimeformat')
 def datetimeformat_filter(filename):
