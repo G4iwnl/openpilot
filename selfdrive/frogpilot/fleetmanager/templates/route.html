@@ -13,10 +13,14 @@
     </video>
     <br><br>
     <div class="camera-switcher d-flex justify-content-center gap-2 mb-3">
-        <a href="{{ route }}?{{ query_segment }},qcamera" class="btn btn-outline-primary btn-sm">qcamera</a>
-        <a href="{{ route }}?{{ query_segment }},fcamera" class="btn btn-outline-primary btn-sm">fcamera</a>
-        <a href="{{ route }}?{{ query_segment }},dcamera" class="btn btn-outline-primary btn-sm">dcamera</a>
-        <a href="{{ route }}?{{ query_segment }},ecamera" class="btn btn-outline-primary btn-sm">ecamera</a>
+        <a href="{{ route }}?{{ query_segment }},qcamera" 
+           class="btn btn-sm {% if query_type == 'qcamera' %}btn-primary{% else %}btn-outline-primary{% endif %}">qcamera</a>
+        <a href="{{ route }}?{{ query_segment }},fcamera" 
+           class="btn btn-sm {% if query_type == 'fcamera' %}btn-primary{% else %}btn-outline-primary{% endif %}">fcamera</a>
+        <a href="{{ route }}?{{ query_segment }},dcamera" 
+           class="btn btn-sm {% if query_type == 'dcamera' %}btn-primary{% else %}btn-outline-primary{% endif %}">dcamera</a>
+        <a href="{{ route }}?{{ query_segment }},ecamera" 
+           class="btn btn-sm {% if query_type == 'ecamera' %}btn-primary{% else %}btn-outline-primary{% endif %}">ecamera</a>
     </div>
     <div class="video-info">
         current segment: <span id="currentsegment" class="badge bg-primary"></span>
@@ -314,4 +318,8 @@
 		flex-wrap: wrap;
 		row-gap: 8px;
 	}
+    .camera-switcher .btn {
+        min-width: 80px;
+        transition: all 0.2s ease;
+    }
 </style>
