@@ -122,14 +122,11 @@ def upload_folder_to_ftp(local_folder, directory, remote_path):
           print(f"Directory creation failed: {e}")
         ftp.cwd(remote_path)
 
-        # ���� ������ ��� ���� ��������
         files = [
             os.path.join(root, filename)
             for root, _, filenames in os.walk(local_folder)
             for filename in filenames
         ]
-
-        # tqdm�� ����� ���� �� ǥ��
         with tqdm(total=len(files), desc="Uploading Files", unit="file") as pbar:
             for local_file in files:
                 filename = os.path.basename(local_file)
@@ -141,7 +138,7 @@ def upload_folder_to_ftp(local_folder, directory, remote_path):
                   except Exception as e:
                       print(f"Failed to upload {local_file}: {e}")
 
-                  pbar.update(1)  # ���� �� ������
+                  pbar.update(1) 
 
         ftp.quit()
         return True
@@ -269,26 +266,46 @@ def check_folder_exists():
     exists = os.path.exists(path) if path else False
     return jsonify({'exists': exists})
 
-@app.route("/footage/full/upload_carrot/<route>/<segment>")
+@app.route("/footage/full/upload_carrot/<route>/<segment>", methods=['POST'])
 def upload_carrot(route, segment):
-    local_folder = Paths.log_root() + f"{route}--{segment}"
-    if not os.path.isdir(local_folder):
-        print(f"Folder not found: {local_folder}")
-        return abort(404, "Folder not found")
+    if 'file' not in request.files:
+        return "No file part", 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return "No selected file", 400
 
-    car_selected = Params().get("CarName")
-    if car_selected is None:
-      car_selected = "none"
-    else:
-      car_selected = car_selected.decode('utf-8')
+    try:
+        ftp_server = "shind0.synology.me"
+        ftp_port = 8021
+        ftp_username = "carrotpilot"
+        ftp_password = "Ekdrmsvkdlffjt7710"
+        ftp = FTP()
+        ftp.connect(ftp_server, ftp_port)
+        ftp.login(ftp_username, ftp_password)
+        
+        car_selected = Params().get("CarName", "none").decode('utf-8')
+        directory = "routes " + car_selected + " " + Params().get("DongleId").decode('utf-8')
+        
+        try:
+            ftp.mkd(directory)
+        except:
+            pass
+            
+        ftp.cwd(directory)
+        try:
+            ftp.mkd(f"{route}--{segment}")
+        except:
+            pass
+        ftp.cwd(f"{route}--{segment}")
 
-    directory = "routes " + car_selected + " " + Params().get("DongleId").decode('utf-8')
-    success = upload_folder_to_ftp(local_folder, directory, f"{route}--{segment}")
-
-    if success:
-        return "All files uploaded successfully", 200
-    else:
-        return "Failed to upload files", 500
+        ftp.storbinary(f'STOR {file.filename}', file.stream)
+        ftp.quit()
+        
+        return "File uploaded successfully", 200
+    except Exception as e:
+        print(f"FTP Upload Error: {e}")
+        return f"Failed to upload file: {str(e)}", 500
         
 @app.route("/footage/full/upload_g4/<route>/<segment>", methods=['POST'])
 def upload_g4(route, segment):
