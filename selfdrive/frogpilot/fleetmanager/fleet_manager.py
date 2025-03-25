@@ -197,6 +197,29 @@ def upload_folder_g4_ftp(local_folder, directory, remote_path):
     except Exception as e:
         print(f"FTP Upload Error: {e}")
         return False
+@app.route("/folder-info")
+def get_folder_info():
+    path = request.args.get('path')
+    if not path or not os.path.exists(path):
+        return jsonify({'error': 'Folder not found'}), 404
+    
+    try:
+        created_time = os.path.getctime(path)
+        created_date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(created_time))
+        total_size = 0
+        for dirpath, dirnames, filenames in os.walk(path):
+            for f in filenames:
+                fp = os.path.join(dirpath, f)
+                if os.path.exists(fp):
+                    total_size += os.path.getsize(fp)
+        
+        return jsonify({
+            'created_date': created_date,
+            'size': total_size,
+            'status': 'success'
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route("/footage/full/upload_carrot/<route>/<segment>")
 def upload_carrot(route, segment):

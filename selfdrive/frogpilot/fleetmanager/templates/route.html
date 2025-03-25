@@ -26,35 +26,37 @@
         current segment: <span id="currentsegment" class="badge bg-primary"></span>
         <br>
         current view: <span id="currentview" class="badge bg-secondary"></span>
+        <br>
+        date: <span id="folderDate" class="badge bg-info"></span>
     </div>
     <br>
-	<div class="download-section text-center">
-		<div class="d-flex flex-column align-items-center gap-3">
-			<div>
-				<div class="d-flex align-items-center gap-2">
-					<span>Full Downloads:</span>
-					<div class="d-flex flex-wrap gap-2">
-						<a download="{{ route }}-qcamera.mp4" href="/footage/full/qcamera/{{ route }}" class="btn btn-sm btn-outline-primary">qcamera</a>
-						<a download="{{ route }}-fcamera.mp4" href="/footage/full/fcamera/{{ route }}" class="btn btn-sm btn-outline-primary">fcamera</a>
-						<a download="{{ route }}-dcamera.mp4" href="/footage/full/dcamera/{{ route }}" class="btn btn-sm btn-outline-primary">dcamera</a>
-						<a download="{{ route }}-ecamera.mp4" href="/footage/full/ecamera/{{ route }}" class="btn btn-sm btn-outline-primary">ecamera</a>
-					</div>
-				</div>
-			</div>
-			<div>
-				<div class="d-flex align-items-center gap-2">
-					<span>Segment Downloads:</span>
-					<div class="d-flex flex-wrap gap-2">
-						<a download="{{ route }}-rlog-{{query_segment}}.mp4" href="/footage/full/rlog/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">rlog</a>
-						<a download="{{ route }}-qcamera-{{query_segment}}.mp4" href="/footage/full/qcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">qcamera</a>
-						<a download="{{ route }}-fcamera-{{query_segment}}.mp4" href="/footage/full/fcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">fcamera</a>
-						<a download="{{ route }}-dcamera-{{query_segment}}.mp4" href="/footage/full/dcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">dcamera</a>
-						<a download="{{ route }}-ecamera-{{query_segment}}.mp4" href="/footage/full/ecamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">ecamera</a>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
+    <div class="download-section text-center">
+        <div class="d-flex flex-column align-items-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2">
+                    <span>Full Downloads:</span>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a download="{{ route }}-qcamera.mp4" href="/footage/full/qcamera/{{ route }}" class="btn btn-sm btn-outline-primary">qcamera</a>
+                        <a download="{{ route }}-fcamera.mp4" href="/footage/full/fcamera/{{ route }}" class="btn btn-sm btn-outline-primary">fcamera</a>
+                        <a download="{{ route }}-dcamera.mp4" href="/footage/full/dcamera/{{ route }}" class="btn btn-sm btn-outline-primary">dcamera</a>
+                        <a download="{{ route }}-ecamera.mp4" href="/footage/full/ecamera/{{ route }}" class="btn btn-sm btn-outline-primary">ecamera</a>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="d-flex align-items-center gap-2">
+                    <span>Segment Downloads:</span>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a download="{{ route }}-rlog-{{query_segment}}.mp4" href="/footage/full/rlog/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">rlog</a>
+                        <a download="{{ route }}-qcamera-{{query_segment}}.mp4" href="/footage/full/qcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">qcamera</a>
+                        <a download="{{ route }}-fcamera-{{query_segment}}.mp4" href="/footage/full/fcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">fcamera</a>
+                        <a download="{{ route }}-dcamera-{{query_segment}}.mp4" href="/footage/full/dcamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">dcamera</a>
+                        <a download="{{ route }}-ecamera-{{query_segment}}.mp4" href="/footage/full/ecamera/{{ route }}/{{query_segment}}" class="btn btn-sm btn-outline-secondary">ecamera</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="segment-controls mt-4">
         <h3>Segment List</h3>
@@ -67,15 +69,23 @@
             {% for segment in segments.split(',') %}
             {% set clean_segment = segment.strip().strip("'") %}
             {% if clean_segment %}
-            <div class="segment-item d-flex align-items-center py-2 border-bottom ps-2">
+            {% set seg_num = clean_segment.split('--')[2] %}
+            <div class="segment-item d-flex align-items-start py-2 border-bottom ps-2">
                 <input type="checkbox" 
                        name="selected_segments" 
                        value="{{ clean_segment }}" 
-                       class="form-check-input me-3 segment-checkbox"
+                       class="form-check-input me-3 segment-checkbox mt-1"
                        style="transform: scale(1.5)">
-                <a href="{{ route }}?{{ clean_segment.split('--')[2] }},{{ query_type }}" class="text-decoration-none">
-                    {{ clean_segment }}
-                </a>
+                <div class="d-flex flex-column">
+                    <a href="{{ route }}?{{ seg_num }},{{ query_type }}" class="text-decoration-none">
+                        {{ clean_segment }}
+                    </a>
+                    <small class="text-muted" id="segment-info-{{ seg_num }}">
+                        <i class="bi bi-clock-history me-1"></i><span id="segment-date-{{ seg_num }}">Loading date...</span>
+                        <span class="mx-2">•</span>
+                        <i class="bi bi-hdd me-1"></i><span id="segment-size-{{ seg_num }}">Loading size...</span>
+                    </small>
+                </div>
             </div>
             {% endif %}
             {% endfor %}
@@ -90,201 +100,247 @@
         </div>
     </div>
 
+    <script>
+        const segments = [{{ segments }}];
+        const currentSegment = "{{ route }}--{{ query_segment }}";
+        let currentSegmentIndex = segments.findIndex(seg => seg === currentSegment);
+        if (currentSegmentIndex === -1) currentSegmentIndex = 0;
 
-	<script>
-		
-		const segments = [{{ segments }}];
-		const currentSegment = "{{ route }}--{{ query_segment }}";
-		let currentSegmentIndex = segments.findIndex(seg => seg === currentSegment);
-		if (currentSegmentIndex === -1) currentSegmentIndex = 0;
+        const video = document.getElementById('video');
+        video.src = `/footage/{{ query_type }}/${currentSegment}`;
+        document.getElementById("currentsegment").textContent = currentSegment;
+        document.getElementById("currentview").textContent = "{{ query_type }}";
+        video.load();
+        video.play().catch(e => console.log("Autoplay prevented:", e));
 
-		
-		const video = document.getElementById('video');
-		video.src = `/footage/{{ query_type }}/${currentSegment}`;
-		document.getElementById("currentsegment").textContent = currentSegment;
-		document.getElementById("currentview").textContent = "{{ query_type }}";
-		video.load();
-		video.play().catch(e => console.log("Autoplay prevented:", e));
+        video.addEventListener('ended', function() {
+            currentSegmentIndex = (currentSegmentIndex + 1) % segments.length;
+            const nextSegment = segments[currentSegmentIndex];
+            const segNum = nextSegment.split('--')[2];
+            window.location.href = `{{ route }}?${segNum},{{ query_type }}`;
+        });
 
-		
-		video.addEventListener('ended', function() {
-			currentSegmentIndex = (currentSegmentIndex + 1) % segments.length;
-			const nextSegment = segments[currentSegmentIndex];
-			const segNum = nextSegment.split('--')[2];
-			window.location.href = `{{ route }}?${segNum},{{ query_type }}`;
-		});
+        function toggleAllSegments() {
+            const checkboxes = document.querySelectorAll('.segment-checkbox');
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            checkboxes.forEach(cb => cb.checked = !allChecked);
+            updateSelectionCount();
+        }
 
-		
-		function toggleAllSegments() {
-			const checkboxes = document.querySelectorAll('.segment-checkbox');
-			const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-			checkboxes.forEach(cb => cb.checked = !allChecked);
-			updateSelectionCount();
-		}
+        function updateSelectionCount() {
+            const count = document.querySelectorAll('.segment-checkbox:checked').length;
+            document.getElementById('selectedCount').textContent = `${count} segments selected`;
+        }
 
-		function updateSelectionCount() {
-			const count = document.querySelectorAll('.segment-checkbox:checked').length;
-			document.getElementById('selectedCount').textContent = `${count} segments selected`;
-		}
+        async function getFolderInfo(folderPath) {
+            try {
+                const response = await fetch(`/folder-info?path=${encodeURIComponent(folderPath)}`);
+                if (!response.ok) throw new Error('Network response was not ok');
+                return await response.json();
+            } catch (e) {
+                console.error(`Error getting folder info for ${folderPath}:`, e);
+                return null;
+            }
+        }
 
-		
-		async function uploadSelectedSegments() {
-			const selected = Array.from(document.querySelectorAll('.segment-checkbox:checked'))
-								.map(cb => cb.value);
-			
-			if(selected.length === 0) {
-				showUploadStatus('No segments selected!', 'danger');
-				return;
-			}
+        function formatDate(timestamp) {
+            const date = new Date(timestamp * 1000);
+            return date.toLocaleString();
+        }
 
-			
-			const progressUI = `
-				<div class="upload-progress mt-3">
-					<div class="progress mb-2">
-						<div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
-							 role="progressbar" style="width: 0%"></div>
-					</div>
-					<div class="row">
-						<div class="col-6 text-start">
-							<small id="uploadProgressText">Preparing upload...</small>
-						</div>
-						<div class="col-6 text-end">
-							<small id="uploadSpeed">-</small>
-						</div>
-					</div>
-					<div class="row mt-1">
-						<div class="col-12">
-							<small id="uploadFileInfo" class="text-muted">-</small>
-						</div>
-					</div>
-				</div>
-			`;
-			const statusDiv = document.getElementById('uploadStatus');
-			statusDiv.innerHTML = progressUI;
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
+        }
 
-			try {
-				let totalSize = 0;
-				let uploadedSize = 0;
-				const startTime = Date.now();
-				const uploads = [];
-				const selectedSegmentsCount = selected.length;
+        async function updateCurrentFolderInfo() {
+            const folderPath = `/data/media/0/realdata/${currentSegment}`;
+            const info = await getFolderInfo(folderPath);
+            const dateElement = document.getElementById('folderDate');
+            
+            if (info && info.created_date) {
+                dateElement.textContent = formatDate(info.created_date);
+                if (info.size) {
+                    dateElement.textContent += ` (${formatBytes(info.size)})`;
+                }
+            } else {
+                dateElement.textContent = "Unknown";
+            }
+        }
 
-				document.getElementById('uploadProgressText').textContent = 'Calculating total size...';
-				for (const segment of selected) {
-					const segmentNum = segment.split('--')[2];
-					const files = ['rlog.zst', 'qcamera.ts'];
-					
-					for (const file of files) {
-						try {
-							const response = await fetch(`/file-size?path=/data/media/0/realdata/{{ route }}--${segmentNum}/${file}`);
-							const { size } = await response.json();
-							if (size) {
-								totalSize += size;
-								uploads.push({ segmentNum, file, size });
-							}
-						} catch (e) {
-							console.warn(`Size check failed for ${file}`, e);
-						}
-					}
-				}
+        async function updateSegmentListInfo() {
+            for (const segment of segments) {
+                const cleanSegment = segment.trim().replace(/'/g, '');
+                if (!cleanSegment) continue;
+                
+                const segNum = cleanSegment.split('--')[2];
+                const folderPath = `/data/media/0/realdata/${cleanSegment}`;
+                
+                const info = await getFolderInfo(folderPath);
+                if (info) {
+                    if (info.created_date) {
+                        document.getElementById(`segment-date-${segNum}`).textContent = formatDate(info.created_date);
+                    }
+                    if (info.size) {
+                        document.getElementById(`segment-size-${segNum}`).textContent = formatBytes(info.size);
+                    }
+                } else {
+                    document.getElementById(`segment-info-${segNum}`).textContent = "Info not available";
+                }
+            }
+        }
 
-				
-				const initialUploadMsg = `Uploading ${uploads.length} files (${selectedSegmentsCount} Segments) ${formatBytes(totalSize)}...`;
-				showUploadStatus(initialUploadMsg, 'info');
-				document.getElementById('uploadProgressText').textContent = initialUploadMsg;
-				document.getElementById('uploadFileInfo').textContent = 
-					`${selectedSegmentsCount} Segments | ${uploads.length} files | ${formatBytes(totalSize)}`;
+        async function uploadSelectedSegments() {
+            const selected = Array.from(document.querySelectorAll('.segment-checkbox:checked'))
+                                .map(cb => cb.value);
+            
+            if(selected.length === 0) {
+                showUploadStatus('No segments selected!', 'danger');
+                return;
+            }
 
-				
-				for (const { segmentNum, file, size } of uploads) {
-					try {
-						const filePath = `/data/media/0/realdata/{{ route }}--${segmentNum}/${file}`;
-						document.getElementById('uploadFileInfo').textContent = 
-							`Uploading: ${file} (${formatBytes(size)})`;
-						
-						const formData = new FormData();
-						const blob = await fetch(filePath).then(r => r.blob());
-						formData.append('file', blob, file);
-						formData.append('segment', segmentNum);
+            const progressUI = `
+                <div class="upload-progress mt-3">
+                    <div class="progress mb-2">
+                        <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 text-start">
+                            <small id="uploadProgressText">Preparing upload...</small>
+                        </div>
+                        <div class="col-6 text-end">
+                            <small id="uploadSpeed">-</small>
+                        </div>
+                    </div>
+                    <div class="row mt-1">
+                        <div class="col-12">
+                            <small id="uploadFileInfo" class="text-muted">-</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+            const statusDiv = document.getElementById('uploadStatus');
+            statusDiv.innerHTML = progressUI;
 
-						const xhr = new XMLHttpRequest();
-						xhr.open('POST', `/footage/full/upload_g4/{{ route }}/${segmentNum}`, true);
+            try {
+                let totalSize = 0;
+                let uploadedSize = 0;
+                const startTime = Date.now();
+                const uploads = [];
+                const selectedSegmentsCount = selected.length;
 
-						xhr.upload.onprogress = function(e) {
-							if (e.lengthComputable && totalSize > 0) {
-								const loaded = uploadedSize + e.loaded;
-								const percent = Math.round(loaded / totalSize * 100);
-								const elapsed = (Date.now() - startTime) / 1000;
-								const speed = elapsed > 0 ? loaded / (1024 * 1024 * elapsed) : 0;
-								
-								document.getElementById('uploadProgressBar').style.width = `${percent}%`;
-								document.getElementById('uploadProgressText').textContent = 
-									`${percent}% (${formatBytes(loaded)}/${formatBytes(totalSize)})`;
-								document.getElementById('uploadSpeed').textContent = 
-									`${speed.toFixed(2)} MB/s`;
-							}
-						};
+                document.getElementById('uploadProgressText').textContent = 'Calculating total size...';
+                for (const segment of selected) {
+                    const segmentNum = segment.split('--')[2];
+                    const files = ['rlog.zst', 'qcamera.ts'];
+                    
+                    for (const file of files) {
+                        try {
+                            const response = await fetch(`/file-size?path=/data/media/0/realdata/{{ route }}--${segmentNum}/${file}`);
+                            const { size } = await response.json();
+                            if (size) {
+                                totalSize += size;
+                                uploads.push({ segmentNum, file, size });
+                            }
+                        } catch (e) {
+                            console.warn(`Size check failed for ${file}`, e);
+                        }
+                    }
+                }
 
-						await new Promise((resolve, reject) => {
-							xhr.onload = () => {
-								if (xhr.status === 200) {
-									uploadedSize += size;
-									resolve();
-								} else {
-									reject(new Error(`Upload failed: ${xhr.statusText}`));
-								}
-							};
-							xhr.onerror = () => reject(new Error('Upload failed'));
-							xhr.send(formData);
-						});
-					} catch (error) {
-						console.error(`Upload error for ${file}:`, error);
-						showUploadStatus(`Error: ${error.message}`, 'danger');
-						throw error;
-					}
-				}
+                const initialUploadMsg = `Uploading ${uploads.length} files (${selectedSegmentsCount} Segments) ${formatBytes(totalSize)}...`;
+                showUploadStatus(initialUploadMsg, 'info');
+                document.getElementById('uploadProgressText').textContent = initialUploadMsg;
+                document.getElementById('uploadFileInfo').textContent = 
+                    `${selectedSegmentsCount} Segments | ${uploads.length} files | ${formatBytes(totalSize)}`;
 
-				
-				const successAlert = document.createElement('div');
-				successAlert.className = 'alert alert-success';
-				successAlert.textContent = `Upload complete! ${selectedSegmentsCount} segments uploaded`;
-				statusDiv.prepend(successAlert);
+                for (const { segmentNum, file, size } of uploads) {
+                    try {
+                        const filePath = `/data/media/0/realdata/{{ route }}--${segmentNum}/${file}`;
+                        document.getElementById('uploadFileInfo').textContent = 
+                            `Uploading: ${file} (${formatBytes(size)})`;
+                        
+                        const formData = new FormData();
+                        const blob = await fetch(filePath).then(r => r.blob());
+                        formData.append('file', blob, file);
+                        formData.append('segment', segmentNum);
 
-				
-				const initialAlert = statusDiv.querySelector('.alert-info');
-				if (initialAlert) initialAlert.remove();
-				
-				const progressElements = document.querySelectorAll('.upload-progress, #uploadProgressBar, #uploadProgressText, #uploadSpeed, #uploadFileInfo');
-				progressElements.forEach(el => el.remove());
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('POST', `/footage/full/upload_g4/{{ route }}/${segmentNum}`, true);
 
-			} catch (error) {
-				console.error('Upload failed:', error);
-				showUploadStatus(`Upload failed: ${error.message}`, 'danger');
-				document.getElementById('uploadProgressBar').classList.remove('progress-bar-animated');
-				document.getElementById('uploadProgressBar').classList.add('bg-danger');
-			}
-		}
+                        xhr.upload.onprogress = function(e) {
+                            if (e.lengthComputable && totalSize > 0) {
+                                const loaded = uploadedSize + e.loaded;
+                                const percent = Math.round(loaded / totalSize * 100);
+                                const elapsed = (Date.now() - startTime) / 1000;
+                                const speed = elapsed > 0 ? loaded / (1024 * 1024 * elapsed) : 0;
+                                
+                                document.getElementById('uploadProgressBar').style.width = `${percent}%`;
+                                document.getElementById('uploadProgressText').textContent = 
+                                    `${percent}% (${formatBytes(loaded)}/${formatBytes(totalSize)})`;
+                                document.getElementById('uploadSpeed').textContent = 
+                                    `${speed.toFixed(2)} MB/s`;
+                            }
+                        };
 
-		function showUploadStatus(message, type, append = false) {
-			const statusDiv = document.getElementById('uploadStatus');
-			if (!append) {
-				const alertDiv = document.createElement('div');
-				alertDiv.className = `alert alert-${type} mb-2`;
-				alertDiv.textContent = message;
-				statusDiv.prepend(alertDiv);
-			}
-		}
+                        await new Promise((resolve, reject) => {
+                            xhr.onload = () => {
+                                if (xhr.status === 200) {
+                                    uploadedSize += size;
+                                    resolve();
+                                } else {
+                                    reject(new Error(`Upload failed: ${xhr.statusText}`));
+                                }
+                            };
+                            xhr.onerror = () => reject(new Error('Upload failed'));
+                            xhr.send(formData);
+                        });
+                    } catch (error) {
+                        console.error(`Upload error for ${file}:`, error);
+                        showUploadStatus(`Error: ${error.message}`, 'danger');
+                        throw error;
+                    }
+                }
 
-		function formatBytes(bytes, decimals = 2) {
-			if (bytes === 0) return '0 Bytes';
-			const k = 1024;
-			const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-			const i = Math.floor(Math.log(bytes) / Math.log(k));
-			return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
-		}
+                const successAlert = document.createElement('div');
+                successAlert.className = 'alert alert-success';
+                successAlert.textContent = `Upload complete! ${selectedSegmentsCount} segments uploaded`;
+                statusDiv.prepend(successAlert);
 
-		updateSelectionCount();
-	</script>
+                const initialAlert = statusDiv.querySelector('.alert-info');
+                if (initialAlert) initialAlert.remove();
+                
+                const progressElements = document.querySelectorAll('.upload-progress, #uploadProgressBar, #uploadProgressText, #uploadSpeed, #uploadFileInfo');
+                progressElements.forEach(el => el.remove());
+
+            } catch (error) {
+                console.error('Upload failed:', error);
+                showUploadStatus(`Upload failed: ${error.message}`, 'danger');
+                document.getElementById('uploadProgressBar').classList.remove('progress-bar-animated');
+                document.getElementById('uploadProgressBar').classList.add('bg-danger');
+            }
+        }
+
+        function showUploadStatus(message, type, append = false) {
+            const statusDiv = document.getElementById('uploadStatus');
+            if (!append) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type} mb-2`;
+                alertDiv.textContent = message;
+                statusDiv.prepend(alertDiv);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSelectionCount();
+            updateCurrentFolderInfo();
+            updateSegmentListInfo();
+        });
+    </script>
 {% endautoescape %}
 <br><br>
 {% endblock %}
@@ -310,16 +366,32 @@
         font-size: 0.9em;
         color: #666;
     }
-	.download-section .btn {
-		min-width: 90px;
-		padding: 0.25rem 0.5rem;
-	}
-	.download-section .d-flex.align-items-center {
-		flex-wrap: wrap;
-		row-gap: 8px;
-	}
+    .download-section .btn {
+        min-width: 90px;
+        padding: 0.25rem 0.5rem;
+    }
+    .download-section .d-flex.align-items-center {
+        flex-wrap: wrap;
+        row-gap: 8px;
+    }
     .camera-switcher .btn {
         min-width: 80px;
         transition: all 0.2s ease;
+    }
+    .segment-item {
+        align-items: flex-start !important;
+    }
+    .segment-item small {
+        font-size: 0.8rem;
+        margin-top: 2px;
+    }
+    .segment-item .form-check-input {
+        margin-top: 0.3rem;
+    }
+    .badge {
+        font-weight: 500;
+    }
+    #folderDate {
+        font-size: 0.9em;
     }
 </style>
