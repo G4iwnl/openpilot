@@ -555,7 +555,7 @@ def create_adrv_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
           #if canfd_debug == 1:
           values["SPEED_LIMIT"] = 100
           ret.append(packer.make_can_msg("HDA_INFO_4A3", CAN.CAM, values))
-      if frame % 10 == 0:
+      if frame % 10 == 0 and False:
         if CS.new_msg_4b4 is not None: #G80 HDA2개조차량은 안나옴...
           values = CS.new_msg_4b4
           values["NEW_SIGNAL_1"] = 8
