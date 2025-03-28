@@ -554,16 +554,16 @@ def create_adrv_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
         if CS.hda_info_4a3 is not None:
           values = CS.hda_info_4a3
           #if canfd_debug == 1:
-          values["SPEED_LIMIT"] = 100
-          print(values)
+          values["SIGNAL_0"] = 5
+          values["SPEED_LIMIT"] = 80
           ret.append(packer.make_can_msg("HDA_INFO_4A3", CAN.CAM, values))
       if frame % 10 == 0:
         if CS.cluster_info_1fa is not None: 
           values = CS.cluster_info_1fa
-          values["SPEED_LIMIT_1"] = 100
-          values["SPEED_LIMIT_2"] = 100
-          values["SPEED_LIMIT_3"] = 100
-          values["SPEED_LIMIT_4"] = 100
+          values["SPEED_LIMIT_1"] = 80
+          values["SPEED_LIMIT_2"] = 80
+          values["SPEED_LIMIT_3"] = 85
+          values["SPEED_LIMIT_4"] = 80
           ret.append(packer.make_can_msg("CLUSTER_SPEED_LIMIT", CAN.CAM, values))
     return ret
   else:
