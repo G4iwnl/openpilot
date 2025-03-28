@@ -74,6 +74,7 @@ const CanMsg HYUNDAI_CANFD_HDA2_LONG_TX_MSGS[] = {
 
   {203, 0, 24}, // CB
   {373, 2, 24}, // TCS(0x175)
+  {506, 2, 32}, // CLUSTER_SPEED_LIMIT
 };
 
 const CanMsg HYUNDAI_CANFD_HDA1_TX_MSGS[] = {
