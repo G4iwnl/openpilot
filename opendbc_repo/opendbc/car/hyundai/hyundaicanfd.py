@@ -563,6 +563,7 @@ def create_adrv_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
           values["SPEED_LIMIT_1"] = 100
           values["SPEED_LIMIT_2"] = 100
           values["SPEED_LIMIT_3"] = 100
+          values["SPEED_LIMIT_4"] = 100
           ret.append(packer.make_can_msg("CLUSTER_SPEED_LIMIT", CAN.CAM, values))
     return ret
   else:
