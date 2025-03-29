@@ -88,6 +88,13 @@ const CanMsg HYUNDAI_CANFD_HDA1_TX_MSGS[] = {
   {203, 0, 24}, // CB
   {373, 2, 24}, // TCS(0x175)
 
+  {353, 0, 32}, // ADRV_353
+  {354, 0, 32}, // CORNER_RADAR_HIGHWAY
+  {512, 0, 8}, // ADRV_0x200
+  {1187, 2, 8}, // 4A3
+  {1204, 2, 8}, // 4B4
+  {373, 2, 24}, // TCS(0x175)
+
 };
 
 
