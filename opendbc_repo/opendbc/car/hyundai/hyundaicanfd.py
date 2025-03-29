@@ -490,8 +490,9 @@ def create_adrv_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
 
           if values["ALERTS_2"] in [1, 2, 5]:
             values["ALERTS_2"] = 0
-            values["SOUNDS_2"] = 0
             values["DAW_ICON"] = 0
+            
+          values["SOUNDS_2"] = 0  # 2: STEER중지 경고후에도 사운드가 나옴.
 
           if values["ALERTS_3"] in [17, 26]:
             values["ALERTS_3"] = 0
