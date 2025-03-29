@@ -428,10 +428,7 @@ def create_tcs_messages(packer, CAN, CS):
     ret.append(packer.make_can_msg("TCS", CAN.CAM, values))
   return ret
 
-def create_adrv_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle, left_lane_warning, right_lane_warning, canfd_debug):
-  # messages needed to car happy after disabling
-  # the ADAS Driving ECU to do longitudinal control
-
+def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle, left_lane_warning, right_lane_warning, canfd_debug):
   ret = []
 
   values = {
@@ -566,8 +563,15 @@ def create_adrv_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
           values["SPEED_LIMIT_3"] = 85
           values["SPEED_LIMIT_4"] = 80
           ret.append(packer.make_can_msg("CLUSTER_SPEED_LIMIT", CAN.CAM, values))
-    return ret
-  else:
+  return ret
+
+def create_adrv_messages(CP, packer, CAN, frame):
+  # messages needed to car happy after disabling
+  # the ADAS Driving ECU to do longitudinal control
+
+  ret = []
+
+  if not CP.flags & HyundaiFlags.CAMERA_SCC.value:
     values = {}
 
     ret.extend(create_fca_warning_light(CP, packer, CAN, frame))
@@ -605,7 +609,7 @@ def create_adrv_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
       }
       ret.append(packer.make_can_msg("ADRV_0x1da", CAN.ECAN, values))
 
-    return ret
+  return ret
 
 ## carrot
 def alt_cruise_buttons(packer, CP, CAN, buttons, cruise_btns_msg, cnt):
