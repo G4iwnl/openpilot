@@ -385,7 +385,7 @@ class CarState(CarStateBase):
       ret.cruiseState.enabled = cp.vl["TCS"]["ACC_REQ"] == 1
       ret.cruiseState.standstill = False
       if self.CP.flags & HyundaiFlags.CAMERA_SCC.value:
-        self.MainMode_ACC = cp_cruise_info.vl["SCC_CONTROL"]["MainMode_ACC"] == 1
+        self.MainMode_ACC = cp_cam.vl["SCC_CONTROL"]["MainMode_ACC"] == 1
     else:
       cp_cruise_info = cp_cam if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else cp
       ret.cruiseState.enabled = cp_cruise_info.vl["SCC_CONTROL"]["ACCMode"] in (1, 2)
