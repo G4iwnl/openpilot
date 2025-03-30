@@ -428,7 +428,7 @@ def create_tcs_messages(packer, CAN, CS):
     ret.append(packer.make_can_msg("TCS", CAN.CAM, values))
   return ret
 
-def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle, left_lane_warning, right_lane_warning, canfd_debug):
+def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle, left_lane_warning, right_lane_warning, canfd_debug, MainMode_ACC_trigger):
   ret = []
 
   values = {
@@ -442,6 +442,12 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
         values["SET_ME_2"] = 0   #커멘트해도 steer_temp에러남, 2값은 콤마에서 찾은거니...
         values["DATA102"] = 0  # steer_temp관련없음
         ret.append(packer.make_can_msg("ADRV_0x160", CAN.ECAN, values))
+
+      if CS.cruise_buttons_msg is not None:
+        values = CS.cruise_buttons_msg
+        if MainMode_ACC_trigger >= 0:
+          values["ADAPTIVE_CRUISE_MAIN_BTN"] = 1
+        ret.append(packer.make_can_msg(CS.cruise_btns_msg_canfd, CAN.CAM, values))
 
     if frame % 5 == 0:
       if CP.extFlags & HyundaiExtFlags.CANFD_161.value:

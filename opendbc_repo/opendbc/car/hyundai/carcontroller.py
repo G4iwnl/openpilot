@@ -81,6 +81,7 @@ class CarController(CarControllerBase):
     self.angle_max_torque = 200
 
     self.canfd_debug = 0
+    self.MainMode_ACC_trigger = 0
 
   def update(self, CC, CS, now_nanos):
 
@@ -234,7 +235,7 @@ class CarController(CarControllerBase):
         self.hyundai_jerk.make_jerk(self.CP, CS, accel, actuators, hud_control)
 
         if True: #not camera_scc:
-          can_sends.extend(hyundaicanfd.create_ccnc_messages(self.CP, self.packer, self.CAN, self.frame, CC, CS, hud_control, apply_angle, left_lane_warning, right_lane_warning, self.canfd_debug))
+          can_sends.extend(hyundaicanfd.create_ccnc_messages(self.CP, self.packer, self.CAN, self.frame, CC, CS, hud_control, apply_angle, left_lane_warning, right_lane_warning, self.canfd_debug, self.MainMode_ACC_trigger))
           if hda2:
             can_sends.extend(hyundaicanfd.create_adrv_messages(self.CP, self.packer, self.CAN, self.frame))
           else:
@@ -371,6 +372,12 @@ class CarController(CarControllerBase):
           self.cruise_buttons_msg_cnt += 1
 
     return can_sends
+
+  def canfd_toggle_adas(self, CC, CS):
+    if self.frame % 2 == 0:
+      self.MainMode_ACC_trigger = max(-50, self.MainMode_ACC_trigger - 1)
+      if CC.enabled and not CS.MainMode_ACC and self.MainMode_ACC_trigger == -50:
+        self.MainMode_ACC_trigger = 2
 
   def canfd_speed_control_pcm(self, CC, CS, cruise_buttons_msg_values):
 

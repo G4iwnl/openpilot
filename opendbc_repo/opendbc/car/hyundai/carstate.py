@@ -87,6 +87,7 @@ class CarState(CarStateBase):
     self.pcmCruiseGap = 0
 
     self.cruise_buttons_alt = False # for CASPER_EV
+    self.MainMode_ACC = False
 
   def update(self, can_parsers) -> structs.CarState:
     cp = can_parsers[Bus.pt]
@@ -383,6 +384,8 @@ class CarState(CarStateBase):
       # These are not used for engage/disengage since openpilot keeps track of state using the buttons
       ret.cruiseState.enabled = cp.vl["TCS"]["ACC_REQ"] == 1
       ret.cruiseState.standstill = False
+      if self.CP.flags & HyundaiFlags.CAMERA_SCC.value:
+        self.MainMode_ACC = cp_cruise_info.vl["SCC_CONTROL"]["MainMode_ACC"] == 1
     else:
       cp_cruise_info = cp_cam if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else cp
       ret.cruiseState.enabled = cp_cruise_info.vl["SCC_CONTROL"]["ACCMode"] in (1, 2)
@@ -442,12 +445,16 @@ class CarState(CarStateBase):
     # }} carrot
     
 
-    if self.cruise_btns_msg_canfd in cp.vl_all: #carrot
-      if not cp.vl_all[self.cruise_btns_msg_canfd]["CRUISE_BUTTONS"]:
+    if self.cruise_btns_msg_canfd in cp.vl:
+      self.cruise_buttons_msg = copy.copy(cp.vl[self.cruise_btns_msg_canfd])
+    """
+    if self.cruise_btns_msg_canfd in cp.vl: #carrot
+      if not cp.vl[self.cruise_btns_msg_canfd]["CRUISE_BUTTONS"]:
         pass
         #print("empty cruise btns...")
       else:
-        self.cruise_buttons_msg = copy.copy(cp.vl_all[self.cruise_btns_msg_canfd])
+        self.cruise_buttons_msg = copy.copy(cp.vl[self.cruise_btns_msg_canfd])
+     """
     prev_main_buttons = self.main_buttons[-1]
     #self.cruise_buttons.extend(cp.vl_all[self.cruise_btns_msg_canfd]["CRUISE_BUTTONS"])
     self.main_buttons.extend(cp.vl_all[self.cruise_btns_msg_canfd]["ADAPTIVE_CRUISE_MAIN_BTN"])
