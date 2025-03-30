@@ -515,6 +515,12 @@ class CarState(CarStateBase):
       pt_messages += [
         ("CRUISE_BUTTONS", 50)
       ]
+      
+    if CP.extFlags & HyundaiExtFlags.STEER_TOUCH:
+      pt_messages += [
+        ("STEER_TOUCH_2AF", 10),
+      ]
+
 
     ## BSM신호가 ADAS인경우 BUS2로 개조되고, 독립인경우 ECAN에서 들어옴.
     # 개조, 독립 EV6: 1, 1 => True, inADAS: 1, 0 => False

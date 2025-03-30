@@ -152,6 +152,7 @@ class HyundaiExtFlags(IntFlag):
   CANFD_GEARS_69 = 2 ** 10
   CANFD_161 = 2 ** 11
   CRUISE_BUTTON_ALT = 2 ** 12     # for CASPER_EV
+  STEER_TOUCH = 2 ** 13
 
 class Footnote(Enum):
   CANFD = CarFootnote(
