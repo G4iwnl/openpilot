@@ -102,7 +102,7 @@ def create_steering_messages_camera_scc(packer, CP, CAN, enabled, lat_active, ap
     #698(0x2ba), 353(0x161), 354(0x162), 442(0x1ba), 480(0x1e0), 485(0x1e5), 490(0x1ea),
     #512(0x200), 837(0x345), 908(0x38c), 1402(0x57a), 474(0x1da)
 
-    apply_angle = np.clip(apply_angle, -119, 119)
+    #apply_angle = np.clip(apply_angle, -119, 119)
 
     values = {
       #"LKAS_ANGLE_ACTIVE": 2 if abs(CS.out.steeringAngleDeg) < 110.0 and lat_active else 1,
