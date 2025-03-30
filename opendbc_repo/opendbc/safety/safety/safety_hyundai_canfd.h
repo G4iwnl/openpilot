@@ -37,6 +37,8 @@ const CanMsg HYUNDAI_CANFD_HDA2_ALT_STEERING_TX_MSGS[] = {
 const CanMsg HYUNDAI_CANFD_HDA2_LONG_TX_MSGS[] = {
   {0x50, 0, 16},  // LKAS
   {0x1CF, 1, 8},  // CRUISE_BUTTON
+  {0x1CF, 2, 8},  // CRUISE_BUTTON
+  {0x1AA, 2, 16}, // CRUISE_ALT_BUTTONS , carrot
   {0x2A4, 0, 24}, // CAM_0x2A4
   {0x51, 0, 32},  // ADRV_0x51
   {0x730, 1, 8},  // tester present for ADAS ECU disable
@@ -339,6 +341,7 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
     }
   }
 
+#if 0
   // cruise buttons check
   if (addr == 0x1cf) {
     int button = GET_BYTE(to_send, 2) & 0x7U;
@@ -351,6 +354,7 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
       tx = false;
     }
   }
+#endif
 
   // UDS: only tester present ("\x02\x3E\x80\x00\x00\x00\x00\x00") allowed on diagnostics address
   if ((addr == 0x730) && hyundai_canfd_hda2) {
