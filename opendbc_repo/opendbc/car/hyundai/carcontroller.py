@@ -133,7 +133,7 @@ class CarController(CarControllerBase):
     apply_angle = float(np.clip(apply_angle, CS.out.steeringAngleDeg - error_limit, CS.out.steeringAngleDeg + error_limit))
 
     if CS.out.steeringPressed:
-      self.lkas_max_torque = max(self.lkas_max_torque - 20, 25)
+      self.lkas_max_torque = max(self.lkas_max_torque - 20, 5)
     else:
       #target_torque = np.interp(CS.out.vEgo, [0, 4], [40, self.angle_max_torque])
       target_torque = np.interp(abs(actuators.curvature), [0.0, 0.03, 0.06], [0.5 * self.angle_max_torque, 0.75 * self.angle_max_torque, self.angle_max_torque])
