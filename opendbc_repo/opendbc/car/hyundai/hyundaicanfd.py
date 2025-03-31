@@ -64,48 +64,12 @@ class CanBus(CanBusBase):
 # 201 - 2a0
 
 
-#                     EV6      K8   IONIQ5      CANIVAL
-#  OFF:GEN:HIGHWAY
-# LFA
-#  LKA_MODE          2:2:2    6:6:6      K8     0:0:0
-#                             > 7이 되는경우?
-#  VALUE27           0:0:0    0:3:3      K8     0:0:0
-#                    K8의 경우 차선이 없으면 0이됨... 카니발은?
-#  STEER_REQ         0:1:1    ==         ==     ==
-#                    속도가 0이더라도 STR_REQ를 0으로 하지 않음..
-#                    하지만, STR_REQ를 0으로 하는경우가 있음.. 이때  TORQUE_REQUEST를 0으로 하지 않음(VALUE104는 100으로 출력함)
-#  VALUE104          100:3:3  100:xx:xx  K8     100:xx:xx
-#                              xx: cluspeed + 60 (정확하지는 않지만 속도를 따라감)
-#  VALUE63           0:0:0    0:0:0      K8     0:0:0
-#  VALUE64           0:0:0    0:0:0      K8     0:0:0
-#  HAS_LANE_SAFETY   0:0:0    1:1:1      K8     0:0:0
-#          LaneSafety를 의미하는것은 아닌것 같음.
-
-# LKAS                                          LKAS_ALT
-#  LKA_MODE          2:2:2    6:6:6     K8      2:2:2
-#  VALUE27           0:0:3    0:3:3     0:0:0(?) 0:0:0
-#  LKA_ASSIST        0:0:0    0:0:0     K8      0:0:0
-#  VALUE64           0:0:0    100:xx:xx K8      0:0:0
-#  HAS_LANE_SAFETY   1:1:1    1:1:1     K8      0:0:0
-#  VALUE104          0:0:0    0:0:0     K8      0:0:0
-
-# 0x1ea
-#  HDA_MODE1         8:8:8    8:8:8     K8      8:8:8
-#  HDA_MODE2         0:0:1    0:0:1(??) 0:0:1   0:0:1
 
 def create_steering_messages_camera_scc(packer, CP, CAN, enabled, lat_active, apply_steer, CS, apply_angle, max_torque, angle_control):
 
   ret = []
   if angle_control:
-    # EV9(ADRV)
-    #203(0xcb), 298(0x12a), 352(0x160), 416(0x1a0), 282(0x11a), 437(0x1b5), 506(0x1fa),
-    #698(0x2ba), 353(0x161), 354(0x162), 442(0x1ba), 480(0x1e0), 485(0x1e5), 490(0x1ea),
-    #512(0x200), 837(0x345), 908(0x38c), 1402(0x57a), 474(0x1da)
-
-    #apply_angle = np.clip(apply_angle, -119, 119)
-
     values = {
-      #"LKAS_ANGLE_ACTIVE": 2 if abs(CS.out.steeringAngleDeg) < 110.0 and lat_active else 1,
       "LKAS_ANGLE_ACTIVE": 2 if lat_active else 1,
       "LKAS_ANGLE_CMD": -apply_angle,
       "LKAS_ANGLE_MAX_TORQUE": max_torque if lat_active else 0,
@@ -131,61 +95,19 @@ def create_steering_messages_camera_scc(packer, CP, CAN, enabled, lat_active, ap
     values = CS.lfa_info
     value_104 = 100 if not lat_active else 60 + CS.out.vEgo * 3.6
 
-    canival_mode = True
-    k8_mode = False
-    if True:
-      values = {}
-      values["LKA_MODE"] = 2
-      values["LKA_ICON"] = 2 if lat_active else 1
-      values["TORQUE_REQUEST"] = apply_steer
-      values["STEER_REQ"] = 1 if lat_active else 0
-      values["VALUE64"] = 0  # STEER_MODE, NEW_SIGNAL_2
-      values["HAS_LANE_SAFETY"] = 0
-      values["LKA_ACTIVE"] = 0 # NEW_SIGNAL_1
+    values = {}
+    values["LKA_MODE"] = 2
+    values["LKA_ICON"] = 2 if lat_active else 1
+    values["TORQUE_REQUEST"] = apply_steer
+    values["STEER_REQ"] = 1 if lat_active else 0
+    values["VALUE64"] = 0  # STEER_MODE, NEW_SIGNAL_2
+    values["HAS_LANE_SAFETY"] = 0
+    values["LKA_ACTIVE"] = 0 # NEW_SIGNAL_1
 
-      #values["VALUE63"] = 0
+    #values["VALUE63"] = 0
 
-      #values["VALUE104"] = 3 if lat_active else 100
-      #values["VALUE82_SET256"] = 0
-    elif canival_mode:
-      values["LKA_ICON"] = 2 if enabled else 1
-      values["TORQUE_REQUEST"] = apply_steer
-      values["STEER_REQ"] = 1 if lat_active else 0
-      values["VALUE63"] = 0
-      values["VALUE64"] = 0
-
-      values["LKA_MODE"] = 0
-      values["LKA_ACTIVE"] = 0
-      values["HAS_LANE_SAFETY"] = 0
-      values["VALUE104"] = 3 if lat_active else 100
-      values["VALUE82_SET256"] = 0
-      values["NEW_SIGNAL_1"] = 0
-    elif k8_mode: # ioniq5
-      values["LKA_ICON"] = 2 if enabled else 1
-      values["TORQUE_REQUEST"] = apply_steer
-      values["STEER_REQ"] = 1 if lat_active else 0
-      values["VALUE63"] = 0
-      values["VALUE64"] = 0
-
-      values["LKA_MODE"] = 6
-      values["LKA_ACTIVE"] = 3
-      values["HAS_LANE_SAFETY"] = 1
-      values["VALUE104"] = value_104
-      values["VALUE82_SET256"] = 0
-      values["NEW_SIGNAL_1"] = 0
-    else:
-      values["LKA_ICON"] = 2 if enabled else 1
-      values["TORQUE_REQUEST"] = apply_steer
-      values["STEER_REQ"] = 1 if lat_active else 0
-      values["VALUE63"] = 0
-      values["VALUE64"] = 0
-
-      values["LKA_MODE"] = 2
-      values["LKA_ACTIVE"] = 0
-      values["HAS_LANE_SAFETY"] = 0
-      values["VALUE104"] = 3 if enabled else 100
-      values["VALUE82_SET256"] = 256
-      values["NEW_SIGNAL_1"] = 0
+    #values["VALUE104"] = 3 if lat_active else 100
+    #values["VALUE82_SET256"] = 0
 
   ret.append(packer.make_can_msg("LFA", CAN.ECAN, values))
   return ret
@@ -449,6 +371,8 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
           values["ADAPTIVE_CRUISE_MAIN_BTN"] = 1
         elif LFA_trigger > 0:
           values["LFA_BTN"] = 1
+          values["COUNTER"] = (values["COUNTER"] + 1) % 256
+          ret.append(packer.make_can_msg(CS.cruise_btns_msg_canfd, CAN.ECAN, values))
         ret.append(packer.make_can_msg(CS.cruise_btns_msg_canfd, CAN.CAM, values))
         
 
