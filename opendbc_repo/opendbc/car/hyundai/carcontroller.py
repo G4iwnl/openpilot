@@ -377,13 +377,16 @@ class CarController(CarControllerBase):
     return can_sends
 
   def canfd_toggle_adas(self, CC, CS):
+    trigger_min = -100
+    trigger_start = 4
     if self.frame % 2 == 0:
-      self.MainMode_ACC_trigger = max(-50, self.MainMode_ACC_trigger - 1)
-      self.LFA_trigger = max(-50, self.LFA_trigger - 1)
-      if CC.enabled and not CS.MainMode_ACC and self.MainMode_ACC_trigger == -50:
-        self.MainMode_ACC_trigger = 2
-      elif CC.latActive and CS.LFA_ICON == 0 and self.LFA_trigger == -50 and self.MainMode_ACC_trigger == -50:
-        self.LFA_trigger = 2
+      self.MainMode_ACC_trigger = max(trigger_min, self.MainMode_ACC_trigger - 1)
+      self.LFA_trigger = max(trigger_min, self.LFA_trigger - 1)
+      if self.MainMode_ACC_trigger == trigger_min and self.LFA_trigger == trigger_min:
+        if CC.enabled and not CS.MainMode_ACC:
+          self.MainMode_ACC_trigger = trigger_start
+        elif CC.latActive and CS.LFA_ICON == 0:
+          self.LFA_trigger = trigger_start
 
   def canfd_speed_control_pcm(self, CC, CS, cruise_buttons_msg_values):
 
