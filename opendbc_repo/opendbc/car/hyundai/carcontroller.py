@@ -131,8 +131,8 @@ class CarController(CarControllerBase):
     #  apply_angle = CS.out.steeringAngleDeg
 
     # prevent steering error. carrot
-    error_limit = 5.0
-    apply_angle = float(np.clip(apply_angle, CS.out.steeringAngleDeg - error_limit, CS.out.steeringAngleDeg + error_limit))
+    #error_limit = 5.0
+    #apply_angle = float(np.clip(apply_angle, CS.out.steeringAngleDeg - error_limit, CS.out.steeringAngleDeg + error_limit))
 
     if CS.out.steeringPressed:
       self.lkas_max_torque = max(self.lkas_max_torque - 20, 5)
