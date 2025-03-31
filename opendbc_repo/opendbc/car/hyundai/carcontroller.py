@@ -114,6 +114,8 @@ class CarController(CarControllerBase):
 
     actuators = CC.actuators
     hud_control = CC.hudControl
+    
+    angle_control = self.CP.flags & HyundaiFlags.ANGLE_CONTROL
 
     # steering torque
     new_torque = int(round(actuators.torque * self.params.STEER_MAX))
@@ -133,6 +135,8 @@ class CarController(CarControllerBase):
     # prevent steering error. carrot
     #error_limit = 5.0
     #apply_angle = float(np.clip(apply_angle, CS.out.steeringAngleDeg - error_limit, CS.out.steeringAngleDeg + error_limit))
+    if angle_control:
+      apply_steer_req = CC.latActive
 
     if CS.out.steeringPressed:
       self.lkas_max_torque = max(self.lkas_max_torque - 20, 5)
@@ -213,7 +217,6 @@ class CarController(CarControllerBase):
       hda2_long = hda2 and self.CP.openpilotLongitudinalControl
 
       # steering control
-      angle_control = self.CP.flags & HyundaiFlags.ANGLE_CONTROL
       if camera_scc:
         can_sends.extend(hyundaicanfd.create_steering_messages_camera_scc(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_torque, CS, apply_angle, self.lkas_max_torque, angle_control))
       else:
