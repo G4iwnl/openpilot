@@ -382,7 +382,7 @@ class CarController(CarControllerBase):
     self.MainMode_ACC_trigger = max(trigger_min, self.MainMode_ACC_trigger - 1)
     self.LFA_trigger = max(trigger_min, self.LFA_trigger - 1)
     if self.MainMode_ACC_trigger == trigger_min and self.LFA_trigger == trigger_min:
-      if CC.enabled and not CS.MainMode_ACC and CS.vEgo > 3.:
+      if CC.enabled and not CS.MainMode_ACC and CS.out.vEgo > 3.:
         self.MainMode_ACC_trigger = trigger_start
       elif CC.latActive and CS.LFA_ICON == 0:
         self.LFA_trigger = trigger_start
