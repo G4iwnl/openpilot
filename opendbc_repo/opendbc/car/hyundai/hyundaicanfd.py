@@ -428,7 +428,7 @@ def create_tcs_messages(packer, CAN, CS):
     ret.append(packer.make_can_msg("TCS", CAN.CAM, values))
   return ret
 
-def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle, left_lane_warning, right_lane_warning, canfd_debug, MainMode_ACC_trigger):
+def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle, left_lane_warning, right_lane_warning, canfd_debug, MainMode_ACC_trigger, LFA_trigger):
   ret = []
 
   values = {
@@ -447,7 +447,10 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
         values = CS.cruise_buttons_msg
         if MainMode_ACC_trigger > 0:
           values["ADAPTIVE_CRUISE_MAIN_BTN"] = 1
+        elif LFA_trigger > 0:
+          values["LFA_BTN"] = 1
         ret.append(packer.make_can_msg(CS.cruise_btns_msg_canfd, CAN.CAM, values))
+        
 
     if frame % 5 == 0:
       if CP.extFlags & HyundaiExtFlags.CANFD_161.value:

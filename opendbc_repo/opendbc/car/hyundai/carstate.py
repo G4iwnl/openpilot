@@ -88,6 +88,7 @@ class CarState(CarStateBase):
 
     self.cruise_buttons_alt = False # for CASPER_EV
     self.MainMode_ACC = False
+    self.LFA_ICON = 0
 
   def update(self, can_parsers) -> structs.CarState:
     cp = can_parsers[Bus.pt]
@@ -386,6 +387,7 @@ class CarState(CarStateBase):
       ret.cruiseState.standstill = False
       if self.CP.flags & HyundaiFlags.CAMERA_SCC.value:
         self.MainMode_ACC = cp_cam.vl["SCC_CONTROL"]["MainMode_ACC"] == 1
+        self.LFA_ICON = cp_cam.vl["LFAHDA_CLUSTER"]["LFA_ICON"]
     else:
       cp_cruise_info = cp_cam if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else cp
       ret.cruiseState.enabled = cp_cruise_info.vl["SCC_CONTROL"]["ACCMode"] in (1, 2)
@@ -555,6 +557,7 @@ class CarState(CarStateBase):
       cam_messages += [
         ("SCC_CONTROL", 50),
         ("LFA", 20),
+        ("LFAHDA_CLUSTER", 20),
       ]
       if CP.flags & HyundaiFlags.CANFD_HDA2:
         cam_messages += [
