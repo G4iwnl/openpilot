@@ -561,7 +561,7 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
         if CS.hda_info_4a3 is not None:
           values = CS.hda_info_4a3
           #if canfd_debug == 1:
-          values["SIGNAL_0"] = 5
+          values["SIGNAL_0"] = 1
           values["SPEED_LIMIT"] = 80
           ret.append(packer.make_can_msg("HDA_INFO_4A3", CAN.CAM, values))
       if frame % 10 == 0:
