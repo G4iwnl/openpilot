@@ -382,7 +382,7 @@ class CarController(CarControllerBase):
       self.LFA_trigger = max(-50, self.LFA_trigger - 1)
       if CC.enabled and not CS.MainMode_ACC and self.MainMode_ACC_trigger == -50:
         self.MainMode_ACC_trigger = 2
-      elif CC.latActive and CS.LFA_ICON == 0 and self.MainMode_ACC_trigger == -50:
+      elif CC.latActive and CS.LFA_ICON == 0 and self.LFA_trigger == -50 and self.MainMode_ACC_trigger == -50:
         self.LFA_trigger = 2
 
   def canfd_speed_control_pcm(self, CC, CS, cruise_buttons_msg_values):
