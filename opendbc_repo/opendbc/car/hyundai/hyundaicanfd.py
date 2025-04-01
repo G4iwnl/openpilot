@@ -368,7 +368,8 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
       if CS.cruise_buttons_msg is not None:
         values = CS.cruise_buttons_msg
         if MainMode_ACC_trigger > 0:
-          values["ADAPTIVE_CRUISE_MAIN_BTN"] = 1
+          #values["ADAPTIVE_CRUISE_MAIN_BTN"] = 1
+          pass
         elif LFA_trigger > 0:
           pass
           #values["LFA_BTN"] = 1
