@@ -66,7 +66,6 @@ class CarState(CarStateBase):
     self.adrv_info_160 = None
     self.adrv_info_162 = None
     self.hda_info_4a3 = None
-    self.cluster_info_1fa = None
     self.new_msg_4b4 = None
     self.tcs_info_373 = None
     
@@ -416,8 +415,6 @@ class CarState(CarStateBase):
 
       if "HDA_INFO_4A3" in cp.vl:
         self.hda_info_4a3 = copy.copy(cp.vl.get("HDA_INFO_4A3", {}))
-      if "CLUSTER_SPEED_LIMIT" in cp.vl:
-        self.cluster_info_1fa = copy.copy(cp.vl.get("CLUSTER_SPEED_LIMIT", {}))
       if "NEW_MSG_4B4" in cp.vl:
         self.new_msg_4b4 = copy.copy(cp.vl.get("NEW_MSG_4B4", {}))
 

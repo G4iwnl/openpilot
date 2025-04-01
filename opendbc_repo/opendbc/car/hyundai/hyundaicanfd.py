@@ -489,14 +489,13 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
           values["SIGNAL_0"] = 1
           values["SPEED_LIMIT"] = 80
           ret.append(packer.make_can_msg("HDA_INFO_4A3", CAN.CAM, values))
+      # CLUSTER_SPEED_LIMIT는 의미없음.. 카메라가 만들어서 보내는듯...
+      # ADAS 콤마연결하면.. 0번에서.. (카메라혹은 다른곳에서)
+      # 카메라 콤마연결+롱컨개조 하면.. 2번에서 데이터가 나옴..(카메라혹은 ADAS)
       if frame % 10 == 0:
-        if CS.cluster_info_1fa is not None: 
-          values = CS.cluster_info_1fa
-          values["SPEED_LIMIT_1"] = 80
-          values["SPEED_LIMIT_2"] = 80
-          values["SPEED_LIMIT_3"] = 85
-          values["SPEED_LIMIT_4"] = 80
-          ret.append(packer.make_can_msg("CLUSTER_SPEED_LIMIT", CAN.CAM, values))
+        
+        pass
+        
   return ret
 
 def create_adrv_messages(CP, packer, CAN, frame):
