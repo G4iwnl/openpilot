@@ -498,8 +498,8 @@ static int hyundai_canfd_fwd_hook(int bus_num, int addr) {
 static safety_config hyundai_canfd_init(uint16_t param) {
 
   for (int i = 0; i < 32; i++) {
-    if (canfd_tx_addr[i] > 0) canfd_tx_timeout[i] = 1. / canfd_tx_hz[i] * 1000000 * 1.5;
-    if (canfd_tx_addr2[i] > 0) canfd_tx_timeout2[i] = 1. / canfd_tx_hz2[i] * 1000000 * 1.5;
+    if (canfd_tx_addr[i] > 0) canfd_tx_timeout[i] = 1. / canfd_tx_hz[i] * 1000000 + 20000;  // add 20ms for safety
+    if (canfd_tx_addr2[i] > 0) canfd_tx_timeout2[i] = 1. / canfd_tx_hz2[i] * 1000000 + 20000;  // add 20ms for safety
   }
 
   hyundai_common_init(param);
