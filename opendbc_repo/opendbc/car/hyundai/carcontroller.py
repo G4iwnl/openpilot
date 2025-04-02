@@ -80,7 +80,7 @@ class CarController(CarControllerBase):
     self.lkas_max_torque = 0
     self.angle_max_torque = 200
 
-    self.angle_torque = MyTorqueController(1/DT_CTRL, max_accel=300, down_step=3)
+    self.angle_torque = MyTorqueController(1/DT_CTRL, max_accel=800, down_step=3)
 
     self.canfd_debug = 0
     self.MainMode_ACC_trigger = 0
