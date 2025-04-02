@@ -80,8 +80,6 @@ class CarController(CarControllerBase):
     self.lkas_max_torque = 0
     self.angle_max_torque = 200
 
-    self.angle_torque = MyTorqueController(1/DT_CTRL, max_accel=300, down_step=3)
-
     self.canfd_debug = 0
     self.MainMode_ACC_trigger = 0
     self.LFA_trigger = 0
@@ -142,7 +140,6 @@ class CarController(CarControllerBase):
 
     if CS.out.steeringPressed:
       self.lkas_max_torque = max(self.lkas_max_torque - 20, 5)
-      self.angle_torque.set(self.lkas_max_torque)
     else:
       #angle_max_torque = np.interp(CS.out.vEgo, [0, 4], [40, self.angle_max_torque])
       #target_torque = np.interp(abs(actuators.curvature), [0.0, 0.003, 0.006], [0.5 * angle_max_torque, 0.75 * angle_max_torque, angle_max_torque])
@@ -152,18 +149,16 @@ class CarController(CarControllerBase):
       #  torque_ratio = np.interp(abs(self.apply_angle_last), [0, 1.0], [0.5, 1.0])
       #  target_torque = min(target_torque, self.angle_max_torque * torque_ratio)
 
-      #if self.lkas_max_torque > target_torque:
-      #  self.lkas_max_torque = max(self.lkas_max_torque - self.params.ANGLE_TORQUE_DOWN_RATE, target_torque)
-      #else:
-      #  self.lkas_max_torque = min(self.lkas_max_torque + self.params.ANGLE_TORQUE_UP_RATE, target_torque)
-      self.lkas_max_torque = self.angle_torque.update(target_torque)
+      if self.lkas_max_torque > target_torque:
+        self.lkas_max_torque = max(self.lkas_max_torque - self.params.ANGLE_TORQUE_DOWN_RATE, target_torque)
+      else:
+        self.lkas_max_torque = min(self.lkas_max_torque + self.params.ANGLE_TORQUE_UP_RATE, target_torque)
 
 
     if not CC.latActive:
       apply_angle = CS.out.steeringAngleDeg
       apply_torque = 0
       self.lkas_max_torque = 0
-      self.angle_torque.set(self.lkas_max_torque)
 
     self.apply_angle_last = apply_angle
 
@@ -506,52 +501,3 @@ class HyundaiJerk:
         self.cb_upper = np.clip(0.9 + accel * 0.2, 0, 1.2)
         self.cb_lower = np.clip(0.8 + accel * 0.2, 0, 1.2)
 
-
-class MyTorqueController:
-  def __init__(self, hz=100, max_accel=500, down_step=8):
-    self.hz = hz
-    self.max_accel = max_accel       # 최대 토크 가속도 (Nm/s²)
-    self.down_step = down_step       # 하강 속도 (Nm/step)
-    self.current = 0.0               # 현재 토크
-    self.target = 0.0                # 목표 토크
-    self.initial = 0.0               # 상승 시작 시 토크
-    self.step = 0                    # 현재 step
-    self.steps_total = 1             # 총 step 수 (S-curve 상승용)
-    self.mode = 'hold'               # 'up', 'down', 'hold'
-
-  def set(self, target):
-    self.target = target
-    self.current = target
-    self.step = 0
-    self.steps_total = 1
-    self.mode = 'hold'
-    
-  def update(self, target):
-    if target != self.target:
-      self.target = target
-      if target < self.current:
-        self.mode = 'down'       # 빠른 하강
-      else:
-        self.mode = 'up'         # 부드러운 상승
-        self.initial = self.current
-        total_change = abs(target - self.initial)
-        duration_sec = np.sqrt(total_change / self.max_accel) * 2
-        self.steps_total = max(1, int(duration_sec * self.hz))
-        self.step = 0
-
-    if self.mode == 'down':
-      self.current = max(self.current - self.down_step, self.target)
-      if self.current <= self.target:
-        self.mode = 'hold'
-
-    elif self.mode == 'up':
-      if self.step >= self.steps_total:
-        self.current = self.target
-        self.mode = 'hold'
-      else:
-        progress = self.step / self.steps_total
-        curve_ratio = (1 - np.cos(np.pi * progress)) / 2
-        self.current = self.initial + (self.target - self.initial) * curve_ratio
-        self.step += 1
-
-    return self.current
