@@ -141,7 +141,7 @@ class CarController(CarControllerBase):
       apply_steer_req = CC.latActive
 
     if CS.out.steeringPressed:
-      self.lkas_max_torque = max(self.lkas_max_torque - 20, 25)
+      self.lkas_max_torque = max(self.lkas_max_torque - 20, 5)
       self.angle_torque.set(self.lkas_max_torque)
     else:
       #angle_max_torque = np.interp(CS.out.vEgo, [0, 4], [40, self.angle_max_torque])
