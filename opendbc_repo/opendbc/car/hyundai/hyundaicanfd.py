@@ -435,6 +435,9 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
           if values["ALERTS_5"] in [1, 4, 5]:
             values["ALERTS_5"] = 0
 
+          if values["ALERTS_5"] in [11] and CS.softHoldActive > 0:
+            values["ALERTS_5"] = 0
+
           curvature = {
             i: (31 if i == -1 else 13 - abs(i + 15)) if i < 0 else 15 + i
             for i in range(-15, 16)
