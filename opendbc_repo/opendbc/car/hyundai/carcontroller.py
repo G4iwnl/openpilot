@@ -81,7 +81,7 @@ class CarController(CarControllerBase):
     self.lkas_max_torque = 0
     self.lkas_max_torque_in = 0
     self.angle_max_torque = 200
-    self.angle_average = MyMovingAverage(10)
+    self.angle_average = MyMovingAverage(20)
 
     self.canfd_debug = 0
     self.MainMode_ACC_trigger = 0
