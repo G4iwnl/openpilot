@@ -280,29 +280,31 @@ class CarState(CarStateBase):
     vEgoClu, aEgoClu = self.update_clu_speed_kf(ret.vEgoCluster)
     ret.vCluRatio = (ret.vEgo / vEgoClu) if (vEgoClu > 3. and ret.vEgo > 3.) else 1.0
 
-    self.totalDistance += ret.vEgo * DT_CTRL 
-    #ret.totalDistance = self.totalDistance
-
     if self.CP.extFlags & HyundaiExtFlags.NAVI_CLUSTER.value:
       speedLimit = cp.vl["Navi_HU"]["SpeedLim_Nav_Clu"]
       speedLimitCam = cp.vl["Navi_HU"]["SpeedLim_Nav_Cam"]
       ret.speedLimit = speedLimit if speedLimit < 255 and speedLimitCam == 1 else 0
-      if ret.speedLimit>0 and not ret.gasPressed:
-        if self.speedLimitDistance <= self.totalDistance:
-          self.speedLimitDistance = self.totalDistance + ret.speedLimit * 6  
-        self.speedLimitDistance = max(self.totalDistance+1, self.speedLimitDistance) 
-      else:
-        self.speedLimitDistance = self.totalDistance
-      ret.speedLimitDistance = self.speedLimitDistance - self.totalDistance
     else:
       ret.speedLimit = 0
       ret.speedLimitDistance = 0
+      
+    self.update_speed_limit(ret)
 
     if prev_main_buttons == 0 and self.main_buttons[-1] != 0:
       self.main_enabled = not self.main_enabled
 
     return ret
-
+  
+  def update_speed_limit(self, ret):
+    self.totalDistance += ret.vEgo * DT_CTRL 
+    if ret.speedLimit > 0 and not ret.gasPressed:
+      if self.speedLimitDistance <= self.totalDistance:
+        self.speedLimitDistance = self.totalDistance + ret.speedLimit * 6
+      self.speedLimitDistance = max(self.totalDistance + 1, self.speedLimitDistance)
+    else:
+      self.speedLimitDistance = self.totalDistance
+    ret.speedLimitDistance = self.speedLimitDistance - self.totalDistance
+    
   def update_canfd(self, can_parsers) -> structs.CarState:
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
@@ -415,6 +417,9 @@ class CarState(CarStateBase):
 
       if "HDA_INFO_4A3" in cp.vl:
         self.hda_info_4a3 = copy.copy(cp.vl.get("HDA_INFO_4A3", {}))
+        speedLimit = self.hda_info_4a3["SPEED_LIMIT"]
+        ret.speedLimit = speedLimit if speedLimit < 255 else 0
+        
       if "NEW_MSG_4B4" in cp.vl:
         self.new_msg_4b4 = copy.copy(cp.vl.get("NEW_MSG_4B4", {}))
 
@@ -473,6 +478,7 @@ class CarState(CarStateBase):
     vEgoClu, aEgoClu = self.update_clu_speed_kf(ret.vEgoCluster)
     ret.vCluRatio = (ret.vEgo / vEgoClu) if (vEgoClu > 3. and ret.vEgo > 3.) else 1.0
 
+    self.update_speed_limit(ret)
 
     ret.buttonEvents = [*create_button_events(self.cruise_buttons[-1], prev_cruise_buttons, BUTTONS_DICT),
                         *create_button_events(self.main_buttons[-1], prev_main_buttons, {1: ButtonType.mainCruise})]
