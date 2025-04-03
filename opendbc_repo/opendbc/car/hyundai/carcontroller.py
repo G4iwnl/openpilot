@@ -7,6 +7,7 @@ from opendbc.car.hyundai.carstate import CarState
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParams, CAR, CAN_GEARS, HyundaiExtFlags
 from opendbc.car.interfaces import CarControllerBase
+from openpilot.common.filter_simple import MyMovingAverage
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
@@ -79,6 +80,7 @@ class CarController(CarControllerBase):
     self.apply_angle_last = 0
     self.lkas_max_torque = 0
     self.angle_max_torque = 200
+    self.angle_average = MyMovingAverage(10)
 
     self.canfd_debug = 0
     self.MainMode_ACC_trigger = 0
@@ -140,6 +142,7 @@ class CarController(CarControllerBase):
 
     if CS.out.steeringPressed:
       self.lkas_max_torque = max(self.lkas_max_torque - 20, 25)
+      self.angle_average.set_all(self.lkas_max_torque)
     else:
       #angle_max_torque = np.interp(CS.out.vEgo, [0, 4], [40, self.angle_max_torque])
       #target_torque = np.interp(abs(actuators.curvature), [0.0, 0.003, 0.006], [0.5 * angle_max_torque, 0.75 * angle_max_torque, angle_max_torque])
@@ -151,8 +154,10 @@ class CarController(CarControllerBase):
 
       if self.lkas_max_torque > target_torque:
         self.lkas_max_torque = max(self.lkas_max_torque - self.params.ANGLE_TORQUE_DOWN_RATE, target_torque)
+        self.angle_average.set_all(self.lkas_max_torque)
       else:
-        self.lkas_max_torque = min(self.lkas_max_torque + self.params.ANGLE_TORQUE_UP_RATE, target_torque)
+        lkas_max_torque = min(self.lkas_max_torque + self.params.ANGLE_TORQUE_UP_RATE, target_torque)
+        self.lkas_max_torque = self.angle_average.process(lkas_max_torque)
 
 
     if not CC.latActive:
