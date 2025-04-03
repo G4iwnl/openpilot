@@ -102,8 +102,10 @@ class CarController(CarControllerBase):
         self.angle_max_torque = 200
       if steerDeltaUp > 0:
         self.params.STEER_DELTA_UP = steerDeltaUp
+        self.params.ANGLE_TORQUE_UP_RATE = steerDeltaUp
       if steerDeltaDown > 0:
         self.params.STEER_DELTA_DOWN = steerDeltaDown
+        self.params.ANGLE_TORQUE_DOWN_RATE = steerDeltaDown
       self.soft_hold_mode = 1 if params.get_int("AutoCruiseControl") > 1 else 2
       self.hapticFeedbackWhenSpeedCamera = int(params.get_int("HapticFeedbackWhenSpeedCamera"))
 
