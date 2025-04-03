@@ -102,10 +102,10 @@ class CarController(CarControllerBase):
         self.angle_max_torque = 200
       if steerDeltaUp > 0:
         self.params.STEER_DELTA_UP = steerDeltaUp
-        self.params.ANGLE_TORQUE_UP_RATE = steerDeltaUp
+        #self.params.ANGLE_TORQUE_UP_RATE = steerDeltaUp
       if steerDeltaDown > 0:
         self.params.STEER_DELTA_DOWN = steerDeltaDown
-        self.params.ANGLE_TORQUE_DOWN_RATE = steerDeltaDown
+        #self.params.ANGLE_TORQUE_DOWN_RATE = steerDeltaDown
       self.soft_hold_mode = 1 if params.get_int("AutoCruiseControl") > 1 else 2
       self.hapticFeedbackWhenSpeedCamera = int(params.get_int("HapticFeedbackWhenSpeedCamera"))
 
@@ -150,7 +150,7 @@ class CarController(CarControllerBase):
       #angle_max_torque = np.interp(CS.out.vEgo, [0, 4], [40, self.angle_max_torque])
       #target_torque = np.interp(abs(actuators.curvature), [0.0, 0.003, 0.006], [0.5 * angle_max_torque, 0.75 * angle_max_torque, angle_max_torque])
       #speed_multiplier = np.interp(CS.out.vEgo, [0, 15, 30], [1.0, 1.4, 1.8])
-      speed_multiplier = np.interp(CS.out.vEgo, [0, 30], [0.5, 1.0])
+      speed_multiplier = np.interp(CS.out.vEgo, [0, 5, 30], [0.2, 0.5, 1.0])
       target_torque = min(np.interp(abs(actuators.curvature), [0.0, 0.003, 0.01, 0.02, 0.03], [0.25, 0.50, 0.65, 0.75, 1.0]) * self.angle_max_torque * speed_multiplier, self.angle_max_torque)
       #if abs(self.apply_angle_last) < 1.0:
       #  torque_ratio = np.interp(abs(self.apply_angle_last), [0, 1.0], [0.5, 1.0])
