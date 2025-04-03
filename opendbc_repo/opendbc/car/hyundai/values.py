@@ -25,8 +25,8 @@ class CarControllerParams:
     #([0, 9, 16, 25], [1.6, 1.0, 0.6, 0.15]),
     #([0, 9, 16, 25], [2.0, 1.2, 0.8, 0.28]),
     # sunny's
-    ([0, 5, 25], [0.6, 0.4, 0.15]),
-    ([0, 5, 25], [1.0, 0.5, 0.26]),   
+    #([0, 5, 25], [0.6, 0.4, 0.15]),
+    #([0, 5, 25], [1.0, 0.5, 0.26]),   
   )
     # Stock LFA system is seen sending 250 max, but for LKAS events it's 175 max.
   # 250 can at least achieve 4 m/s^2, 80 corresponds to ~2.5 m/s^2
