@@ -149,7 +149,8 @@ class CarController(CarControllerBase):
     else:
       #angle_max_torque = np.interp(CS.out.vEgo, [0, 4], [40, self.angle_max_torque])
       #target_torque = np.interp(abs(actuators.curvature), [0.0, 0.003, 0.006], [0.5 * angle_max_torque, 0.75 * angle_max_torque, angle_max_torque])
-      speed_multiplier = np.interp(CS.out.vEgo, [0, 15, 30], [1.0, 1.4, 1.8])
+      #speed_multiplier = np.interp(CS.out.vEgo, [0, 15, 30], [1.0, 1.4, 1.8])
+      speed_multiplier = np.interp(CS.out.vEgo, [0, 30], [0.5, 1.0])
       target_torque = min(np.interp(abs(actuators.curvature), [0.0, 0.003, 0.01, 0.02, 0.03], [0.25, 0.50, 0.65, 0.75, 1.0]) * self.angle_max_torque * speed_multiplier, self.angle_max_torque)
       #if abs(self.apply_angle_last) < 1.0:
       #  torque_ratio = np.interp(abs(self.apply_angle_last), [0, 1.0], [0.5, 1.0])
