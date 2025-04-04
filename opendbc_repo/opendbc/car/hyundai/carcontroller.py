@@ -7,7 +7,7 @@ from opendbc.car.hyundai.carstate import CarState
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParams, CAR, CAN_GEARS, HyundaiExtFlags
 from opendbc.car.interfaces import CarControllerBase
-from openpilot.common.filter_simple import MyMovingAverage
+from opendbc.car.common.pid import PIDController
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
@@ -79,9 +79,7 @@ class CarController(CarControllerBase):
 
     self.apply_angle_last = 0
     self.lkas_max_torque = 0
-    self.lkas_max_torque_in = 0
     self.angle_max_torque = 200
-    self.angle_average = MyMovingAverage(20)
 
     self.canfd_debug = 0
     self.MainMode_ACC_trigger = 0
@@ -134,33 +132,23 @@ class CarController(CarControllerBase):
     apply_angle = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw, 
                                                CS.out.steeringAngleDeg, CC.latActive, self.params.ANGLE_LIMITS)
 
-    #if abs(CS.out.steeringTorqueEps) >= 100.0: # carrot. fault avoidance, test code
-    #  apply_angle = CS.out.steeringAngleDeg
-
-    # prevent steering error. carrot
-    #error_limit = 5.0
-    #apply_angle = float(np.clip(apply_angle, CS.out.steeringAngleDeg - error_limit, CS.out.steeringAngleDeg + error_limit))
     if angle_control:
       apply_steer_req = CC.latActive
 
     if CS.out.steeringPressed:
-      self.lkas_max_torque = self.lkas_max_torque_in = max(self.lkas_max_torque - 20, 25)
-      self.angle_average.set_all(self.lkas_max_torque_in)
+      self.lkas_max_torque = self.lkas_max_torque = max(self.lkas_max_torque - 20, 25)
     else:
-      #angle_max_torque = np.interp(CS.out.vEgo, [0, 4], [40, self.angle_max_torque])
-      #target_torque = np.interp(abs(actuators.curvature), [0.0, 0.003, 0.006], [0.5 * angle_max_torque, 0.75 * angle_max_torque, angle_max_torque])
-      #speed_multiplier = np.interp(CS.out.vEgo, [0, 15, 30], [1.0, 1.4, 1.8])
-      speed_multiplier = np.interp(CS.out.vEgo, [0, 5, 30], [0.2, 0.5, 1.0])
-      target_torque = min(np.interp(abs(actuators.curvature), [0.0, 0.003, 0.01, 0.02, 0.03], [0.25, 0.50, 0.65, 0.75, 1.0]) * self.angle_max_torque * speed_multiplier, self.angle_max_torque)
-      #if abs(self.apply_angle_last) < 1.0:
-      #  torque_ratio = np.interp(abs(self.apply_angle_last), [0, 1.0], [0.5, 1.0])
-      #  target_torque = min(target_torque, self.angle_max_torque * torque_ratio)
+      target_torque = np.interp(abs(actuators.curvature), [0.0, 0.003, 0.006], [0.5 * self.angle_max_torque, 0.75 * self.angle_max_torque, self.angle_max_torque])
 
-      if self.lkas_max_torque_in > target_torque:
-        self.lkas_max_torque_in = max(self.lkas_max_torque_in - self.params.ANGLE_TORQUE_DOWN_RATE, target_torque)
+      max_steering_tq = self.params.STEER_DRIVER_ALLOWANCE * 0.5
+      rate_ratio = max(0, max_steering_tq - abs(CS.out.steeringTorque)) / max_steering_tq
+      rate_up = self.params.ANGLE_TORQUE_UP_RATE * rate_ratio
+      rate_down = self.params.ANGLE_TORQUE_DOWN_RATE * rate_ratio
+
+      if self.lkas_max_torque > target_torque:
+        self.lkas_max_torque = max(self.lkas_max_torque - rate_down, target_torque)
       else:
-        self.lkas_max_torque_in = min(self.lkas_max_torque_in + self.params.ANGLE_TORQUE_UP_RATE, target_torque)
-      self.lkas_max_torque = self.angle_average.process(self.lkas_max_torque_in)
+        self.lkas_max_torque = min(self.lkas_max_torque + rate_up, target_torque)
 
 
     if not CC.latActive:
