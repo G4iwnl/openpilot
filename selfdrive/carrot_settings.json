@@ -275,11 +275,11 @@
       "unit": 1
     },
     {
-      "group": "조향튜닝",
+      "group": "쏘렌토",
       "name": "TempSteerDeltaUp",
       "title": "차선변경 임시 SteerDeltaUp(0)",
       "descr": "임시 SteerDeltaUp, Down을 모두 0으로하면 임시Delta를 사용하지 않습니다.",
-      "egroup": "LAT",
+      "egroup": "sorento",
       "etitle": "TempSteerDeltaUp(0)",
       "edescr": "",
       "min": 0,
@@ -288,11 +288,11 @@
       "unit": 1
     },
     {
-      "group": "조향튜닝",
+      "group": "쏘렌토",
       "name": "TempSteerDeltaDown",
       "title": "차선변경 임시 SteerDeltaDown(0)",
       "descr": "임시 SteerDeltaUp, Down을 모두 0으로하면 임시Delta를 사용하지 않습니다.",
-      "egroup": "LAT",
+      "egroup": "sorento",
       "etitle": "TempSteerDeltaUp(0)",
       "edescr": "",
       "min": 0,
@@ -587,11 +587,11 @@
       "unit": 1
     },
     {
-      "group": "조향일반",
+      "group": "쏘렌토",
       "name": "LaneChangeDelay",
       "title": "차선변경 딜레이 x 0.1s(0)",
       "descr": "x0.1초 단위입니다. 0으로하면 사용하지 않습니다.",
-      "egroup": "LATSET",
+      "egroup": "sorento",
       "etitle": "LaneChangeDelay x 0.1s",
       "edescr": "x0.1 metrics. 0: not use",
       "min": 0,
@@ -782,11 +782,11 @@
       "unit": 1
     },
     {
-      "group": "시작",
+      "group": "쏘렌토",
       "name": "HDPuse",
       "title": "HDP 사용(CCNC)",
       "descr": "1:APN사용시, 2:항상",
-      "egroup": "START",
+      "egroup": "sorento",
       "etitle": "Use HDP(CCNC)",
       "edescr": "1:While using APN, 2:Always",
       "min": 0,
@@ -795,11 +795,11 @@
       "unit": 1
     },
     {
-      "group": "시작",
+      "group": "쏘렌토",
       "name": "VisionOnly",
       "title": "비전온리",
       "descr": "0: 비전 + 레이더, 1: 비전온리",
-      "egroup": "START",
+      "egroup": "sorento",
       "etitle": "VisionOnly",
       "edescr": "0: Vision + Radar, 1: VisionOnly",
       "min": 0,
@@ -1446,11 +1446,11 @@
       "unit": 1
     },
     {
-      "group": "감속제어",
+      "group": "쏘렌토",
       "name": "DecreaseHDA",
       "title": "HDA자동 감속(CANFD신호 이용)",
       "descr": "0:사용안함, 1:APN없이 HDA로 감속",
-      "egroup": "SPEED",
+      "egroup": "sorento",
       "etitle": "HDA auto decrease",
       "edescr": "0:no, 1:yes",
       "min": 0,
