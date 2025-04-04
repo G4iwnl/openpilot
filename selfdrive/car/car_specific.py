@@ -167,8 +167,9 @@ class CarSpecificEvents:
 
     if CS.doorOpen:
       events.add(EventName.doorOpen)
-    if CS.seatbeltUnlatched:
-      events.add(EventName.seatbeltNotLatched)
+      # g4
+#    if CS.seatbeltUnlatched:
+#      events.add(EventName.seatbeltNotLatched)
     if CS.gearShifter == GearShifter.park:
       events.add(EventName.wrongGear)
     if CS.gearShifter == GearShifter.neutral:

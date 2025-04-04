@@ -52,6 +52,7 @@ class PowerMonitoring:
       # Low-pass battery voltage
       self.car_voltage_instant_mV = voltage
       self.car_voltage_mV = ((voltage * CAR_VOLTAGE_LOW_PASS_K) + (self.car_voltage_mV * (1 - CAR_VOLTAGE_LOW_PASS_K)))
+      self.params.put_nonblocking("CarBatteryVoltage", str(int(self.car_voltage_mV)))
       statlog.gauge("car_voltage", self.car_voltage_mV / 1e3)
 
       # Cap the car battery power and save it in a param every 10-ish seconds

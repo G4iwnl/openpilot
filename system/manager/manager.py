@@ -154,12 +154,17 @@ def get_default_params():
     ("DisableDM", "0"),
     ("RecordRoadCam", "0"),
     ("HDPuse", "0"),
+    ("LaneChangeDelay", "0"),
+    ("TempSteerDeltaDown", "0"),
+    ("TempSteerDeltaUp", "0"),
+    ("VisionOnly", "0"),
     ("CruiseOnDist", "400"),
     ("HotspotOnBoot", "0"),
     ("CustomSR", "0"),
     ("SteerRatioRate", "100"),
     ("NNFF", "0"),
     ("NNFFLite", "0"),
+    ("CarBatteryVoltage", "0"),
   ]
   return default_params
 

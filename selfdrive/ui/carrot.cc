@@ -1867,6 +1867,7 @@ public:
     float   xTarget = 0.0;
     int     myDrivingMode = 1;
 
+    float battery_voltage = 0.0f;
     QString szPosRoadName = "";
     int     nRoadLimitSpeed = 30;
     int     nGoPosDist = 0;
@@ -2360,6 +2361,11 @@ public:
                 nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BOTTOM);
                 ui_draw_text(s, x, nav_y, szPosRoadName.toStdString().c_str(), 35, COLOR_WHITE, BOLD, 3.0f, 8.0f);
             }
+
+            int battery_y = y + 140; // 시간 표시 위치(y) + 140px
+            QString bat_str = QString("%1 V").arg(battery_voltage, 0, 'f', 3);
+            NVGcolor bat_color = (battery_voltage < 11.8) ? COLOR_ORANGE : COLOR_GREEN;
+            ui_draw_text(s, x, battery_y, bat_str.toStdString().c_str(), 50, bat_color, BOLD);
         }
     }
     void drawConnInfo(const UIState* s) {
@@ -2465,6 +2471,16 @@ public:
             }
             if (cpu_size > 0) cpuUsage /= cpu_size;
         }
+
+        std::string battery_voltage_str = params.get("CarBatteryVoltage");
+        try {
+            battery_voltage = battery_voltage_str.empty() ? 0.0f : std::stof(battery_voltage_str) / 1000.0f;
+        } catch (const std::exception& e) {
+            battery_voltage = 0.0f; // 파싱 실패 시 기본값
+        }
+
+
+
     }
     void drawDeviceInfo(const UIState* s) {
 #ifdef WSL2

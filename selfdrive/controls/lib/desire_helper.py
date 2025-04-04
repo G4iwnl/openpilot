@@ -136,6 +136,11 @@ class DesireHelper:
 
     self.turn_desire_state = False
     self.desire_disable_count = 0
+    self.lane_change_delay_timer = 0.0
+# 기존 코드
+    self.orgsdu = None  # 추가
+    self.orgsdd = None  # 추가
+    
 
   def check_lane_state(self, modeldata):
     self.lane_width_left, self.distance_to_road_edge_left, self.distance_to_road_edge_left_far, lane_prob_left = calculate_lane_width(modeldata.laneLines[0], modeldata.laneLineProbs[0],
@@ -165,175 +170,229 @@ class DesireHelper:
     #print(f"desire_state = {desire_state}, turn_desire_state = {self.turn_desire_state}, disable_count = {self.desire_disable_count}")
 
   def update(self, carstate, modeldata, lateral_active, lane_change_prob, carrotMan, radarState):
-
+    # 파라미터 읽기 (변경: LaneChangeDelay 추가)
     self.laneChangeNeedTorque = self.params.get_int("LaneChangeNeedTorque")
+    lane_change_delay = self.params.get_int("LaneChangeDelay") * 0.1  # 0.1초 단위 변환
 
     self.carrot_lane_change_count = max(0, self.carrot_lane_change_count - 1)
 
     v_ego = carstate.vEgo
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
 
-    #### check driver's blinker state
+    # 블링커 상태 체크 (변경: 블링커 변경 감지 추가)
     driver_blinker_state = carstate.leftBlinker * 1 + carstate.rightBlinker * 2
     driver_blinker_changed = driver_blinker_state != self.driver_blinker_state
+    if driver_blinker_changed:
+        self.lane_change_delay_timer = 0.0  # 블링커 변경 시 타이머 리셋
     self.driver_blinker_state = driver_blinker_state
     driver_desire_enabled = driver_blinker_state in [BLINKER_LEFT, BLINKER_RIGHT]
     if self.laneChangeNeedTorque == 2:
-      driver_desire_enabled = False
+        driver_desire_enabled = False
 
-    ##### check ATC's blinker state
+    # ATC 블링커 상태 체크 (기존 코드 유지)
     atc_type = carrotMan.atcType
     atc_blinker_state = BLINKER_NONE
     if self.carrot_lane_change_count > 0:
-      atc_blinker_state = self.carrot_blinker_state
+        atc_blinker_state = self.carrot_blinker_state
     elif carrotMan.carrotCmdIndex != self.carrot_cmd_index_last and carrotMan.carrotCmd == "LANECHANGE":
-      self.carrot_cmd_index_last = carrotMan.carrotCmdIndex
-      self.carrot_lane_change_count = int(0.2 / DT_MDL)
-      #print(f"Desire lanechange: {carrotMan.carrotArg}")
-      self.carrot_blinker_state = BLINKER_LEFT if carrotMan.carrotArg == "LEFT" else BLINKER_RIGHT
+        self.carrot_cmd_index_last = carrotMan.carrotCmdIndex
+        self.carrot_lane_change_count = int(0.2 / DT_MDL)
+        self.carrot_blinker_state = BLINKER_LEFT if carrotMan.carrotArg == "LEFT" else BLINKER_RIGHT
     elif atc_type in ["turn left", "turn right"]:
-      if self.atc_active != 2:
-        below_lane_change_speed = True
-        self.lane_change_timer = 0.0
-        atc_blinker_state = BLINKER_LEFT if atc_type == "turn left" else BLINKER_RIGHT
-        self.atc_active = 1
-        self.blinker_ignore = False
+        if self.atc_active != 2:
+            below_lane_change_speed = True
+            self.lane_change_timer = 0.0
+            atc_blinker_state = BLINKER_LEFT if atc_type == "turn left" else BLINKER_RIGHT
+            self.atc_active = 1
+            self.blinker_ignore = False
     elif atc_type in ["fork left", "fork right", "atc left", "atc right"]:
-      if self.atc_active != 2:
-        below_lane_change_speed = False
-        atc_blinker_state = BLINKER_LEFT if atc_type in ["fork left", "atc left"] else BLINKER_RIGHT
-        self.atc_active = 1
+        if self.atc_active != 2:
+            below_lane_change_speed = False
+            atc_blinker_state = BLINKER_LEFT if atc_type in ["fork left", "atc left"] else BLINKER_RIGHT
+            self.atc_active = 1
     else:
-      self.atc_active = 0
+        self.atc_active = 0
+
     if driver_blinker_state != BLINKER_NONE and atc_blinker_state != BLINKER_NONE and driver_blinker_state != atc_blinker_state:
-      atc_blinker_state = BLINKER_NONE
-      self.atc_active = 2
+        atc_blinker_state = BLINKER_NONE
+        self.atc_active = 2
+
     atc_desire_enabled = atc_blinker_state in [BLINKER_LEFT, BLINKER_RIGHT]
 
     if driver_blinker_state == BLINKER_NONE:
-      self.blinker_ignore = False
+        self.blinker_ignore = False
     if self.blinker_ignore:
-      driver_blinker_state = BLINKER_NONE
-      atc_blinker_state = BLINKER_NONE
-      driver_desire_enabled = False
+        driver_blinker_state = BLINKER_NONE
+        atc_blinker_state = BLINKER_NONE
+        driver_desire_enabled = False
 
     if self.atc_type != atc_type:
-      atc_desire_enabled = False
+        atc_desire_enabled = False
 
     self.atc_type = atc_type
 
     desire_enabled = driver_desire_enabled or atc_desire_enabled
     blinker_state = driver_blinker_state if driver_desire_enabled else atc_blinker_state
     
-    ##### check lane state
+    # 차선 상태 체크 (기존 코드 유지)
     self.check_lane_state(modeldata)
     self.check_desire_state(modeldata)
     
     if desire_enabled:
-      lane_available = self.available_left_lane if blinker_state == BLINKER_LEFT else self.available_right_lane
-      edge_available = self.available_left_edge if blinker_state == BLINKER_LEFT else self.available_right_edge
-      lane_appeared = self.lane_exist_left_count.counter == int(0.2 / DT_MDL) if blinker_state == BLINKER_LEFT else self.lane_exist_right_count.counter == int(0.2 / DT_MDL)
+        lane_available = self.available_left_lane if blinker_state == BLINKER_LEFT else self.available_right_lane
+        edge_available = self.available_left_edge if blinker_state == BLINKER_LEFT else self.available_right_edge
+        lane_appeared = self.lane_exist_left_count.counter == int(0.2 / DT_MDL) if blinker_state == BLINKER_LEFT else self.lane_exist_right_count.counter == int(0.2 / DT_MDL)
 
-      radar = radarState.leadLeft if blinker_state == BLINKER_LEFT else radarState.leadRight
-      side_object_dist = radar.dRel + radar.vLead * 4.0 if radar.status else 255
-      object_detected = side_object_dist < v_ego * 3.0
-      self.object_detected_count = max(1, self.object_detected_count + 1) if object_detected else min(-1, self.object_detected_count - 1)
-
+        radar = radarState.leadLeft if blinker_state == BLINKER_LEFT else radarState.leadRight
+        side_object_dist = radar.dRel + radar.vLead * 4.0 if radar.status else 255
+        object_detected = side_object_dist < v_ego * 3.0
+        self.object_detected_count = max(1, self.object_detected_count + 1) if object_detected else min(-1, self.object_detected_count - 1)
     else:
-      lane_available = True
-      edge_available = True
-      lane_appeared = False
-      self.object_detected_count = 0
+        lane_available = True
+        edge_available = True
+        lane_appeared = False
+        self.object_detected_count = 0
 
     lane_availabled = not self.lane_available_last and lane_available
     edge_availabled = not self.edge_available_last and edge_available
     side_object_detected = self.object_detected_count > -0.3 / DT_MDL
 
     if self.carrot_lane_change_count > 0:
-      auto_lane_change_blocked = False
-      auto_lane_change_available = lane_available
+        auto_lane_change_blocked = False
+        auto_lane_change_available = lane_available
     else:
-      auto_lane_change_blocked = ((atc_blinker_state == BLINKER_LEFT) and (driver_blinker_state != BLINKER_LEFT))
-      auto_lane_change_available = not auto_lane_change_blocked and lane_availabled and edge_availabled and not side_object_detected
+        auto_lane_change_blocked = ((atc_blinker_state == BLINKER_LEFT) and (driver_blinker_state != BLINKER_LEFT))
+        auto_lane_change_available = not auto_lane_change_blocked and lane_availabled and edge_availabled and not side_object_detected
 
     if not lateral_active or self.lane_change_timer > LANE_CHANGE_TIME_MAX:
-      #print("Desire canceled")
-      self.lane_change_state = LaneChangeState.off
-      self.lane_change_direction = LaneChangeDirection.none
-      self.turn_direction = TurnDirection.none
+        self.lane_change_state = LaneChangeState.off
+        self.lane_change_direction = LaneChangeDirection.none
+        self.turn_direction = TurnDirection.none
+        
+        
+        if self.orgsdu is not None and self.orgsdd is not None:
+            Params().put("CustomSteerDeltaUp", self.orgsdu)
+            Params().put("CustomSteerDeltaDown", self.orgsdd)
+            self.orgsdu = None
+            self.orgsdd = None    
+        
+        
     elif desire_enabled and ((below_lane_change_speed and not carstate.standstill and self.enable_turn_desires) or self.turn_desire_state):
-      #print("Desire Turning")
-      self.lane_change_state = LaneChangeState.off
-      self.turn_direction = TurnDirection.turnLeft if blinker_state == BLINKER_LEFT else TurnDirection.turnRight
-      self.lane_change_direction = self.turn_direction #LaneChangeDirection.none
-      desire_enabled = False
-    elif self.desire_disable_count > 0: # Turn 후 일정시간 동안 차선변경 불가능
-      #print("Desire after turning")
-      self.lane_change_state = LaneChangeState.off
-      self.lane_change_direction = LaneChangeDirection.none
-      self.turn_direction = TurnDirection.none
+        self.lane_change_state = LaneChangeState.off
+        self.turn_direction = TurnDirection.turnLeft if blinker_state == BLINKER_LEFT else TurnDirection.turnRight
+        self.lane_change_direction = self.turn_direction
+        desire_enabled = False
+    elif self.desire_disable_count > 0:
+        self.lane_change_state = LaneChangeState.off
+        self.lane_change_direction = LaneChangeDirection.none
+        self.turn_direction = TurnDirection.none
     else:
-      #print(f"Desire LaneChange below={below_lane_change_speed}, lane_change_state={self.lane_change_state}, desire_enabled={desire_enabled},{self.prev_desire_enabled} ")
-      self.turn_direction = TurnDirection.none
-      # LaneChangeState.off
-      if self.lane_change_state == LaneChangeState.off and desire_enabled and not self.prev_desire_enabled and not below_lane_change_speed:
-        self.lane_change_state = LaneChangeState.preLaneChange
-        self.lane_change_ll_prob = 1.0
-
-      # LaneChangeState.preLaneChange
-      elif self.lane_change_state == LaneChangeState.preLaneChange:
-        # Set lane change direction
-        self.lane_change_direction = LaneChangeDirection.left if \
-          blinker_state == BLINKER_LEFT else LaneChangeDirection.right
-
-        torque_applied = carstate.steeringPressed and \
-                         ((carstate.steeringTorque > 0 and self.lane_change_direction == LaneChangeDirection.left) or
-                          (carstate.steeringTorque < 0 and self.lane_change_direction == LaneChangeDirection.right))
-
-        blindspot_detected = ((carstate.leftBlindspot and self.lane_change_direction == LaneChangeDirection.left) or
-                              (carstate.rightBlindspot and self.lane_change_direction == LaneChangeDirection.right))
-
-        if not desire_enabled or below_lane_change_speed:
-          self.lane_change_state = LaneChangeState.off
-          self.lane_change_direction = LaneChangeDirection.none
-        elif not blindspot_detected:
-          if self.laneChangeNeedTorque > 0:
-            if torque_applied and lane_available:
-              self.lane_change_state = LaneChangeState.laneChangeStarting
-          # 운전자가 깜박이켠경우는 바로 차선변경 시작
-          elif driver_desire_enabled and lane_available:
-            self.lane_change_state = LaneChangeState.laneChangeStarting
-          # ATC작동인경우 차선이 나타나거나 차선이 생기면 차선변경 시작
-          # lane_appeared: 차선이 생기는건 안함.. 위험.
-          elif torque_applied or auto_lane_change_available:
-            self.lane_change_state = LaneChangeState.laneChangeStarting
-
-      # LaneChangeState.laneChangeStarting
-      elif self.lane_change_state == LaneChangeState.laneChangeStarting:
-        # fade out over .5s
-        self.lane_change_ll_prob = max(self.lane_change_ll_prob - 2 * DT_MDL, 0.0)
-
-        # 98% certainty
-        if lane_change_prob < 0.02 and self.lane_change_ll_prob < 0.01:
-          self.lane_change_state = LaneChangeState.laneChangeFinishing
-
-      # LaneChangeState.laneChangeFinishing
-      elif self.lane_change_state == LaneChangeState.laneChangeFinishing:
-        # fade in laneline over 1s
-        self.lane_change_ll_prob = min(self.lane_change_ll_prob + DT_MDL, 1.0)
-
-        if self.lane_change_ll_prob > 0.99:
-          self.lane_change_direction = LaneChangeDirection.none
-          if desire_enabled:
+        self.turn_direction = TurnDirection.none
+        if self.lane_change_state == LaneChangeState.off and desire_enabled and not self.prev_desire_enabled and not below_lane_change_speed:
             self.lane_change_state = LaneChangeState.preLaneChange
-          else:
-            self.lane_change_state = LaneChangeState.off
+            self.lane_change_ll_prob = 1.0
+
+        elif self.lane_change_state == LaneChangeState.preLaneChange:
+            self.lane_change_direction = LaneChangeDirection.left if blinker_state == BLINKER_LEFT else LaneChangeDirection.right
+
+            torque_applied = carstate.steeringPressed and \
+                           ((carstate.steeringTorque > 0 and self.lane_change_direction == LaneChangeDirection.left) or
+                            (carstate.steeringTorque < 0 and self.lane_change_direction == LaneChangeDirection.right))
+
+            blindspot_detected = ((carstate.leftBlindspot and self.lane_change_direction == LaneChangeDirection.left) or
+                                (carstate.rightBlindspot and self.lane_change_direction == LaneChangeDirection.right))
+
+            if not desire_enabled or below_lane_change_speed:
+                self.lane_change_state = LaneChangeState.off
+                self.lane_change_direction = LaneChangeDirection.none
+            elif not blindspot_detected:
+                # 변경된 차선 변경 시작 로직 (핵심 변경 부분)
+                apply_delay = lane_change_delay > 0 and self.laneChangeNeedTorque == 0
+                
+                if apply_delay:  # 딜레이 모드
+                    if driver_desire_enabled:
+                        self.lane_change_delay_timer += DT_MDL
+                    
+                    if self.lane_change_delay_timer >= lane_change_delay and lane_available:
+                        
+                        
+                        
+                        newdu = Params().get_int("TempSteerDeltaUp")
+                        newdd = Params().get_int("TempSteerDeltaDown")
+                        if not (newdu == 0 and newdd == 0):
+                            if self.orgsdu is None:  # 최초 1회만 읽기
+                                self.orgsdu = Params().get("CustomSteerDeltaUp")
+                                self.orgsdd = Params().get("CustomSteerDeltaDown")
+                            print(f"차선변경시작 \n SteerDelta 변경: {newdu}/{newdd} → 복원 예정: {self.orgsdu}/{self.orgsdd}")
+                            Params().put("CustomSteerDeltaUp", str(newdu))
+                            Params().put("CustomSteerDeltaDown", str(newdd))
+                        self.lane_change_state = LaneChangeState.laneChangeStarting
+                        
+                        self.lane_change_delay_timer = 0.0
+                elif self.laneChangeNeedTorque > 0:  # 토크 모드
+                    if torque_applied and lane_available:
+                        
+                        
+                        newdu = Params().get_int("TempSteerDeltaUp")
+                        newdd = Params().get_int("TempSteerDeltaDown")
+                        if not (newdu == 0 and newdd == 0):
+                            if self.orgsdu is None:  # 최초 1회만 읽기
+                                self.orgsdu = Params().get("CustomSteerDeltaUp")
+                                self.orgsdd = Params().get("CustomSteerDeltaDown")
+                            print(f"차선변경시작 \n SteerDelta 변경: {newdu}/{newdd} → 복원 예정: {self.orgsdu}/{self.orgsdd}")
+                            Params().put("CustomSteerDeltaUp", str(newdu))
+                            Params().put("CustomSteerDeltaDown", str(newdd))
+                        self.lane_change_state = LaneChangeState.laneChangeStarting
+                            
+                            
+                else:  # 즉시 모드
+                    if (driver_desire_enabled and lane_available) or torque_applied or auto_lane_change_available:
+                        
+                        newdu = Params().get_int("TempSteerDeltaUp")
+                        newdd = Params().get_int("TempSteerDeltaDown")
+                        if not (newdu == 0 and newdd == 0):
+                            if self.orgsdu is None:  # 최초 1회만 읽기
+                                self.orgsdu = Params().get("CustomSteerDeltaUp")
+                                self.orgsdd = Params().get("CustomSteerDeltaDown")
+                            print(f"차선변경시작 \n SteerDelta 변경: {newdu}/{newdd} → 복원 예정: {self.orgsdu}/{self.orgsdd}")
+                            Params().put("CustomSteerDeltaUp", str(newdu))
+                            Params().put("CustomSteerDeltaDown", str(newdd))
+                        self.lane_change_state = LaneChangeState.laneChangeStarting
+
+        elif self.lane_change_state == LaneChangeState.laneChangeStarting:
+            self.lane_change_ll_prob = max(self.lane_change_ll_prob - 2 * DT_MDL, 0.0)
+
+            if lane_change_prob < 0.02 and self.lane_change_ll_prob < 0.01:
+                self.lane_change_state = LaneChangeState.laneChangeFinishing
+                if self.orgsdu is not None and self.orgsdd is not None:
+                    Params().put("CustomSteerDeltaUp", self.orgsdu)
+                    Params().put("CustomSteerDeltaDown", self.orgsdd)
+                    self.orgsdu = None
+                    self.orgsdd = None
+
+        elif self.lane_change_state == LaneChangeState.laneChangeFinishing:
+            self.lane_change_ll_prob = min(self.lane_change_ll_prob + DT_MDL, 1.0)
+
+            if self.lane_change_ll_prob > 0.99:
+                self.lane_change_direction = LaneChangeDirection.none
+                if desire_enabled:
+                    self.lane_change_state = LaneChangeState.preLaneChange
+                else:
+                    self.lane_change_state = LaneChangeState.off
+                    try:
+                        if self.orgsdu is not None and self.orgsdd is not None:
+                            Params().put("CustomSteerDeltaUp", self.orgsdu)
+                            Params().put("CustomSteerDeltaDown", self.orgsdd)
+                            self.orgsdu = None
+                            self.orgsdd = None
+                    except:
+                        pass
+                    
 
     if self.lane_change_state in (LaneChangeState.off, LaneChangeState.preLaneChange):
-      self.lane_change_timer = 0.0
+        self.lane_change_timer = 0.0
     else:
-      self.lane_change_timer += DT_MDL
-
+        self.lane_change_timer += DT_MDL
 
     self.lane_available_last = lane_available
     self.edge_available_last = edge_available
@@ -342,26 +401,40 @@ class DesireHelper:
     steering_pressed = carstate.steeringPressed and \
                      ((carstate.steeringTorque < 0 and blinker_state == BLINKER_LEFT) or (carstate.steeringTorque > 0 and blinker_state == BLINKER_RIGHT))
     if steering_pressed and self.lane_change_state != LaneChangeState.off:
-      self.lane_change_direction = LaneChangeDirection.none
-      self.lane_change_state = LaneChangeState.off
-      self.blinker_ignore = True
+        self.lane_change_direction = LaneChangeDirection.none
+        self.lane_change_state = LaneChangeState.off
+        self.blinker_ignore = True
 
     if self.turn_direction != TurnDirection.none:
-      self.desire = TURN_DESIRES[self.turn_direction]
-      self.lane_change_direction = self.turn_direction
+        self.desire = TURN_DESIRES[self.turn_direction]
+        self.lane_change_direction = self.turn_direction
     else:
-      self.desire = DESIRES[self.lane_change_direction][self.lane_change_state]
+        self.desire = DESIRES[self.lane_change_direction][self.lane_change_state]
 
-    #print(f"desire = {self.desire}")
-    #self.desireLog = f"desire = {self.desire}"
-    self.desireLog = f"rlane={self.distance_to_road_edge_right:.1f},{self.distance_to_road_edge_right_far:.1f}"
+    # 디버깅 정보 추가 (변경)
+    self.desireLog = f"delay={self.lane_change_delay_timer:.1f}/{lane_change_delay:.1f}"
 
-    # Send keep pulse once per second during LaneChangeStart.preLaneChange
     if self.lane_change_state in (LaneChangeState.off, LaneChangeState.laneChangeStarting):
-      self.keep_pulse_timer = 0.0
-    elif self.lane_change_state == LaneChangeState.preLaneChange:
-      self.keep_pulse_timer += DT_MDL
-      if self.keep_pulse_timer > 1.0:
         self.keep_pulse_timer = 0.0
-      elif self.desire in (log.Desire.keepLeft, log.Desire.keepRight):
-        self.desire = log.Desire.none
+    elif self.lane_change_state == LaneChangeState.preLaneChange:
+        self.keep_pulse_timer += DT_MDL
+        if self.keep_pulse_timer > 1.0:
+            self.keep_pulse_timer = 0.0
+        elif self.desire in (log.Desire.keepLeft, log.Desire.keepRight):
+            self.desire = log.Desire.none
+            
+            
+    if self.lane_change_state == LaneChangeState.off and (self.orgsdu is not None or self.orgsdd is not None):
+        try:
+            if not (self.orgsdu is None and self.orgsdd is None):  # 명시적 None 체크
+                current_sdu = Params().get("CustomSteerDeltaUp")
+                current_sdd = Params().get("CustomSteerDeltaDown")
+                
+                # 현재 값과 원본 값이 다를 때만 복원 (불필요한 쓰기 방지)
+                if current_sdu != self.orgsdu or current_sdd != self.orgsdd:
+                    Params().put("CustomSteerDeltaUp", self.orgsdu)
+                    Params().put("CustomSteerDeltaDown", self.orgsdd)
+                self.orgsdu = None
+                self.orgsdd = None
+        except Exception as e:
+            print(f"SteerDelta 복원 실패: {e}")
