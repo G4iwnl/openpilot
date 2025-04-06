@@ -16,12 +16,12 @@ class CarControllerParams:
   ACCEL_MAX = 2.5 # m/s
   ANGLE_LIMITS: AngleSteeringLimits = AngleSteeringLimits(
     # LKAS angle command is unlimited, but LFA is limited to 176.7 deg (but does not fault if requesting above)
-    180,  # deg
+    180, # deg
     # stock comma's
     #([0, 9, 16, 25], [1.4, 0.6, 0.4, 0.1]),
     #([0, 9, 16, 25], [1.4, 0.7, 0.5, 0.1]),
-    ([0, 9, 16, 25], [1.2, 1.2, 0.8, 0.2]),
-    ([0, 9, 16, 25], [1.8, 1.8, 1.0, 0.35]),
+    ([0, 9, 16, 25], [1.4, 1.2, 0.8, 0.2]),
+    ([0, 9, 16, 25], [2.0, 1.6, 1.0, 0.35]),
     #([0, 9, 16, 25], [1.6, 1.0, 0.6, 0.15]),
     #([0, 9, 16, 25], [2.0, 1.2, 0.8, 0.28]),
     # sunny's
