@@ -1461,7 +1461,7 @@
     {
       "group": "쏘렌토",
       "name": "DecreaseHDA",
-      "title": "HDA자동 감속(CANFD신호 이용) [아직 작동 X]",
+      "title": "HDA자동 감속(CANFD신호 이용) [테스트중]",
       "descr": "0:사용안함, 1:APN없이 HDA로 감속",
       "egroup": "sorento",
       "etitle": "HDA auto decrease",
