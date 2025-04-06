@@ -1452,7 +1452,7 @@
       "descr": "0:신호감지안함, 1:신호정지만 감지, 2:신호정지/출발 모두",
       "egroup": "SPEED",
       "etitle": "TrafficLightDetectMode",
-      "edescr": "0:None,1:Stopping only, 2:Stop & Go",
+      "edescr": "0:None, 1:Stopping only, 2:Stop & Go",
       "min": 0,
       "max": 2,
       "default": 2,

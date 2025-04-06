@@ -458,7 +458,8 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
             i: (31 if i == -1 else 13 - abs(i + 15)) if i < 0 else 15 + i
             for i in range(-15, 16)
           }
-          values["LANELINE_CURVATURE"] = curvature.get(max(-15, min(round(disp_angle / 2), 15)), 14)
+          cmax = Params().get_int("CanfdDebug")
+          values["LANELINE_CURVATURE"] = curvature.get(max(-cmax, min(round(disp_angle / 2), cmax)), 14)
           if hud_control.leftLaneDepart:
             values["LANELINE_LEFT"] = 4 if (frame // 50) % 2 == 0 else 1
           else:
