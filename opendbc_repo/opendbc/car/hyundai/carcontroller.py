@@ -20,6 +20,15 @@ MAX_ANGLE = 85
 MAX_ANGLE_FRAMES = 89
 MAX_ANGLE_CONSECUTIVE_FRAMES = 2
 
+vibrate_intervals = [
+  (0.0, 0.5),
+  (1.0, 1.5),
+  #(2.5, 3.0),
+  #(3.5, 4.0),
+  (5.0, 5.5),
+  (6.0, 6.5),
+  (7.5, 8.0),
+]
 
 def process_hud_alert(enabled, fingerprint, hud_control):
   sys_warning = (hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw))
@@ -135,12 +144,15 @@ class CarController(CarControllerBase):
       apply_steer_req = CC.latActive
 
     if CS.out.steeringPressed:
+      self.apply_angle_last = actuators.steeringAngleDeg
       self.lkas_max_torque = self.lkas_max_torque = max(self.lkas_max_torque - 20, 25)
     else:
-      target_torque = np.interp(abs(actuators.curvature), [0.0, 0.003, 0.006], [0.5 * self.angle_max_torque, 0.75 * self.angle_max_torque, self.angle_max_torque])
 
-      max_steering_tq = self.params.STEER_DRIVER_ALLOWANCE * 0.5
-      rate_ratio = max(0, max_steering_tq - abs(CS.out.steeringTorque)) / max_steering_tq
+      angle_max_torque = np.interp(CS.out.vEgo * CV.MS_TO_KPH, [0, 20, 30], [25, 50, self.angle_max_torque])
+      target_torque = np.interp(abs(actuators.curvature), [0.0, 0.003, 0.006], [0.5 * angle_max_torque, 0.75 * angle_max_torque, angle_max_torque])
+
+      max_steering_tq = self.params.STEER_DRIVER_ALLOWANCE * 0.7
+      rate_ratio = max(20, max_steering_tq - abs(CS.out.steeringTorque)) / max_steering_tq
       rate_up = self.params.ANGLE_TORQUE_UP_RATE * rate_ratio
       rate_down = self.params.ANGLE_TORQUE_DOWN_RATE * rate_ratio
 
@@ -151,7 +163,6 @@ class CarController(CarControllerBase):
 
 
     if not CC.latActive:
-      apply_angle = CS.out.steeringAngleDeg
       apply_torque = 0
       self.lkas_max_torque = 0
 
@@ -172,17 +183,21 @@ class CarController(CarControllerBase):
                                                                                       hud_control)
 
     active_speed_decel = hud_control.activeCarrot == 3 # 3: Speed Decel
-    if active_speed_decel and self.speedCameraHapticEndFrame < 0: # 과속카메라 감속시작
+    if active_speed_decel and self.speedCameraHapticEndFrame < 0: # 과속카메라 감속시작      
       self.speedCameraHapticEndFrame = self.frame + (8.0 / DT_CTRL)  #8초간 켜줌.
     elif not active_speed_decel:
       self.speedCameraHapticEndFrame = -1
 
-    if self.frame < self.speedCameraHapticEndFrame and self.hapticFeedbackWhenSpeedCamera>0:
-      haptic_stop = (self.speedCameraHapticEndFrame - (5.0/DT_CTRL)) < self.frame < (self.speedCameraHapticEndFrame - (3.0/DT_CTRL))
-      if not haptic_stop:
-         left_lane_warning = right_lane_warning = self.hapticFeedbackWhenSpeedCamera
-      if self.speedCameraHapticEndFrame < self.frame:
-        self.speedCameraHapticEndFrame = -1
+    if 0 <= self.speedCameraHapticEndFrame - self.frame < int(8.0 / DT_CTRL) and self.hapticFeedbackWhenSpeedCamera > 0:
+      t = (self.frame - (self.speedCameraHapticEndFrame - int(8.0 / DT_CTRL))) * DT_CTRL
+
+      for start, end in vibrate_intervals:
+        if start <= t < end:
+          left_lane_warning = right_lane_warning = self.hapticFeedbackWhenSpeedCamera
+          break
+
+    if self.frame >= self.speedCameraHapticEndFrame:
+      self.speedCameraHapticEndFrame = -1
 
     if self.frame % self.blinking_frame == 0:
       self.blinking_signal = True
@@ -226,7 +241,7 @@ class CarController(CarControllerBase):
 
       # LFA and HDA icons
       if self.frame % 5 == 0 and (not hda2 or hda2_long):
-        can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, self.CAN, CC.enabled))
+        can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, CS, self.CAN, CC.enabled))
 
       # blinkers
       if hda2 and self.CP.flags & HyundaiFlags.ENABLE_BLINKERS:
@@ -495,4 +510,3 @@ class HyundaiJerk:
         self.jerk_l = min(max(1.0, -self.jerk * 2.0), jerk_max_l)
         self.cb_upper = np.clip(0.9 + accel * 0.2, 0, 1.2)
         self.cb_lower = np.clip(0.8 + accel * 0.2, 0, 1.2)
-
