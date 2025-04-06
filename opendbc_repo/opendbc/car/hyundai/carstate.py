@@ -60,6 +60,8 @@ class CarState(CarStateBase):
 
     self.cruise_info = {}
     self.lfa_info = {}
+    self.lfa_alt_info = {}
+    self.lfahda_cluster_info = {}
     self.adrv_info_161 = None
     self.adrv_info_200 = None
     self.adrv_info_1ea = None
@@ -389,6 +391,8 @@ class CarState(CarStateBase):
       if self.CP.flags & HyundaiFlags.CAMERA_SCC.value:
         self.MainMode_ACC = cp_cam.vl["SCC_CONTROL"]["MainMode_ACC"] == 1
         self.LFA_ICON = cp_cam.vl["LFAHDA_CLUSTER"]["LFA_ICON"]
+        if self.MainMode_ACC:
+          self.main_enabled = True
     else:
       cp_cruise_info = cp_cam if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else cp
       ret.cruiseState.enabled = cp_cruise_info.vl["SCC_CONTROL"]["ACCMode"] in (1, 2)
@@ -402,6 +406,9 @@ class CarState(CarStateBase):
     if self.CP.flags & HyundaiFlags.CAMERA_SCC.value:
       self.cruise_info = copy.copy(cp_cam.vl["SCC_CONTROL"])
       self.lfa_info = copy.copy(cp_cam.vl["LFA"])
+      if self.CP.flags & HyundaiFlags.ANGLE_CONTROL.value:
+        self.lfa_alt_info = copy.copy(cp_cam.vl["LFA_ALT"])
+      self.lfahda_cluster_info = copy.copy(cp_cam.vl["LFAHDA_CLUSTER"])
 
       if self.CP.extFlags & HyundaiExtFlags.CANFD_161.value:
         if "ADRV_0x161" in cp_cam.vl:
@@ -417,9 +424,8 @@ class CarState(CarStateBase):
 
       if "HDA_INFO_4A3" in cp.vl:
         self.hda_info_4a3 = copy.copy(cp.vl.get("HDA_INFO_4A3", {}))
-        speedLimit = self.hda_info_4a3["SPEED_LIMIT"]
-        if Params().get_int("DecreaseHDA") == 1:
-          ret.speedLimit = speedLimit if speedLimit < 255 else 0
+        #speedLimit = self.hda_info_4a3["SPEED_LIMIT"]
+        #ret.speedLimit = speedLimit if speedLimit < 255 else 0 # 안됨.. 고속화도로나 고속도로는....
         
       if "NEW_MSG_4B4" in cp.vl:
         self.new_msg_4b4 = copy.copy(cp.vl.get("NEW_MSG_4B4", {}))
@@ -574,6 +580,10 @@ class CarState(CarStateBase):
         cam_messages += [
           ("ADRV_0x161", 20),
           ("ADRV_0x162", 20),
+        ]
+      if CP.flags & HyundaiFlags.ANGLE_CONTROL:
+        cam_messages += [
+          ("LFA_ALT", 100),
         ]
 
     #if not (CP.flags & HyundaiFlags.CANFD_HDA2) and CP.extFlags & HyundaiExtFlags.NAVI_CLUSTER.value and (CP.extFlags & HyundaiExtFlags.SCC_BUS2.value) :
