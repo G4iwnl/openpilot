@@ -108,12 +108,13 @@ def create_steering_messages_camera_scc(frame, packer, CP, CAN, CC, lat_active, 
     #values["VALUE104"] = 3 if lat_active else 100
     #values["VALUE82_SET256"] = 0
 
-  
-    values = CS.mdps_info
-   if frame % 1000 < 5:
-     values["STEERING_COL_TORQUE"] += 100
-   ret.append(packer.make_can_msg("MDPS", CAN.CAM, values))
-   
+  ret.append(packer.make_can_msg("LFA", CAN.ECAN, values))
+
+  values = CS.mdps_info
+  if frame % 1000 < 5:
+    values["STEERING_COL_TORQUE"] += 100
+  ret.append(packer.make_can_msg("MDPS", CAN.CAM, values))
+
   return ret
 
 def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_steer, apply_angle, max_torque, angle_control):
@@ -396,15 +397,14 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
           lat_active = CC.latActive
           nav_active = hud_control.activeCarrot > 1
           
-          # g4
+          # hdpuse carrot
           hdp_use = int(Params().get("HDPuse"))
           hdp_active = False
           if hdp_use == 1:
               hdp_active = cruise_enabled and nav_active
           elif hdp_use == 2:
               hdp_active = cruise_enabled
-              
-          # g4
+          # hdpuse carrot
 
           values = CS.adrv_info_161
           #print("adrv_info_161 = ", CS.adrv_info_161)
