@@ -429,8 +429,8 @@ class CarState(CarStateBase):
         self.hda_info_4a3 = copy.copy(cp.vl.get("HDA_INFO_4A3", {}))
         speedLimit = self.hda_info_4a3["SPEED_LIMIT"]
         if Params().get_int("DecreaseHDA") == 1:
-          if self.hda_info_4a3["NEW_SIGNAL_7"] == 17:
-            ret.speedLimit = speedLimit if speedLimit < 255 else 0
+          #if self.hda_info_4a3["NEW_SIGNAL_7"] == 17:
+          ret.speedLimit = speedLimit if speedLimit < 255 else 0
         
       if "NEW_MSG_4B4" in cp.vl:
         self.new_msg_4b4 = copy.copy(cp.vl.get("NEW_MSG_4B4", {}))
