@@ -1,6 +1,6 @@
 <div align="center" style="text-align: center;">
 
-<h1>carrotpilot</h1>
+<h1>SorentoPilot ( g4 )</h1>
 
 <h3>
   <a href="https://g4iwnl.gitbook.io/carrotpilot">Manual</a>
