@@ -166,6 +166,7 @@ def get_default_params():
     ("NNFF", "0"),
     ("NNFFLite", "0"),
     ("CarBatteryVoltage", "0"),
+    ("hudfrontboxshape", "0"),
   ]
   return default_params
 
