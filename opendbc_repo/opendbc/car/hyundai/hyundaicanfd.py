@@ -69,11 +69,10 @@ def create_steering_messages_camera_scc(packer, CP, CAN, CC, lat_active, apply_s
 
   ret = []
   if angle_control:
-    values = {
-      "LKAS_ANGLE_ACTIVE": 2 if CC.latActive else 1,
-      "LKAS_ANGLE_CMD": -apply_angle,
-      "LKAS_ANGLE_MAX_TORQUE": max_torque if CC.latActive else 0,
-    }
+    values = {} #CS.lfa_alt_info
+    values["LKAS_ANGLE_ACTIVE"] = 2 if CC.latActive else 1
+    values["LKAS_ANGLE_CMD"] = -apply_angle
+    values["LKAS_ANGLE_MAX_TORQUE"] = max_torque if CC.latActive else 0
     ret.append(packer.make_can_msg("LFA_ALT", CAN.ECAN, values))
 
     values = CS.lfa_info
@@ -214,11 +213,10 @@ def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
   })
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
 
-def create_lfahda_cluster(packer, CAN, enabled):
-  values = {
-    "HDA_ICON": 1 if enabled else 0,
-    "LFA_ICON": 2 if enabled else 0,
-  }
+def create_lfahda_cluster(packer, CS, CAN, enabled):
+  values = CS.lfahda_cluster_info
+  values["HDA_ICON"] = 1 if enabled else 0
+  values["LFA_ICON"] = 2 if enabled else 0
   return packer.make_can_msg("LFAHDA_CLUSTER", CAN.ECAN, values)
 
 
@@ -243,7 +241,8 @@ def create_acc_control_scc2(packer, CAN, enabled, accel_last, accel, stopping, g
   #values["JerkUpperLimit"] = 3.0
   values["JerkLowerLimit"] = jerk_l if enabled else 1
   values["JerkUpperLimit"] = jerk_u
-  values["DISTANCE_SETTING"] = hud_control.leadDistanceBars # + 5
+  #values["DISTANCE_SETTING"] = hud_control.leadDistanceBars # + 5
+  values["DISTANCE_SETTING"] = hud_control.leadDistanceBars  + 5
 
   #values["ACC_ObjDist"] = 1
   #values["ObjValid"] = 0
@@ -252,7 +251,10 @@ def create_acc_control_scc2(packer, CAN, enabled, accel_last, accel, stopping, g
   #values["SET_ME_3"] = 0x3  # objRelsped와 충돌
   values["SET_ME_TMP_64"] = 0x64
 
-  values["NEW_SIGNAL_3"] = 1 if hud_control.leadVisible else 0 #0  # 1이되면 차선이탈방지 알람이 뜬다고...  => 앞에 차가 있으면, 1또는 2가 됨. 전방두부?
+  hud_lead_info = 0
+  if hud_control.leadVisible:
+    hud_lead_info = 1 if values["ACC_ObjRelSpd"] > 0 else 2
+  values["HUD_LEAD_INFO"] = hud_lead_info
 
   #values["NEW_SIGNAL_4"] = 2
 
@@ -263,7 +265,7 @@ def create_acc_control_scc2(packer, CAN, enabled, accel_last, accel, stopping, g
   values["CRUISE_STANDSTILL"] = 1 if stopping and CS.out.aEgo > -0.1 else 0
 
   values["NEW_SIGNAL_2"] = 0    # 이것이 켜지면 가속을 안하는듯함.
-  #values["NEW_SIGNAL_4"] = 0    # signal2와 조합하여.. 앞차와 깜박이등이 인식되는것 같음..
+  values["NEW_SIGNAL_4"] = 9 if hud_control.leadVisible else 0
   values["NEW_SIGNAL_1"] = 0    # 눈이 묻어 레이더오류시... 2가 됨. 이때 가속을 안함...
 
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
@@ -430,8 +432,9 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
             
           values["SOUNDS_2"] = 0  # 2: STEER중지 경고후에도 사운드가 나옴.
 
-          if values["ALERTS_3"] in [17, 26]:
+          if values["ALERTS_3"] in [3, 4, 17, 26]:
             values["ALERTS_3"] = 0
+            values["SOUNDS_3"] = 0
 
           if values["ALERTS_5"] in [1, 4, 5]:
             values["ALERTS_5"] = 0
@@ -478,6 +481,10 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
 
       if CS.adrv_info_162 is not None:
         values = CS.adrv_info_162
+        if hud_control.leadDistance > 0:
+          values["FF_DETECT_POS"] = hud_control.leadDistance
+          #values["FF_DETECT"] = 11 if hud_control.leadRelSpeed > -0.1 else 12  # bicycle
+          values["FF_DETECT"] = 5 if hud_control.leadRelSpeed > -0.1 else 6 # truck
         values["FAULT_FCA"] = 0
         values["FAULT_LSS"] = 0
         values["FAULT_LFA"] = 0
