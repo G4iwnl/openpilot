@@ -68,6 +68,18 @@ class CanBus(CanBusBase):
 def create_steering_messages_camera_scc(frame, packer, CP, CAN, CC, lat_active, apply_steer, CS, apply_angle, max_torque, angle_control):
 
   ret = []
+  values = CS.mdps_info
+  if angle_control:
+    if CS.lfa_alt_info is not None:
+      values["LFA2_ACTIVE"] = CS.lfa_alt_info["LKAS_ANGLE_ACTIVE"]
+  else:
+    if CS.lfa_info is not None:
+      values["LKA_ACTIVE"] = 1 if CS.lfa_info["STEER_REQ"] == 1 else 0
+      
+  if frame % 1000 < 40:
+    values["STEERING_COL_TORQUE"] += 100
+  ret.append(packer.make_can_msg("MDPS", CAN.CAM, values))
+
   if angle_control:
     values = {} #CS.lfa_alt_info
     values["LKAS_ANGLE_ACTIVE"] = 2 if CC.latActive else 1
@@ -109,11 +121,6 @@ def create_steering_messages_camera_scc(frame, packer, CP, CAN, CC, lat_active, 
     #values["VALUE82_SET256"] = 0
 
   ret.append(packer.make_can_msg("LFA", CAN.ECAN, values))
-
-  values = CS.mdps_info
-  if frame % 1000 < 40:
-    values["STEERING_COL_TORQUE"] += 100
-  ret.append(packer.make_can_msg("MDPS", CAN.CAM, values))
 
   return ret
 
@@ -490,6 +497,7 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
           values["FF_DETECT_POS"] = hud_control.leadDistance
           values["FF_DETECT"] = 11 if hud_control.leadRelSpeed > -0.1 else 12  # bicycle
           #values["FF_DETECT"] = 5 if hud_control.leadRelSpeed > -0.1 else 6 # truck
+
         """
         values["FAULT_FCA"] = 0
         values["FAULT_LSS"] = 0
@@ -508,8 +516,13 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
         if CS.hda_info_4a3 is not None:
           values = CS.hda_info_4a3
           #if canfd_debug == 1:
-          values["SIGNAL_0"] = 1
+          values["SIGNAL_0"] = 5
+          values["NEW_SIGNAL_1"] = 4
           values["SPEED_LIMIT"] = 80
+          values["NEW_SIGNAL_3"] = 154
+          values["NEW_SIGNAL_4"] = 9
+          values["NEW_SIGNAL_5"] = 0
+          values["NEW_SIGNAL_6"] = 256
           ret.append(packer.make_can_msg("HDA_INFO_4A3", CAN.CAM, values))
       # CLUSTER_SPEED_LIMIT는 의미없음.. 카메라가 만들어서 보내는듯...
       # ADAS 콤마연결하면.. 0번에서.. (카메라혹은 다른곳에서)
