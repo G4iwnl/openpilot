@@ -53,7 +53,6 @@ class Controls:
     self.steer_limited_by_controls = False
     self.desired_curvature = 0.0
 
-
     self.LoC = LongControl(self.CP)
     self.VM = VehicleModel(self.CP)
     self.LaC: LatControl
@@ -133,6 +132,7 @@ class Controls:
     steer_actuator_delay = self.params.get_float("SteerActuatorDelay") * 0.01
     carrot_lat_control2 = self.params.get_int("CarrotLatControl2")
     lat_actuator_delay = steer_actuator_delay
+    
     if carrot_lat_control2 == 0:
       if self.params.get_bool("CarrotLatControl"):        
         desired_curvature = get_lag_adjusted_curvature(self.CP, CS.vEgo, lat_plan.psis, lat_plan.curvatures, lat_actuator_delay)
@@ -149,8 +149,8 @@ class Controls:
         desired_curvature = 0.0
       else:
         curvature = np.interp(steer_actuator_delay + t_since_plan, ModelConstants.T_IDXS[:CONTROL_N], lat_plan.curvatures)
-        alpha = carrot_lat_control2 * 0.001
-        desired_curvature = curvature * alpha + self.desired_curvature * (1.0 - alpha)
+        curvature_alpha = carrot_lat_control2 * 0.001
+        desired_curvature = curvature * curvature_alpha + self.desired_curvature * (1.0 - curvature_alpha)
       self.desired_curvature, curvature_limited = clip_curvature(CS.vEgo, self.desired_curvature, desired_curvature, lp.roll)
 
     actuators.curvature = float(self.desired_curvature)
