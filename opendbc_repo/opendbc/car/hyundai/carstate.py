@@ -71,6 +71,7 @@ class CarState(CarStateBase):
     self.new_msg_4b4 = None
     self.tcs_info_373 = None
     self.mdps_info = {}
+    self.steer_touch_info = {}
     
     self.cruise_buttons_msg = None
     self.hda2_lfa_block_msg = None
@@ -361,6 +362,8 @@ class CarState(CarStateBase):
     #ret.steerFaultTemporary = False
 
     self.mdps_info = copy.copy(cp.vl["MDPS"])
+    if self.CP.extFlags & HyundaiExtFlags.STEER_TOUCH:
+      self.steer_touch_info = copy.copy(cp.vl["STEER_TOUCH_2AF"])
 
     # carrot test
     left_blinker_lamp = cp.vl["BLINKERS"]["LEFT_LAMP"] or cp.vl["BLINKERS"]["LEFT_LAMP_ALT"] 
@@ -427,10 +430,10 @@ class CarState(CarStateBase):
 
       if "HDA_INFO_4A3" in cp.vl:
         self.hda_info_4a3 = copy.copy(cp.vl.get("HDA_INFO_4A3", {}))
-        speedLimit = self.hda_info_4a3["SPEED_LIMIT"]
         if Params().get_int("DecreaseHDA") == 1:
           if int(self.hda_info_4a3["NEW_SIGNAL_4"]) == 17:
-            ret.speedLimit = speedLimit if speedLimit < 255 else 0
+            speedLimit = self.hda_info_4a3["SPEED_LIMIT"]
+            ret.speedLimit = speedLimit if speedLimit < 255 else 0 # 안됨.. 고속화도로나 고속도로는....
         
       if "NEW_MSG_4B4" in cp.vl:
         self.new_msg_4b4 = copy.copy(cp.vl.get("NEW_MSG_4B4", {}))

@@ -600,19 +600,6 @@
       "unit": 1
     },
     {
-      "group": "쏘렌토",
-      "name": "hudfrontboxshape",
-      "title": "hud 전방두부 모양(0)",
-      "descr": "0: car, 1: bicycle, 2: truck, 3: person, 4: cone",
-      "egroup": "sorento",
-      "etitle": "Hud Front Box Shape(0)",
-      "edescr": "0: car, 1: bicycle, 2: truck, 3: person, 4: cone",
-      "min": 0,
-      "max": 4,
-      "default": 0,
-      "unit": 1
-    },
-    {
       "group": "조향일반",
       "name": "AutoTurnControl",
       "title": "ATC: AutoTurnControl(0)",
@@ -1259,7 +1246,7 @@
       "etitle": "CANFD Debug(0)",
       "edescr": "",
       "min": -1,
-      "max": 3,
+      "max": 128,
       "default": 0,
       "unit": 1
     },

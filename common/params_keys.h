@@ -160,7 +160,6 @@ inline static std::unordered_map<std::string, uint32_t> keys = {
     {"TempSteerDeltaUp", PERSISTENT },
     {"TempSteerDeltaDown", PERSISTENT },
     {"LaneChangeDelay", PERSISTENT },
-    {"hudfrontboxshape", PERSISTENT },
 
     {"AutoCruiseControl", PERSISTENT},
     {"CruiseEcoControl", PERSISTENT},

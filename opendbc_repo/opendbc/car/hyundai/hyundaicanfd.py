@@ -4,6 +4,19 @@ from opendbc.car import CanBusBase
 from opendbc.car.hyundai.values import HyundaiFlags, HyundaiExtFlags
 from openpilot.common.params import Params
 
+def hyundai_crc8(data: bytes) -> int:
+  poly = 0x2F
+  crc = 0xFF
+
+  for byte in data:
+    crc ^= byte
+    for _ in range(8):
+      if crc & 0x80:
+        crc = ((crc << 1) ^ poly) & 0xFF
+      else:
+        crc = (crc << 1) & 0xFF
+
+  return crc ^ 0xFF
 
 class CanBus(CanBusBase):
   def __init__(self, CP, fingerprint=None, lka_steering=None) -> None:
@@ -79,6 +92,19 @@ def create_steering_messages_camera_scc(frame, packer, CP, CAN, CC, lat_active, 
   if frame % 1000 < 40:
     values["STEERING_COL_TORQUE"] += 100
   ret.append(packer.make_can_msg("MDPS", CAN.CAM, values))
+
+  if frame % 10 == 0:
+    if CP.extFlags & HyundaiExtFlags.STEER_TOUCH:
+      values = CS.steer_touch_info
+      if frame % 1000 < 40:
+        values["TOUCH_DETECT"] = 3
+        values["TOUCH1"] = 50
+        values["TOUCH2"] = 50
+        values["CHECKSUM_"] = 0
+        dat = packer.make_can_msg("STEER_TOUCH_2AF", 0, values)[1]
+        values["CHECKSUM_"] = hyundai_crc8(dat[1:8])
+
+      ret.append(packer.make_can_msg("STEER_TOUCH_2AF", CAN.CAM, values))
 
   if angle_control:
     values = {} #CS.lfa_alt_info
@@ -254,8 +280,8 @@ def create_acc_control_scc2(packer, CAN, enabled, accel_last, accel, stopping, g
   #values["JerkUpperLimit"] = 3.0
   values["JerkLowerLimit"] = jerk_l if enabled else 1
   values["JerkUpperLimit"] = jerk_u
-  #values["DISTANCE_SETTING"] = hud_control.leadDistanceBars # + 5
-  values["DISTANCE_SETTING"] = hud_control.leadDistanceBars  + 5
+  values["DISTANCE_SETTING"] = hud_control.leadDistanceBars # + 5
+  #values["DISTANCE_SETTING"] = hud_control.leadDistanceBars  + 5
 
   #values["ACC_ObjDist"] = 1
   #values["ObjValid"] = 0
@@ -458,7 +484,7 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
             i: (31 if i == -1 else 13 - abs(i + 15)) if i < 0 else 15 + i
             for i in range(-15, 16)
           }
-          values["LANELINE_CURVATURE"] = curvature.get(max(-15, min(round(disp_angle / 2), 15)), 14)
+          values["LANELINE_CURVATURE"] = curvature.get(max(-15, min(round(disp_angle / 3), 15)), 14)
           if hud_control.leftLaneDepart:
             values["LANELINE_LEFT"] = 4 if (frame // 50) % 2 == 0 else 1
           else:
@@ -495,16 +521,11 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
         values = CS.adrv_info_162
         if hud_control.leadDistance > 0:
           values["FF_DETECT_POS"] = hud_control.leadDistance
-          if Params().get_int("hudfrontboxshape") == 0:
-            values["FF_DETECT"] = 3 if hud_control.leadRelSpeed > -0.1 else 4  # car
-          elif Params().get_int("hudfrontboxshape") == 1:
-            values["FF_DETECT"] = 11 if hud_control.leadRelSpeed > -0.1 else 12  # bicycle
-          elif Params().get_int("hudfrontboxshape") == 2:            
-            values["FF_DETECT"] = 5 if hud_control.leadRelSpeed > -0.1 else 6 # truck
-          elif Params().get_int("hudfrontboxshape") == 3:            
-            values["FF_DETECT"] = 7 if hud_control.leadRelSpeed > -0.1 else 8 # person
-          elif Params().get_int("hudfrontboxshape") == 4:            
-            values["FF_DETECT"] = 13 if hud_control.leadRelSpeed > -0.1 else 14 # cone
+          #values["FF_DETECT"] = 11 if hud_control.leadRelSpeed > -0.1 else 12  # bicycle
+          #values["FF_DETECT"] = 5 if hud_control.leadRelSpeed > -0.1 else 6 # truck
+          ff_type = 3 if hud_control.leadRadar == 1 else 9
+          values["FF_DETECT"] = ff_type if hud_control.leadRelSpeed > -0.1 else ff_type + 1
+          values["FF_DETECT_LAT"] = - hud_control.leadDPath
 
 
         """
