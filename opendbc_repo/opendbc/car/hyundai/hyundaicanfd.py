@@ -523,9 +523,9 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
           values["FF_DETECT_POS"] = hud_control.leadDistance
           #values["FF_DETECT"] = 11 if hud_control.leadRelSpeed > -0.1 else 12  # bicycle
           #values["FF_DETECT"] = 5 if hud_control.leadRelSpeed > -0.1 else 6 # truck
-          ff_type = 3 if hud_control.leadRadar == 1 else 9
+          ff_type = 3 if hud_control.leadRadar == 1 else 13
           values["FF_DETECT"] = ff_type if hud_control.leadRelSpeed > -0.1 else ff_type + 1
-          values["FF_DETECT_LAT"] = - hud_control.leadDPath
+          #values["FF_DETECT_LAT"] = - hud_control.leadDPath
 
 
         """
@@ -537,7 +537,7 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
         values["FAULT_HDA"] = 0
         """
 
-        if left_lane_warning or right_lane_warning:
+        if (left_lane_warning and not CS.out.leftBlinker) or (right_lane_warning and not CS.out.rightBlinker):
           values["VIBRATE"] = 1
         ret.append(packer.make_can_msg("ADRV_0x162", CAN.ECAN, values))
 

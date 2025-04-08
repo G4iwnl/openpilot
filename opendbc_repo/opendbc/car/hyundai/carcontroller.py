@@ -351,7 +351,7 @@ class CarController(CarControllerBase):
       if CS.cruise_buttons_msg is not None and self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
         try:
           cruise_buttons_msg_values = {key: value[0] for key, value in CS.cruise_buttons_msg.items()}
-        except IndexError:
+        except: #IndexError:
           #print("IndexError....")
           cruise_buttons_msg_values = None
           self.cruise_buttons_msg_cnt += 1

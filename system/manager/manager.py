@@ -130,6 +130,7 @@ def get_default_params():
     ("MaxAngleFrames", "89"),
     ("CarrotLatControl", "0"),
     ("CarrotLatControl2", "0"),
+    ("CarrotLatControl3", "0"),
     ("DampingFactor", "0"),
     ("LateralTorqueCustom", "0"),
     ("LateralTorqueAccelFactor", "2500"),
