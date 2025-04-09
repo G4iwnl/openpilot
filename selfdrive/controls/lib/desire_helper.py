@@ -319,6 +319,7 @@ class DesireHelper:
                         
                         newdu = Params().get_int("TempSteerDeltaUp")
                         newdd = Params().get_int("TempSteerDeltaDown")
+                        Params().put("DisableUpdates", "1")
                         if not (newdu == 0 and newdd == 0):
                             if self.orgsdu is None:  # 최초 1회만 읽기
                                 self.orgsdu = Params().get("CustomSteerDeltaUp")
@@ -335,6 +336,7 @@ class DesireHelper:
                         
                         newdu = Params().get_int("TempSteerDeltaUp")
                         newdd = Params().get_int("TempSteerDeltaDown")
+                        Params().put("DisableUpdates", "1")
                         if not (newdu == 0 and newdd == 0):
                             if self.orgsdu is None:  # 최초 1회만 읽기
                                 self.orgsdu = Params().get("CustomSteerDeltaUp")
@@ -350,6 +352,7 @@ class DesireHelper:
                         
                         newdu = Params().get_int("TempSteerDeltaUp")
                         newdd = Params().get_int("TempSteerDeltaDown")
+                        Params().put("DisableUpdates", "1")
                         if not (newdu == 0 and newdd == 0):
                             if self.orgsdu is None:  # 최초 1회만 읽기
                                 self.orgsdu = Params().get("CustomSteerDeltaUp")
