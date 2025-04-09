@@ -298,6 +298,7 @@ def create_acc_control_scc2(packer, CAN, enabled, accel_last, accel, stopping, g
   #values["NEW_SIGNAL_4"] = 2
 
   values["ZEROS_5"] = 0
+  values["ZEROS_9"] = 0   # 전방주의(24)... 포함. 여러가지 알람이 있을듯..
 
   values["TARGET_DISTANCE"] = CS.out.vEgo * 1.0 + 4.0
 
@@ -470,11 +471,11 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
             
           values["SOUNDS_2"] = 0  # 2: STEER중지 경고후에도 사운드가 나옴.
 
-          if values["ALERTS_3"] in [3, 4, 17, 26]:
+          if values["ALERTS_3"] in [3, 4, 13, 17, 26, 7, 8, 9, 10]:
             values["ALERTS_3"] = 0
             values["SOUNDS_3"] = 0
 
-          if values["ALERTS_5"] in [1, 4, 5]:
+          if values["ALERTS_5"] in [1, 2, 4, 5]:
             values["ALERTS_5"] = 0
 
           if values["ALERTS_5"] in [11] and CS.softHoldActive == 0:

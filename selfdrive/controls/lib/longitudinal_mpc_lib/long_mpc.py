@@ -435,8 +435,7 @@ class LongitudinalMpc:
       x[:], v[:], a[:], j[:] = 0.0, 0.0, 0.0, 0.0
 
       safe_distance = lead_0_obstacle[0] - get_safe_obstacle_distance(v_ego, comfort_brake, stop_distance)
-      lead_danger_factor = np.interp(safe_distance, [-30.0, 0.0], [1.0, LEAD_DANGER_FACTOR])
-      self.lead_danger_factor = self.lead_danger_factor * 0.9 + lead_danger_factor * 0.1
+      self.lead_danger_factor = np.interp(safe_distance, [-30.0, 0.0], [0.9, LEAD_DANGER_FACTOR])
       self.params[:,5] = self.lead_danger_factor
       
     elif mode == 'blended':

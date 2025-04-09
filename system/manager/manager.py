@@ -128,8 +128,6 @@ def get_default_params():
     ("AdjustLaneTime", "13"),
     ("LaneChangeNeedTorque", "0"),
     ("MaxAngleFrames", "89"),
-    ("CarrotLatControl", "0"),
-    ("CarrotLatControl2", "0"),
     ("CarrotLatControl3", "0"),
     ("DampingFactor", "0"),
     ("LateralTorqueCustom", "0"),

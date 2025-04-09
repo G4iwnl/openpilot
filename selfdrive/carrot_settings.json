@@ -105,32 +105,6 @@
       "default": 100,
       "unit": 10
     },
-    {
-      "group": "조향튜닝",
-      "name": "CarrotLatControl",
-      "title": "*당근조향제어(0)",
-      "descr": "0:Default, 1:당근제어",
-      "egroup": "LAT",
-      "etitle": "*Carrot method lateral control(0)",
-      "edescr": "0:Default, 1:LatMpc use",
-      "min": 0,
-      "max": 90,
-      "default": 1,
-      "unit": 1
-    },
-    {
-      "group": "조향튜닝",
-      "name": "CarrotLatControl2",
-      "title": "*당근조향제어2(0)",
-      "descr": "사용안함, 100~500:당근제어2",
-      "egroup": "LAT",
-      "etitle": "*CarrotLatControl2(0)",
-      "edescr": "0:Not used, 100~500: CarrotLat filter.",
-      "min": 0,
-      "max": 1000,
-      "default": 1,
-      "unit": 1
-    },
      {
        "group": "조향튜닝",
        "name": "CarrotLatControl3",
