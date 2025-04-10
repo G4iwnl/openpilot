@@ -153,7 +153,6 @@ def get_default_params():
     ("DisableDM", "0"),
     ("RecordRoadCam", "0"),
     ("HDPuse", "0"),
-    ("Softhold", "0"),
     ("DecreaseHDA", "0"),
     ("LaneChangeDelay", "0"),
     ("TempSteerDeltaDown", "0"),
