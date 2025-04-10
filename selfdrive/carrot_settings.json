@@ -263,19 +263,6 @@
     },
     {
       "group": "쏘렌토",
-      "name": "Softhold",
-      "title": "Softhold 모드 사용",
-      "descr": "",
-      "egroup": "sorento",
-      "etitle": "softhold",
-      "edescr": "",
-      "min": 0,
-      "max": 1,
-      "default": 0,
-      "unit": 1
-    },
-    {
-      "group": "쏘렌토",
       "name": "TempSteerDeltaUp",
       "title": "차선변경 임시 SteerDeltaUp(0)",
       "descr": "임시 SteerDeltaUp, Down을 모두 0으로하면 임시Delta를 사용하지 않습니다.",
