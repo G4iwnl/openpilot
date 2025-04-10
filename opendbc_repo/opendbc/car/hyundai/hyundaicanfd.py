@@ -612,6 +612,9 @@ def create_adrv_messages(CP, packer, CAN, frame):
 
 ## carrot
 def alt_cruise_buttons(packer, CP, CAN, buttons, cruise_btns_msg, cnt):
+  # 크루즈 끄기 버튼(4)이 눌리면 LFA도 함께 끔
+  if buttons == 4:  # 4는 크루즈 끄기 버튼
+    cruise_btns_msg["LFA_BTN"] = 0  # LFA도 끔
   cruise_btns_msg["CRUISE_BUTTONS"] = buttons
   cruise_btns_msg["COUNTER"] = (cruise_btns_msg["COUNTER"] + 1 + cnt) % 256
   bus = CAN.ECAN if CP.flags & HyundaiFlags.CANFD_HDA2 else CAN.CAM
