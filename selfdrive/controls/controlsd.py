@@ -132,7 +132,7 @@ class Controls:
     steer_actuator_delay = self.params.get_float("SteerActuatorDelay") * 0.01
     carrot_lat_control3 = self.params.get_int("CarrotLatControl3")
     lat_actuator_delay = steer_actuator_delay
-
+    
     if carrot_lat_control3 > 0:
       t_since_plan = (self.sm.frame - self.sm.recv_frame['lateralPlan']) * DT_CTRL
       curvature_alpha = carrot_lat_control3 * 0.001
@@ -224,6 +224,8 @@ class Controls:
     hudControl.leadRelSpeed = leadOne.vRel if leadOne.status else 0
     hudControl.leadRadar = 1 if leadOne.radar else 0
     hudControl.leadDPath = leadOne.dPath
+
+    hudControl.modelDesire = 1 if self.sm['modelV2'].meta.desire == log.Desire.turnLeft else 2 if self.sm['modelV2'].meta.desire == log.Desire.turnRight else 0
 
     hudControl.rightLaneVisible = True
     hudControl.leftLaneVisible = True

@@ -115,7 +115,6 @@ class CarController(CarControllerBase):
         self.params.STEER_DELTA_DOWN = steerDeltaDown
         #self.params.ANGLE_TORQUE_DOWN_RATE = steerDeltaDown
       self.soft_hold_mode = 1 if params.get_int("AutoCruiseControl") > 1 else 2
-      
       self.hapticFeedbackWhenSpeedCamera = int(params.get_int("HapticFeedbackWhenSpeedCamera"))
 
       self.button_spam1 = params.get_int("CruiseButtonTest1")
@@ -150,8 +149,12 @@ class CarController(CarControllerBase):
       self.apply_angle_last = actuators.steeringAngleDeg
       self.lkas_max_torque = self.lkas_max_torque = max(self.lkas_max_torque - 20, 25)
     else:
-
-      angle_max_torque = np.interp(CS.out.vEgo * CV.MS_TO_KPH, [0, 20, 30], [25, 50, self.angle_max_torque])
+      if hud_control.modelDesire in [1,2]:
+        angle_max_torque = self.angle_max_torque
+      else:
+        angle_max_torque = np.interp(CS.out.vEgo * CV.MS_TO_KPH, [0, 20, 30], [25, 50, self.angle_max_torque])
+        #angle_max_torque = np.interp(CS.out.vEgo * CV.MS_TO_KPH, [0, 20], [25, self.angle_max_torque])
+      
       target_torque = np.interp(abs(actuators.curvature), [0.0, 0.003, 0.006], [0.5 * angle_max_torque, 0.75 * angle_max_torque, angle_max_torque])
 
       max_steering_tq = self.params.STEER_DRIVER_ALLOWANCE * 0.7
@@ -352,7 +355,7 @@ class CarController(CarControllerBase):
       if CS.cruise_buttons_msg is not None and self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
         try:
           cruise_buttons_msg_values = {key: value[0] for key, value in CS.cruise_buttons_msg.items()}
-        except: #IndexError:
+        except: # IndexError:
           #print("IndexError....")
           cruise_buttons_msg_values = None
           self.cruise_buttons_msg_cnt += 1

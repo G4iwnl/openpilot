@@ -429,6 +429,7 @@ struct CarControl {
     leadRelSpeed @13: Float32;
     leadDPath @14: Float32;
     leadRadar @15: Int16;
+    modelDesire @16: Int16;
 
     # not used with the dash, TODO: separate structs for dash UI and device UI
     audibleAlert @5: AudibleAlert;
