@@ -462,6 +462,12 @@ class CarState(CarStateBase):
     prev_cruise_buttons = self.cruise_buttons[-1]
     #self.cruise_buttons.extend(cp.vl_all[self.cruise_btns_msg_canfd]["CRUISE_BUTTONS"])
     #carrot {{
+
+    if self.cruise_btns_msg_canfd == "CRUISE_BUTTONS":
+      if cp.vl["CRUISE_BUTTONS"]["RIGHT_PADDLE"] == 1 or cp.vl["CRUISE_BUTTONS"]["LEFT_PADDLE"] == 1:
+        self.main_enabled = False
+
+
     if cp.vl[self.cruise_btns_msg_canfd]["LFA_BTN"]:
       cruise_button = [Buttons.LFA_BUTTON]
     else:
