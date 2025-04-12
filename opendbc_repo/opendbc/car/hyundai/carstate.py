@@ -436,8 +436,9 @@ class CarState(CarStateBase):
             ret.speedLimit = speedLimit if speedLimit < 255 else 0 # 안됨.. 고속화도로나 고속도로는....
             #g4 test
           if int(self.hda_info_4a3["NEW_SIGNAL_4"]) == 73:
-            speedLimit = 80
-            ret.speedLimit = speedLimit
+            if Params().get_int("HDAtollgate") != 0:
+              speedLimit = Params().get_int("HDAtollgate")
+              ret.speedLimit = speedLimit
             #g4 test
         
       if "NEW_MSG_4B4" in cp.vl:
