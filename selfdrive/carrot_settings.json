@@ -744,6 +744,19 @@
     },
     {
       "group": "시작",
+      "name": "onlysofthold",
+      "title": "오토크루즈에서 Softhold 기능만 사용",
+      "descr": "",
+      "egroup": "START",
+      "etitle": "only use Softhold in Autocruise",
+      "edescr": "",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "unit": 1
+    },
+    {
+      "group": "시작",
       "name": "AutoGasTokSpeed",
       "title": "오토크루즈: 엑셀톡 속도",
       "descr": "해당속도 이상에서만 작동함.",

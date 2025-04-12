@@ -154,6 +154,7 @@ def get_default_params():
     ("RecordRoadCam", "0"),
     ("HDPuse", "0"),
     ("HDAtollgate", "80"),
+    ("onlysofthold", "0"),
     ("DecreaseHDA", "0"),
     ("LaneChangeDelay", "0"),
     ("TempSteerDeltaDown", "0"),

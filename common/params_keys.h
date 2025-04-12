@@ -155,6 +155,7 @@ inline static std::unordered_map<std::string, uint32_t> keys = {
     {"RecordRoadCam", PERSISTENT },
     {"HDPuse", PERSISTENT },
     {"HDAtollgate", PERSISTENT },
+    {"onlysofthold", PERSISTENT },
     {"DecreaseHDA", PERSISTENT },
     {"VisionOnly", PERSISTENT },
     {"CarBatteryVoltage", PERSISTENT },

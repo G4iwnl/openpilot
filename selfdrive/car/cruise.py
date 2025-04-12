@@ -600,12 +600,14 @@ class VCruiseCarrot:
       if not CS.cruiseState.available and self.cruiseStateAvailable_last:
         self._lat_enabled = False
       if self._brake_pressed_count == -1 and self._soft_hold_active > 0:
-        self._soft_hold_active = 2
-        self._cruise_control(1, -1, "Cruise on (soft hold)")
+        if self.params.get_int("onlysofthold") != 1:
+          self._soft_hold_active = 2
+          self._cruise_control(1, -1, "Cruise on (soft hold)")
       # GM: autoResume
       elif self.params.get_bool("ActivateCruiseAfterBrake"):
-        self.params.put_bool_nonblocking("ActivateCruiseAfterBrake", False)
-        self._cruise_control(1, -1, "Cruise on (brake)")
+        if self.params.get_int("onlysofthold") != 1:
+          self.params.put_bool_nonblocking("ActivateCruiseAfterBrake", False)
+          self._cruise_control(1, -1, "Cruise on (brake)")
       elif self.v_cruise_kph < self.v_ego_kph_set:
         self.v_cruise_kph = self.v_ego_kph_set
     self.cruiseStateAvailable_last = CS.cruiseState.available
@@ -617,8 +619,9 @@ class VCruiseCarrot:
 
     if self._gas_tok and self.v_ego_kph_set >= self.autoGasTokSpeed:
       if not CC.enabled:
+        if self.params.get_int("onlysofthold") != 1:
         #self._cruise_cancel_state = False
-        self._cruise_control(1, -1, "Cruise on (gas tok)")
+          self._cruise_control(1, -1, "Cruise on (gas tok)")
         if self.v_ego_kph_set > v_cruise_kph:
           v_cruise_kph = self.v_ego_kph_set
       else:
@@ -626,28 +629,36 @@ class VCruiseCarrot:
     elif self._gas_pressed_count == -1:
       if 0 < self.d_rel < CS.vEgo * 0.8:
         if CS.vEgo < 1.0:
-          self._cruise_control(1, -1 if self.aTarget > 0.0 else 0, "Cruise on (safe speed)")
+          if self.params.get_int("onlysofthold") != 1:
+            self._cruise_control(1, -1 if self.aTarget > 0.0 else 0, "Cruise on (safe speed)")
         else:
-          self._cruise_control(-1, 0, "Cruise off (lead car too close)")
+          if self.params.get_int("onlysofthold") != 1:
+            self._cruise_control(-1, 0, "Cruise off (lead car too close)")
       elif self.v_ego_kph_set < 30:
-        self._cruise_control(-1, 0, "Cruise off (gas speed)")
+        if self.params.get_int("onlysofthold") != 1:
+          self._cruise_control(-1, 0, "Cruise off (gas speed)")
       elif self.xState == 3:
-        v_cruise_kph = self.v_ego_kph_set
-        self._cruise_control(-1, 3, "Cruise off (traffic sign)")
+        if self.params.get_int("onlysofthold") != 1:
+          v_cruise_kph = self.v_ego_kph_set
+          self._cruise_control(-1, 3, "Cruise off (traffic sign)")
       elif self.v_ego_kph_set >= 30 and not CC.enabled:
-        v_cruise_kph = self.v_ego_kph_set
-        self._cruise_control(1, -1 if self.aTarget > 0.0 else 0, "Cruise on (gas pressed)")
+        if self.params.get_int("onlysofthold") != 1:
+          v_cruise_kph = self.v_ego_kph_set
+          self._cruise_control(1, -1 if self.aTarget > 0.0 else 0, "Cruise on (gas pressed)")
     elif self._brake_pressed_count == -1 and self._soft_hold_active == 0:
       if self.v_ego_kph_set > 40:
-        v_cruise_kph = self.v_ego_kph_set
-        self._cruise_control(1, -1 if self.aTarget > 0.0 else 0, "Cruise on (speed)")
+        if self.params.get_int("onlysofthold") != 1:
+          v_cruise_kph = self.v_ego_kph_set
+          self._cruise_control(1, -1 if self.aTarget > 0.0 else 0, "Cruise on (speed)")
       elif abs(CS.steeringAngleDeg) < 20:
         if self.xState in [3, 5]:
-          v_cruise_kph = self.v_ego_kph_set
-          self._cruise_control(1, 0, "Cruise on (traffic sign)")
+          if self.params.get_int("onlysofthold") != 1:
+            v_cruise_kph = self.v_ego_kph_set
+            self._cruise_control(1, 0, "Cruise on (traffic sign)")
         elif 0 < self.d_rel < 20:
-          v_cruise_kph = self.v_ego_kph_set
-          self._cruise_control(1, -1 if self.v_ego_kph_set < 1 else 0, "Cruise on (lead car)")
+          if self.params.get_int("onlysofthold") != 1:
+            v_cruise_kph = self.v_ego_kph_set
+            self._cruise_control(1, -1 if self.v_ego_kph_set < 1 else 0, "Cruise on (lead car)")
 
     elif not CC.enabled and self._brake_pressed_count < 0 and self._gas_pressed_count < 0:
       if self.d_rel > 0 and CS.vEgo > 0.02:
@@ -655,25 +666,30 @@ class VCruiseCarrot:
         if abs(CS.steeringAngleDeg) > 20:
           pass
         elif not safe_state:
-          self._cruise_control(1, -1, "Cruise on (fcw)")
+          if self.params.get_int("onlysofthold") != 1:
+            self._cruise_control(1, -1, "Cruise on (fcw)")
         elif self.d_rel < self.cruiseOnDist:
-          self._cruise_control(1, -1, "Cruise on (fcw dist)")
+          if self.params.get_int("onlysofthold") != 1:
+            self._cruise_control(1, -1, "Cruise on (fcw dist)")
         else:
           self._add_log(f"leadCar d={self.d_rel:.1f},v={self.v_rel:.1f},{CS.vEgo:.1f}, {safe_dist:.1f}")
           #self.events.append(EventName.stopStop)
       if self.desiredSpeed < self.v_ego_kph_set:
-        self._cruise_control(1, -1, "Cruise on (desired speed)")
+        if self.params.get_int("onlysofthold") != 1:
+          self._cruise_control(1, -1, "Cruise on (desired speed)")
 
     if self._gas_pressed_count > self._gas_tok_timer:
       if CS.aEgo < -0.5:
-        self._cruise_control(-1, 5.0, "Cruise off (gas pressed while braking)")
+        if self.params.get_int("onlysofthold") != 1:
+          self._cruise_control(-1, 5.0, "Cruise off (gas pressed while braking)")
       if self.v_ego_kph_set > v_cruise_kph and self.autoGasSyncSpeed:
         v_cruise_kph = self.v_ego_kph_set
 
     if self._gas_pressed_count == 1 or CS.vEgo < 0.1:
       self._pause_auto_speed_up = False
       if self._gas_pressed_count == 1 and CS.vEgo < 0.1:
-        self._cruise_control(-1, -1, "Cruise off (gasPressed)")
+        if self.params.get_int("onlysofthold") != 1:
+          self._cruise_control(-1, -1, "Cruise off (gasPressed)")
     elif self._brake_pressed_count == 1:
       self._pause_auto_speed_up = True
 
