@@ -456,6 +456,10 @@ class CarState(CarStateBase):
     # It limits the vehicle speed, overridable by pressing the accelerator past a certain point.
     # The car will brake, but does not respect positive acceleration commands in this mode
     # TODO: find this message on ICE & HYBRID cars + cruise control signals (if exists)
+    if self.CP.flags & HyundaiFlags.HYBRID:
+      if cp.vl["CRUISE_BUTTONS"]["RIGHT_PADDLE"] == 1 or cp.vl["CRUISE_BUTTONS"]["LEFT_PADDLE"] == 1:
+        self.main_enabled = False
+
     if self.CP.flags & HyundaiFlags.EV:
       ret.cruiseState.nonAdaptive = cp.vl["MANUAL_SPEED_LIMIT_ASSIST"]["MSLA_ENABLED"] == 1
 
