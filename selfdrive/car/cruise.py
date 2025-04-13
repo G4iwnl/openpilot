@@ -713,6 +713,8 @@ class VCruiseCarrot:
         self._gas_tok = False
 
     if CS.brakePressed:
+      if self.params.get_int("cruiselateral") == 1:
+        self._lat_enabled = False
       self._cruise_ready = False
       self._brake_pressed_count = max(1, self._brake_pressed_count + 1)
       if self._brake_pressed_count == 1 and self.enabled_last:
