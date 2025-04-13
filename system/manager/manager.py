@@ -153,6 +153,7 @@ def get_default_params():
     ("DisableDM", "0"),
     ("RecordRoadCam", "0"),
     ("HDPuse", "0"),
+    ("cruiselateral", "1"),
     ("HDAtollgate", "80"),
     ("onlysofthold", "1"),
     ("DecreaseHDA", "0"),

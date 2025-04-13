@@ -804,6 +804,7 @@ CarrotPanel::CarrotPanel(QWidget* parent) : QWidget(parent) {
   startToggles->addItem(new CValueControl("AutoCruiseControl", "Auto Cruise control", "Softhold, Auto Cruise ON/OFF control", "../assets/offroad/icon_road.png", 0, 3, 1));
   startToggles->addItem(new CValueControl("onlysofthold", "Only use Softhold in AutoCruiseControl", "", "../assets/offroad/icon_road.png", 0, 1, 1));
   startToggles->addItem(new CValueControl("CruiseOnDist", "CRUISE: Auto ON distance(0cm)", "When GAS/Brake is OFF, Cruise ON when the lead car gets closer.", "../assets/offroad/icon_road.png", 0, 2500, 50));
+  startToggles->addItem(new CValueControl("cruiselateral", "lfa off on disengage", "", "../assets/offroad/icon_road.png", 0, 1, 1));
   startToggles->addItem(new CValueControl("AutoEngage", "Auto Engage control on start", "1:SteerEnable, 2:Steer/Cruise Engage", "../assets/offroad/icon_road.png", 0, 2, 1));
   startToggles->addItem(new ParamControl("DisableMinSteerSpeed", "Disable Min.SteerSpeed", "", "../assets/offroad/icon_road.png", this));
   startToggles->addItem(new CValueControl("AutoGasTokSpeed", "Auto AccelTok speed", "Gas(Accel)Tok enable speed", "../assets/offroad/icon_road.png", 0, 200, 5));
