@@ -730,11 +730,11 @@
       "unit": 1
     },
     {
-      "group": "시작",
+      "group": "쏘렌토",
       "name": "AutoCruiseControl",
       "title": "오토크루즈제어(HKG only)",
       "descr": "1:SOFTHOLD, Auto Cruise, 2:SoftHold오류시",
-      "egroup": "START",
+      "egroup": "sorento",
       "etitle": "Auto Cruise control(HKG only)",
       "edescr": "Softhold, Auto Cruise ON/OFF control",
       "min": 0,
@@ -743,16 +743,16 @@
       "unit": 1
     },
     {
-      "group": "시작",
+      "group": "쏘렌토",
       "name": "onlysofthold",
       "title": "오토크루즈에서 Softhold 기능만 사용",
       "descr": "",
-      "egroup": "START",
+      "egroup": "sorento",
       "etitle": "only use Softhold in Autocruise",
       "edescr": "",
       "min": 0,
       "max": 1,
-      "default": 0,
+      "default": 1,
       "unit": 1
     },
     {
