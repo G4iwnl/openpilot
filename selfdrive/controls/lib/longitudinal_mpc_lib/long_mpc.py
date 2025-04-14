@@ -371,11 +371,10 @@ class LongitudinalMpc:
     j_lead = np.clip(j_lead, -2., 2.)
 
     j_lead_factor = carrot.j_lead_factor
-    if j_lead >= 0:
-        j_lead_factor = np.interp(j_lead, [0.0, 0.5], [j_lead_factor, j_lead_factor * 10.])
     if j_lead > 0 and a_lead < 0:
-      a_lead = min(a_lead + j_lead * j_lead_factor * 2.0, 0.0)
-    
+      #a_lead = min(a_lead + j_lead * j_lead_factor * 2.0, 0.0)
+      j_lead_factor *= 5.0
+      
     j_lead_apply = j_lead * j_lead_factor
     lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, j_lead_apply, a_lead_tau)
     return lead_xv, v_lead
