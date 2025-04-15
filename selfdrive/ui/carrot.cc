@@ -356,10 +356,10 @@ protected:
             sprintf(title, "3.Model(Y:pos_32, G:vel_32, O:vel_0)");
 			      break;
         case 4:
-            data[0] = a_ego;
+            data[0] = accel;
             data[1] = lead_radar.getALeadK();
             data[2] = lead_radar.getVRel();
-            sprintf(title, "4.Lead(Y:a_ego, G:a_lead, O:v_rel)");
+            sprintf(title, "4.Lead(Y:accel, G:a_lead, O:v_rel)");
             break;
         case 5:
             data[0] = a_ego;

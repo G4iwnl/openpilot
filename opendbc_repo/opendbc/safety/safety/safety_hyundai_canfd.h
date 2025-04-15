@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include "safety_declarations.h"
@@ -101,6 +100,7 @@ const CanMsg HYUNDAI_CANFD_HDA1_TX_MSGS[] = {
   {1187, 2, 8}, // 4A3
   {1204, 2, 8}, // 4B4
   {373, 2, 24}, // TCS(0x175)
+  {234, 2, 24}, // MDPS
 
 };
 
