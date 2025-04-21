@@ -427,8 +427,8 @@ class CarState(CarStateBase):
       if self.CP.extFlags & HyundaiExtFlags.CANFD_161.value:
         if "ADRV_0x161" in cp_cam.vl:
           self.adrv_info_161 = copy.copy(cp_cam.vl.get("ADRV_0x161", {}))
-        if "ADRV_0x162" in cp_cam.vl:
-          self.adrv_info_162 = copy.copy(cp_cam.vl.get("ADRV_0x162", {}))
+        if "CCNC_0x162" in cp_cam.vl:
+          self.adrv_info_162 = copy.copy(cp_cam.vl.get("CCNC_0x162", {}))
           self.lf_distance = cp_cam.vl["CCNC_0x162"]["LF_DETECT_DISTANCE"]
           self.rf_distance = cp_cam.vl["CCNC_0x162"]["RF_DETECT_DISTANCE"]
           self.lr_distance = cp_cam.vl["CCNC_0x162"]["LR_DETECT_DISTANCE"]
@@ -608,7 +608,7 @@ class CarState(CarStateBase):
       if CP.extFlags & HyundaiExtFlags.CANFD_161:
         cam_messages += [
           ("ADRV_0x161", 20),
-          ("ADRV_0x162", 20),
+          ("CCNC_0x162", 20),
         ]
       if CP.flags & HyundaiFlags.ANGLE_CONTROL:
         cam_messages += [

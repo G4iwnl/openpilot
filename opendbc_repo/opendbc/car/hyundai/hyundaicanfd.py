@@ -567,7 +567,7 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
 
         if (left_lane_warning and not CS.out.leftBlinker) or (right_lane_warning and not CS.out.rightBlinker):
           values["VIBRATE"] = 1
-        ret.append(packer.make_can_msg("ADRV_0x162", CAN.ECAN, values))
+        ret.append(packer.make_can_msg("CCNC_0x162", CAN.ECAN, values))
 
     if canfd_debug > 0:
       if frame % 20 == 0: # 아직 시험중..
