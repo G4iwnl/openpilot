@@ -55,6 +55,7 @@ class Controls:
     self.steer_limited_by_controls = False
     self.curvature = 0.0
     self.desired_curvature = 0.0
+    self.yStd = 0.0
 
     self.pose_calibrator = PoseCalibrator()
     self.calibrated_pose: Pose | None = None
@@ -144,6 +145,12 @@ class Controls:
                                   curve_speed_abs > self.params.get_int("UseLaneLineCurveSpeed"))
 
     steer_actuator_delay = self.params.get_float("SteerActuatorDelay") * 0.01 + LAT_SMOOTH_SECONDS
+
+    if (model_v2.position.yStd) > 0:
+      yStd = np.interp(steer_actuator_delay + LAT_SMOOTH_SECONDS, ModelConstants.t_IDXS, model_v2.position.yStd)
+      self.yStd = yStd * 0.1 + self.yStd * 0.9
+    else:
+      self.yStd = 0.0
     
     if not CC.latActive:
       new_desired_curvature = self.curvature
@@ -169,6 +176,7 @@ class Controls:
                                                        self.calibrated_pose, curvature_limited)  # TODO what if not available
     actuators.torque = float(steer)
     actuators.steeringAngleDeg = float(steeringAngleDeg)
+    actuators.yStd = self.yStd
     # Ensure no NaNs/Infs
     for p in ACTUATOR_FIELDS:
       attr = getattr(actuators, p)

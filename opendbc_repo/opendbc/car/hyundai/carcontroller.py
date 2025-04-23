@@ -150,15 +150,16 @@ class CarController(CarControllerBase):
         base_max_torque = self.angle_max_torque
       else:
         curv = abs(actuators.curvature)
-        curve_scale = np.clip((curv - 0.0) / (0.006 - 0.0), 0.0, 1.0)
+        y_std = actuators.yStd
+        curvature_threshold = np.interp(y_std, [0.0, 0.5], [0.5, 0.006])
+
+        curve_scale = np.clip(curv / curvature_threshold, 0.0, 1.0)
         torque_pts = [
           (1 - curve_scale) * self.angle_max_torque + curve_scale * 25,
           (1 - curve_scale) * self.angle_max_torque + curve_scale * 50,
-          self.angle_max_torque  # 고속(30km/h 이상)은 항상 최대 토크 허용
-        ]
+          self.angle_max_torque
+        ]        
         base_max_torque = np.interp(CS.out.vEgo * CV.MS_TO_KPH, [0, 20, 30], torque_pts)
-        #base_max_torque = np.interp(CS.out.vEgo * CV.MS_TO_KPH, [0, 20, 30], [25, 50, self.angle_max_torque])
-        #base_max_torque = np.interp(CS.out.vEgo * CV.MS_TO_KPH, [0, 20], [25, self.angle_max_torque])
       
       target_torque = np.interp(abs(actuators.curvature), [0.0, 0.003, 0.006], [0.5 * base_max_torque, 0.75 * base_max_torque, base_max_torque])
 
