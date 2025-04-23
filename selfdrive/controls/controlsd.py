@@ -147,7 +147,7 @@ class Controls:
     steer_actuator_delay = self.params.get_float("SteerActuatorDelay") * 0.01 + LAT_SMOOTH_SECONDS
 
     if len(model_v2.position.yStd) > 0:
-      yStd = np.interp(steer_actuator_delay + LAT_SMOOTH_SECONDS, ModelConstants.t_IDXS, model_v2.position.yStd)
+      yStd = np.interp(steer_actuator_delay + LAT_SMOOTH_SECONDS, ModelConstants.T_IDXS, model_v2.position.yStd)
       self.yStd = yStd * 0.1 + self.yStd * 0.9
     else:
       self.yStd = 0.0
