@@ -504,8 +504,8 @@ class HyundaiJerk:
       self.jerk = self.jerk_u_min / 2 - CS.out.aEgo
     else:
       jerk = actuators.jerk if actuators.longControlState == LongCtrlState.pid else 0.0
-      #a_error = actuators.aTargetNow - CS.out.aEgo
-      self.jerk = jerk #+ a_error
+      a_error = actuators.aTargetNow - CS.out.aEgo
+      self.jerk = jerk + a_error
 
     jerk_max_l = 5.0
     jerk_max_u = jerk_max_l
