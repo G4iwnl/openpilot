@@ -42,7 +42,7 @@ def long_control_state_trans(CP, active, long_control_state, v_ego,
       if stopping_condition:
         stopping_accel = stopping_accel if stopping_accel < 0.0 else -0.5
         leadOne = radarState.leadOne
-        fcw_stop = leadOne.status and leadOne.dRel < 3.0
+        fcw_stop = leadOne.status and leadOne.dRel < 4.0
         if a_ego > stopping_accel or fcw_stop: # and v_ego < 1.0:
           long_control_state = LongCtrlState.stopping
         if long_control_state == LongCtrlState.starting:
