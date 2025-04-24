@@ -394,14 +394,14 @@
     {
       "group": "주행튜닝",
       "name": "LongTuningKpV",
-      "title": "Long KpV(0)x0.01",
+      "title": "Long KpV(100)x0.01",
       "descr": "HKG: AccelPid:0, VelocityPid:100",
       "egroup": "LONG",
-      "etitle": "Long KpV(0)x0.01",
+      "etitle": "Long KpV(100)x0.01",
       "edescr": "HKG: AccelPid:0, VelocityPid:100",
       "min": 0,
       "max": 200,
-      "default": 0,
+      "default": 100,
       "unit": 5
     },
     {

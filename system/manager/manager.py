@@ -100,7 +100,7 @@ def get_default_params():
     ("CruiseMaxVals4", "110"),
     ("CruiseMaxVals5", "95"),
     ("CruiseMaxVals6", "80"),
-    ("LongTuningKpV", "0"),
+    ("LongTuningKpV", "100"),
     ("LongTuningKiV", "0"),
     ("LongTuningKf", "100"),
     ("LongActuatorDelay", "20"),
