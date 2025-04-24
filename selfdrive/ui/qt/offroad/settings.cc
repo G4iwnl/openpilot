@@ -655,7 +655,7 @@ CarrotPanel::CarrotPanel(QWidget* parent) : QWidget(parent) {
   latLongToggles->addItem(new CValueControl("LongTuningKiV", "LONG: I Gain(200)", "", "../assets/offroad/icon_logic.png", 0, 2000, 5));
   latLongToggles->addItem(new CValueControl("LongTuningKf", "LONG: FF Gain(100)", "", "../assets/offroad/icon_logic.png", 0, 200, 5));
   latLongToggles->addItem(new CValueControl("LongActuatorDelay", "LONG: ActuatorDelay(20)", "", "../assets/offroad/icon_logic.png", 0, 200, 5));
-  latLongToggles->addItem(new CValueControl("LongVelocityControl", "LONG: VelocityControl(0)", "", "../assets/offroad/icon_logic.png", 0, 1, 1));
+  latLongToggles->addItem(new CValueControl("LongVelocityControl", "LONG: VelocityControl(1)", "0:AccelPID, 1:VelocityPID", "../assets/offroad/icon_logic.png", 0, 1, 1));
   latLongToggles->addItem(new CValueControl("VEgoStopping", "LONG: VEgoStopping(50)", "Stopping factor", "../assets/offroad/icon_logic.png", 1, 100, 5));
   latLongToggles->addItem(new CValueControl("RadarReactionFactor", "LONG: Radar reaction factor(10)", "", "../assets/offroad/icon_logic.png", 0, 200, 10));
   //latLongToggles->addItem(new CValueControl("StartAccelApply", "LONG: StartingAccel 2.0x(0)%", "정지->출발시 가속도의 가속율을 지정합니다 0: 사용안함.", "../assets/offroad/icon_road.png", 0, 100, 10));
