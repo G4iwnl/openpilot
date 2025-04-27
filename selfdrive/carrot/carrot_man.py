@@ -1286,7 +1286,7 @@ class CarrotServ:
         bearing = self.nPosAnglePhone
         self.bearing_offset = 0.0
 
-    #print(f"bearing = {bearing:.1f}, posA=={self.nPosAngle:.1f}, posP=={self.nPosAnglePhone:.1f}, offset={self.bearing_offset:.1f}, {gps_updated_phone}, {gps_updated_navi}")
+    print(f"bearing = {bearing:.1f}, posA=={self.nPosAngle:.1f}, posP=={self.nPosAnglePhone:.1f}, offset={self.bearing_offset:.1f}, {gps_updated_phone}, {gps_updated_navi}")
     gpsDelayTimeAdjust = 0.0
     if gps_updated_navi:
       gpsDelayTimeAdjust = 1.0
