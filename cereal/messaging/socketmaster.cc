@@ -186,6 +186,9 @@ SubMaster::~SubMaster() {
 
 PubMaster::PubMaster(const std::vector<const char *> &service_list) {
   for (auto name : service_list) {
+    if (services.count(name) == 0) {
+      printf("PubMaster Error: unknown service '%s'\n", name);
+    }
     assert(services.count(name) > 0);
     PubSocket *socket = PubSocket::create(message_context.context(), name);
     assert(socket);
