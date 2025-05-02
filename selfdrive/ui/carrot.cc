@@ -2210,7 +2210,7 @@ public:
         strcpy(driving_mode_str_last, driving_mode_str);
 
         auto locationd = sm["liveLocationKalman"].getLiveLocationKalman();
-        bool is_gps_valid = locationd.getGpsOK();
+        bool is_gps_valid = sm.valid("liveLocationKalman") && locationd.getGpsOK();
         if (is_gps_valid) {
           ui_draw_text(s, dx, dy - 45, "GPS", 30, COLOR_GREEN, BOLD);
         }
