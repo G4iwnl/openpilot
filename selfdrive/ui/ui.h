@@ -98,8 +98,6 @@ public:
   float show_brightness_ratio = 1.0;
   int show_brightness_timer = 20;
 
-  char gps_location_socket[32] = "gpsLocationExternal";
-
 signals:
   void uiUpdate(const UIState &s);
   void offroadTransition(bool offroad);

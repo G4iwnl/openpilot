@@ -295,7 +295,6 @@ void MapWindow::updateState(const UIState &s) {
     updateDestinationMarker();
   }
   if (loaded_once && (sm.rcv_frame("modelV2") != model_rcv_frame)) {
-    /*
     auto locationd_location = sm["liveLocationKalman"].getLiveLocationKalman();
     if (locationd_location.getGpsOK()) {
       //auto carrot_man = sm["carrotMan"].getCarrotMan();
@@ -307,7 +306,6 @@ void MapWindow::updateState(const UIState &s) {
       modelV2Path["data"] = QVariant::fromValue<QMapLibre::Feature>(model_path_feature);
       m_map->updateSource("modelPathSource", modelV2Path);
     }
-    */
     model_rcv_frame = sm.rcv_frame("modelV2");
   }
 }

@@ -238,7 +238,7 @@ class CarrotMan:
     print("************************************************CarrotMan init************************************************")
     self.params = Params()
     self.params_memory = Params("/dev/shm/params")
-    self.sm = messaging.SubMaster(['deviceState', 'carState', 'controlsState', 'longitudinalPlan', 'modelV2', 'selfdriveState', 'carControl', 'navRouteNavd', 'navInstruction'])
+    self.sm = messaging.SubMaster(['deviceState', 'carState', 'controlsState', 'longitudinalPlan', 'modelV2', 'selfdriveState', 'carControl', 'navRouteNavd', 'liveLocationKalman', 'navInstruction'])
     self.pm = messaging.PubMaster(['carrotMan', "navRoute", "navInstructionCarrot"])
 
     self.carrot_serv = CarrotServ()
@@ -1268,11 +1268,14 @@ class CarrotServ:
       self.xSpdDist = 0
 
   def _update_gps(self, v_ego, sm):
-    if not sm.updated['carState'] or not sm.updated['carControl']:
+    llk = 'liveLocationKalman'
+    location = sm[llk]
+    #print(f"location = {sm.valid[llk]}, {sm.updated[llk]}, {sm.recv_frame[llk]}, {sm.recv_time[llk]}")
+    if not sm.updated['carState'] or not sm.updated['carControl']: # or not sm.updated[llk]:
       return self.nPosAngle
     CS = sm['carState']
     CC = sm['carControl']
-    self.gps_valid = False #(location.status == log.LiveLocationKalman.Status.valid) and location.positionGeodetic.valid
+    self.gps_valid = (location.status == log.LiveLocationKalman.Status.valid) and location.positionGeodetic.valid
 
     now = time.monotonic()
     gps_updated_phone = (now - self.last_update_gps_time_phone) < 3
@@ -1281,8 +1284,8 @@ class CarrotServ:
     bearing = self.nPosAngle
     if gps_updated_phone:
       self.bearing_offset = 0.0
-    elif len(CC.orientationNED) == 3:
-      bearing = math.degrees(CC.orientationNED[2])
+    elif sm.valid[llk]:
+      bearing = math.degrees(location.calibratedOrientationNED.value[2])
       if self.gps_valid:
         self.bearing_offset = 0.0
       elif self.active_carrot > 0:
@@ -1296,7 +1299,7 @@ class CarrotServ:
 
     external_gps_update_timedout = not (gps_updated_phone or gps_updated_navi)
     #print(f"gps_valid = {self.gps_valid}, bearing = {bearing:.1f}, pos = {location.positionGeodetic.value[0]:.6f}, {location.positionGeodetic.value[1]:.6f}")
-    if False: #self.gps_valid and external_gps_update_timedout:    # 내부GPS가 자동하고 carrotman으로부터 gps신호가 없는경우
+    if self.gps_valid and external_gps_update_timedout:    # 내부GPS가 자동하고 carrotman으로부터 gps신호가 없는경우
       self.vpPosPointLatNavi = location.positionGeodetic.value[0]
       self.vpPosPointLonNavi = location.positionGeodetic.value[1]
       self.last_calculate_gps_time = now #sm.recv_time[llk]
