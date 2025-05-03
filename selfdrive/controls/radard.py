@@ -453,8 +453,10 @@ class RadarD:
 
     v_ego = self.v_ego
     ready = self.ready
-    ## SCC레이더는 일단 보관하고 리스트에서 삭제...
+    ## SCC레이더는 일단 보관하고 리스트에서 삭제... (SCC Track은 0,1번으로 들어옴)
     track_scc = tracks.get(0)
+    if track_scc is None:
+      track_scc = tracks.get(1)
     #if track_scc is not None:
     #  del tracks[0]            ## tracks에서 삭제하면안됨... ㅠㅠ
 
