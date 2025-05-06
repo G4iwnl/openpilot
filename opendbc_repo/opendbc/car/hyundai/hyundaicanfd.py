@@ -429,8 +429,6 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
         elif LFA_trigger > 0:
           values["LFA_BTN"] = 1
           values["COUNTER"] = (values["COUNTER"] + 1) % 256
-          ret.append(packer.make_can_msg(CS.cruise_btns_msg_canfd, CAN.ECAN, values))
-          ret.append(packer.make_can_msg(CS.cruise_btns_msg_canfd, CAN.ECAN, values))
         ret.append(packer.make_can_msg(CS.cruise_btns_msg_canfd, CAN.CAM, values))
 
 
