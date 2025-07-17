@@ -284,4 +284,7 @@ inline static std::unordered_map<std::string, uint32_t> keys = {
     {"SoftRestartTriggered", CLEAR_ON_MANAGER_START},
 
     {"DevicePosition", CLEAR_ON_MANAGER_START},
+    {"NNFF", PERSISTENT},
+    {"NNFFLite", PERSISTENT},
+    {"NNFFModelName", CLEAR_ON_OFFROAD_TRANSITION},
 };
