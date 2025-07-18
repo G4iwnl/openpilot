@@ -19,7 +19,7 @@ from opendbc.car.common.basedir import BASEDIR
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.common.simple_kalman import KF1D, get_kalman_gain
 from opendbc.car.values import PLATFORMS
-from opendbc.can.parser import CANParser
+from opendbc.can import CANParser
 
 from openpilot.common.params import Params
 from openpilot.common.filter_simple import FirstOrderFilter
@@ -209,6 +209,7 @@ class MyTrack:
     self.dRel = radar_point.dRel
     self.vRel = radar_point.vRel
     self.yRel = radar_point.yRel
+    self.yvRel = radar_point.yvRel
     self.vLead = radar_point.vLead
     self.v_lead_filtered_last = self.vLead
     self.aLead = 0.0
@@ -217,6 +218,8 @@ class MyTrack:
     self.vLead_avg = FirstOrderFilter(self.vLead, 0.1, self.dt)
     self.aLead_avg = FirstOrderFilter(self.aLead, 0.15, self.dt)
     self.jLead_avg = FirstOrderFilter(self.jLead, 0.4, self.dt)
+    self.yRel_avg = FirstOrderFilter(self.yRel, 0.02, self.dt)
+    self.yvRel_avg = FirstOrderFilter(self.yvRel, 0.02, self.dt)
         
   def update(self, radar_point):
     self.vLead = radar_point.vLead
@@ -231,7 +234,8 @@ class MyTrack:
       self.v_lead_filtered_last = self.vLead
     """
 
-    self.yRel = radar_point.yRel
+    self.yRel = self.yRel_avg.update(radar_point.yRel)
+    self.yvRel = self.yvRel_avg.update(radar_point.yvRel)
 
     v_lead_filtered = self.vLead_avg.update(self.vLead)
     pseudo_stop = abs(v_lead_filtered) < 0.3 and abs(self.vLead - v_lead_filtered) < 0.05
@@ -301,6 +305,8 @@ class RadarInterfaceBase(ABC):
 
         radar_point.aLead = float(new_tracks[track_id].aLead)
         radar_point.jLead = float(new_tracks[track_id].jLead)
+        radar_point.yRel = float(new_tracks[track_id].yRel)
+        radar_point.yvRel = float(new_tracks[track_id].yvRel)
                 
       self.tracks = new_tracks
       """
@@ -376,11 +382,11 @@ class CarInterfaceBase(ABC):
     """
     Parameters essential to controlling the car may be incomplete or wrong without FW versions or fingerprints.
     """
-    return cls.get_params(candidate, gen_empty_fingerprint(), list(), False, False)
+    return cls.get_params(candidate, gen_empty_fingerprint(), list(), False, False, False)
 
   @classmethod
   def get_params(cls, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[structs.CarParams.CarFw],
-                 alpha_long: bool, docs: bool) -> structs.CarParams:
+                 alpha_long: bool, is_release: bool, docs: bool) -> structs.CarParams:
     ret = CarInterfaceBase.get_std_params(candidate)
 
     platform = PLATFORMS[candidate]
@@ -393,7 +399,7 @@ class CarInterfaceBase(ABC):
     ret.tireStiffnessFactor = platform.config.specs.tireStiffnessFactor
     ret.flags |= int(platform.config.flags)
 
-    ret = cls._get_params(ret, candidate, fingerprint, car_fw, alpha_long, docs)
+    ret = cls._get_params(ret, candidate, fingerprint, car_fw, alpha_long, is_release, docs)
    
     # Enable torque controller for all cars that do not use angle based steering
     if ret.steerControlType != structs.CarParams.SteerControlType.angle and Params().get_bool("NNFF"):
@@ -421,12 +427,16 @@ class CarInterfaceBase(ABC):
   @staticmethod
   @abstractmethod
   def _get_params(ret: structs.CarParams, candidate, fingerprint: dict[int, dict[int, int]],
-                  car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParams:
+                  car_fw: list[structs.CarParams.CarFw], alpha_long: bool, is_release: bool, docs: bool) -> structs.CarParams:
     raise NotImplementedError
 
   @staticmethod
   def init(CP: structs.CarParams, can_recv: CanRecvCallable, can_send: CanSendCallable):
-    pass
+    """Used to disable longitudinal ECUs as needed"""
+
+  @staticmethod
+  def deinit(CP: structs.CarParams, can_recv: CanRecvCallable, can_send: CanSendCallable):
+    """Used to re-enable longitudinal ECUs as needed"""
 
   @staticmethod
   def get_steer_feedforward_default(desired_angle, v_ego):
@@ -493,17 +503,14 @@ class CarInterfaceBase(ABC):
     tune.torque.latAccelOffset = 0.0
     tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
 
-  def _update(self) -> structs.CarState:
-    return self.CS.update(self.can_parsers)
-
   def update(self, can_packets: list[tuple[int, list[CanData]]]) -> structs.CarState:
     # parse can
     for cp in self.can_parsers.values():
       if cp is not None:
-        cp.update_strings(can_packets)
+        cp.update(can_packets)
 
     # get CarState
-    ret = self._update()
+    ret = self.CS.update(self.can_parsers)
 
     ret.canValid = all(cp.can_valid for cp in self.can_parsers.values())
     ret.canTimeout = any(cp.bus_timeout for cp in self.can_parsers.values())

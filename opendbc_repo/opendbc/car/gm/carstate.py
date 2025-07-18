@@ -1,9 +1,8 @@
 import copy
+from opendbc.can import CANDefine, CANParser
 from cereal import car
 from openpilot.common.params import Params #kans
 import numpy as np
-from opendbc.can.can_define import CANDefine
-from opendbc.can.parser import CANParser
 from opendbc.car import Bus, create_button_events, structs
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.interfaces import CarStateBase
@@ -208,72 +207,19 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parsers(CP):
-    pt_messages = [
-      ("BCMTurnSignals", 1),
-      ("ECMPRDNL2", 10),
-      ("PSCMStatus", 10),
-      ("ESPStatus", 10),
-      ("BCMDoorBeltStatus", 10),
-      ("BCMGeneralPlatformStatus", 10),
-      ("EBCMWheelSpdFront", 20),
-      ("EBCMWheelSpdRear", 20),
-      ("EBCMFrictionBrakeStatus", 20),
-      ("AcceleratorPedal2", 33),
-      ("ASCMSteeringButton", 33),
-      ("ECMEngineStatus", 100),
-      ("PSCMSteeringAngle", 100),
-      ("ECMAcceleratorPos", 80),
-    ]
-    if CP.flags & GMFlags.SPEED_RELATED_MSG.value:
-      pt_messages.append(("SPEED_RELATED", 20))
-
-    if CP.enableBsm:
-      pt_messages.append(("BCMBlindSpotMonitor", 10))
-
-    # Used to read back last counter sent to PT by camera
+    pt_messages = []
     if CP.networkLocation == NetworkLocation.fwdCamera:
       pt_messages += [
-        ("ASCMLKASteeringCmd", 0),
+        ("ASCMLKASteeringCmd", float('nan')),
       ]
-    # 이 부분은 위 조건아래 들어와야 하는 것이 아니므로 내어쓰기 해야 합니다.
-    if CP.flags & GMFlags.NO_ACCELERATOR_POS_MSG.value:
-      pt_messages.remove(("ECMAcceleratorPos", 80))
-      pt_messages.append(("EBCMBrakePedalPosition", 100))
-
-    if CP.transmissionType == TransmissionType.direct:
-      pt_messages += [
-        ("EBCMRegenPaddle", 50),
-        ("EVDriveMode", 0),
-      ]
-
-    if CP.carFingerprint in CC_ONLY_CAR:
-      pt_messages += [
-        ("ECMCruiseControl", 10),
-      ]
-    if CP.enableGasInterceptorDEPRECATED:
-      pt_messages += [
-        ("GAS_SENSOR", 50),
-      ]
-
-    cam_messages = []
-    if CP.networkLocation == NetworkLocation.fwdCamera and not CP.flags & GMFlags.NO_CAMERA.value:
-      cam_messages += [
-        ("ASCMLKASteeringCmd", 10),
-        ("AEBCmd", 10),
-      ]
-
-      if CP.carFingerprint not in CC_ONLY_CAR:
-        cam_messages += [
-          ("ASCMActiveCruiseControlStatus", 25),
-        ]
 
     loopback_messages = [
-      ("ASCMLKASteeringCmd", 0),
+      ("ASCMLKASteeringCmd", float('nan')),
     ]
 
     return {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, 0),
-      Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], cam_messages, 2),
+      Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], [], 2),
       Bus.loopback: CANParser(DBC[CP.carFingerprint][Bus.pt], loopback_messages, 128),
     }
 

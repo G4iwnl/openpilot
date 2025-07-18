@@ -1,28 +1,37 @@
 import math
 
-from opendbc.can.parser import CANParser
+from opendbc.can import CANParser
 from opendbc.car import Bus, structs
 from opendbc.car.interfaces import RadarInterfaceBase
-from opendbc.car.hyundai.values import DBC, HyundaiFlags
+from opendbc.car.hyundai.values import DBC, HyundaiFlags, HyundaiExtFlags
 from openpilot.common.params import Params
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from openpilot.common.filter_simple import MyMovingAverage
 
 RADAR_START_ADDR = 0x500
 RADAR_MSG_COUNT = 32
+RADAR_START_ADDR_CANFD1 = 0x210
+RADAR_MSG_COUNT1 = 16
+RADAR_START_ADDR_CANFD2 = 0x3A5 # Group 2, Group 1: 0x210 2개씩있어서 일단 보류.
+RADAR_MSG_COUNT2 = 32
 
 # POC for parsing corner radars: https://github.com/commaai/openpilot/pull/24221/
 
-def get_radar_can_parser(CP, radar_tracks):
+def get_radar_can_parser(CP, radar_tracks, msg_start_addr, msg_count):
   if not radar_tracks:
     return None
   #if Bus.radar not in DBC[CP.carFingerprint]:
   #  return None
-
-  messages = [(f"RADAR_TRACK_{addr:x}", 20) for addr in range(RADAR_START_ADDR, RADAR_START_ADDR + RADAR_MSG_COUNT)]
-  #return CANParser(DBC[CP.carFingerprint][Bus.radar], messages, 1)
   print("RadarInterface: RadarTracks...")
-  return CANParser('hyundai_kia_mando_front_radar_generated', messages, 1)
+
+  if CP.flags & HyundaiFlags.CANFD:
+    CAN = CanBus(CP)
+    messages = [(f"RADAR_TRACK_{addr:x}", 20) for addr in range(msg_start_addr, msg_start_addr + msg_count)]
+    return CANParser('hyundai_canfd_radar_generated', messages, CAN.ACAN)
+  else:
+    messages = [(f"RADAR_TRACK_{addr:x}", 20) for addr in range(msg_start_addr, msg_start_addr + msg_count)]
+  #return CANParser(DBC[CP.carFingerprint][Bus.radar], messages, 1)
+    return CANParser('hyundai_kia_mando_front_radar_generated', messages, 1)
 
 def get_radar_can_parser_scc(CP):
   CAN = CanBus(CP)
@@ -41,15 +50,28 @@ class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
     super().__init__(CP)
     self.updated_messages = set()
-    self.trigger_msg = RADAR_START_ADDR + RADAR_MSG_COUNT - 1
+    self.canfd = True if CP.flags & HyundaiFlags.CANFD else False
+    self.radar_group1 = False
+    if self.canfd:
+      if CP.extFlags & HyundaiExtFlags.RADAR_GROUP1.value:
+        self.radar_start_addr = RADAR_START_ADDR_CANFD1
+        self.radar_msg_count = RADAR_MSG_COUNT1
+        self.radar_group1 = True
+      else:
+        self.radar_start_addr = RADAR_START_ADDR_CANFD2
+        self.radar_msg_count = RADAR_MSG_COUNT2
+    else:
+      self.radar_start_addr = RADAR_START_ADDR
+      self.radar_msg_count = RADAR_MSG_COUNT
+    self.trigger_msg = self.radar_start_addr + self.radar_msg_count - 1
     self.track_id = 0
 
     self.radar_off_can = CP.radarUnavailable
 
-    self.radar_tracks = Params().get_int("EnableRadarTracks") >= 1
-    self.rcp = get_radar_can_parser(CP, self.radar_tracks)
+    self.params = Params()
+    self.radar_tracks = self.params.get_int("EnableRadarTracks") >= 1
+    self.rcp = get_radar_can_parser(CP, self.radar_tracks, self.radar_start_addr, self.radar_msg_count)
 
-    self.canfd = True if CP.flags & HyundaiFlags.CANFD else False
     if not self.radar_tracks:
       self.rcp = get_radar_can_parser_scc(CP)
       self.trigger_msg = 416 if self.canfd else 0x420
@@ -64,7 +86,7 @@ class RadarInterface(RadarInterfaceBase):
     if self.radar_off_can or (self.rcp is None):
       return super().update(None)
 
-    vls = self.rcp.update_strings(can_strings)
+    vls = self.rcp.update(can_strings)
     self.updated_messages.update(vls)
 
     if self.trigger_msg not in self.updated_messages:
@@ -83,7 +105,7 @@ class RadarInterface(RadarInterfaceBase):
     if not self.rcp.can_valid:
       ret.errors.canError = True
 
-    for addr in range(RADAR_START_ADDR, RADAR_START_ADDR + RADAR_MSG_COUNT):
+    for addr in range(self.radar_start_addr, self.radar_start_addr + self.radar_msg_count):
       msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
 
       if addr not in self.pts:
@@ -91,20 +113,65 @@ class RadarInterface(RadarInterfaceBase):
         self.pts[addr].trackId = self.track_id
         self.track_id += 1
 
-      valid = msg['STATE'] in (3, 4)
+      if self.radar_group1:
+        valid = msg['VALID_CNT1'] > 0
+      elif self.canfd:
+        valid = msg['VALID'] > 0
+      else:
+        valid = msg['STATE'] in (3, 4)
       if valid:
-        azimuth = math.radians(msg['AZIMUTH'])
-        self.pts[addr].measured = True
-        self.pts[addr].dRel = math.cos(azimuth) * msg['LONG_DIST']
-        self.pts[addr].yRel = 0.5 * -math.sin(azimuth) * msg['LONG_DIST']
-        self.pts[addr].vRel = msg['REL_SPEED']
-        self.pts[addr].vLead = self.pts[addr].vRel + self.v_ego
-        self.pts[addr].aRel = msg['REL_ACCEL']
-        self.pts[addr].yvRel = float('nan')
+        if self.radar_group1:
+          self.pts[addr].measured = True
+          self.pts[addr].dRel = msg['LONG_DIST1']
+          self.pts[addr].yRel = msg['LAT_DIST1']
+          self.pts[addr].vRel = msg['REL_SPEED1']
+          self.pts[addr].vLead = self.pts[addr].vRel + self.v_ego
+          self.pts[addr].aRel = msg['REL_ACCEL1']
+          self.pts[addr].yvRel = msg['LAT_SPEED1']
+        elif self.canfd:
+          self.pts[addr].measured = True
+          self.pts[addr].dRel = msg['LONG_DIST']
+          self.pts[addr].yRel = msg['LAT_DIST']
+          self.pts[addr].vRel = msg['REL_SPEED']
+          self.pts[addr].vLead = self.pts[addr].vRel + self.v_ego
+          self.pts[addr].aRel = msg['REL_ACCEL']
+          self.pts[addr].yvRel = msg['LAT_SPEED']
+        else:
+          azimuth = math.radians(msg['AZIMUTH'])
+          self.pts[addr].measured = True
+          self.pts[addr].dRel = math.cos(azimuth) * msg['LONG_DIST']
+          self.pts[addr].yRel = 0.5 * -math.sin(azimuth) * msg['LONG_DIST']
+          self.pts[addr].vRel = msg['REL_SPEED']
+          self.pts[addr].vLead = self.pts[addr].vRel + self.v_ego
+          self.pts[addr].aRel = msg['REL_ACCEL']
+          self.pts[addr].yvRel = 0.0
 
       else:
         del self.pts[addr]
 
+    # radar group1은 하나의 msg에 2개의 레이더가 들어있음.
+    if self.radar_group1:
+      for addr in range(self.radar_start_addr, self.radar_start_addr + self.radar_msg_count):
+        msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
+
+        addr += 16
+        if addr not in self.pts:
+          self.pts[addr] = structs.RadarData.RadarPoint()
+          self.pts[addr].trackId = self.track_id
+          self.track_id += 1
+
+        valid = msg['VALID_CNT2'] > 0
+        if valid:
+          self.pts[addr].measured = True
+          self.pts[addr].dRel = msg['LONG_DIST2']
+          self.pts[addr].yRel = msg['LAT_DIST2']
+          self.pts[addr].vRel = msg['REL_SPEED2']
+          self.pts[addr].vLead = self.pts[addr].vRel + self.v_ego
+          self.pts[addr].aRel = msg['REL_ACCEL2']
+          self.pts[addr].yvRel = msg['LAT_SPEED2']
+        else:
+          del self.pts[addr]
+      
     ret.points = list(self.pts.values())
     return ret
 
@@ -136,7 +203,7 @@ class RadarInterface(RadarInterfaceBase):
           self.pts[ii].vRel = vRel
           self.pts[ii].vLead = self.vLead_filter.process(vLead)
           self.pts[ii].aRel = 0 #float('nan')
-          self.pts[ii].yvRel = float('nan')
+          self.pts[ii].yvRel = 0 #float('nan')
           self.pts[ii].measured = True
         else:
           if ii in self.pts:
@@ -159,7 +226,7 @@ class RadarInterface(RadarInterfaceBase):
           self.pts[ii].vRel = vRel
           self.pts[ii].vLead = self.vLead_filter.process(vLead)
           self.pts[ii].aRel = 0 #float('nan')
-          self.pts[ii].yvRel = float('nan')
+          self.pts[ii].yvRel = 0 #float('nan')
           self.pts[ii].measured = True
         else:
           if ii in self.pts:

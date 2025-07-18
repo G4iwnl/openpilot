@@ -135,7 +135,6 @@ class Controls:
     self.lanefull_mode_enabled = (lat_plan.useLaneLines and curve_speed_abs > self.params.get_int("UseLaneLineCurveSpeed"))
     lat_smooth_seconds = LAT_SMOOTH_SECONDS #self.params.get_float("SteerSmoothSec") * 0.01
     steer_actuator_delay = self.params.get_float("SteerActuatorDelay") * 0.01
-    mpc_output_offset = self.params.get_float("LatMpcOutputOffset") * 0.01 # 0.05
     if steer_actuator_delay == 0.0:
       steer_actuator_delay = self.sm['liveDelay'].lateralDelay 
 
@@ -155,7 +154,7 @@ class Controls:
           alpha = 1 - np.exp(-DT_CTRL / tau) if tau > 0 else 1
           return alpha * val + (1 - alpha) * prev_val
 
-        curvature = get_lag_adjusted_curvature(self.CP, CS.vEgo, lat_plan.psis, lat_plan.curvatures, steer_actuator_delay + lat_smooth_seconds + mpc_output_offset, lat_plan.distances)
+        curvature = get_lag_adjusted_curvature(self.CP, CS.vEgo, lat_plan.psis, lat_plan.curvatures, steer_actuator_delay + lat_smooth_seconds, lat_plan.distances)
 
         new_desired_curvature = smooth_value(curvature, self.desired_curvature, lat_smooth_seconds)
     else:
@@ -237,13 +236,38 @@ class Controls:
     hudControl.leadDistanceBars = self.sm['selfdriveState'].personality.raw + 1
     hudControl.visualAlert = self.sm['selfdriveState'].alertHudVisual
 
-    leadOne = self.sm['radarState'].leadOne
+    radarState = self.sm['radarState']
+    leadOne = radarState.leadOne
     hudControl.leadDistance = leadOne.dRel if leadOne.status else 0
     hudControl.leadRelSpeed = leadOne.vRel if leadOne.status else 0
     hudControl.leadRadar = 1 if leadOne.radar else 0
     hudControl.leadDPath = leadOne.dPath
 
-    hudControl.modelDesire = 1 if self.sm['modelV2'].meta.desire == log.Desire.turnLeft else 2 if self.sm['modelV2'].meta.desire == log.Desire.turnRight else 0
+    meta = self.sm['modelV2'].meta
+    hudControl.modelDesire = 1 if meta.desire == log.Desire.turnLeft else 2 if meta.desire == log.Desire.turnRight else 0
+
+    road_edge_left = meta.distanceToRoadEdgeLeft
+    road_edge_right = meta.distanceToRoadEdgeRight
+    def _find_closest_lead(leads, road_edge):
+        if road_edge < 2.0:
+          return None
+        valid_leads = [
+            lead for lead in leads
+            #if lead.status and abs(lead.dPath) < 3.5 and lead.vLead > 2.0 and 5 < lead.dRel < 100
+            if lead.status and abs(lead.dPath) < 4.2 and ((lead.vLead >= 2.0 and 5 < lead.dRel < 100) or (lead.vLead < 2.0 and 3 < lead.dRel < 30))
+        ]
+        return min(valid_leads, key=lambda l: l.dRel) if valid_leads else None
+
+    lead_left = _find_closest_lead(radarState.leadsLeft, road_edge_left)
+    lead_right = _find_closest_lead(radarState.leadsRight, road_edge_right)
+    if lead_left is not None:
+      hudControl.leadLeftDist = lead_left.dRel
+      hudControl.leadLeftLat = abs(lead_left.dPath)
+      #print(f"Lead left: {lead_left.dRel:.2f}m, {lead_left.dPath:.2f}m, {lead_left.vRel:.2f}m/s")
+    if lead_right is not None:
+      hudControl.leadRightDist = lead_right.dRel
+      hudControl.leadRightLat = abs(lead_right.dPath)
+
 
     hudControl.rightLaneVisible = True
     hudControl.leftLaneVisible = True

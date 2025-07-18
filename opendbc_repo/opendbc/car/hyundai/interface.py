@@ -27,7 +27,7 @@ class CarInterface(CarInterfaceBase):
   RadarInterface = RadarInterface
 
   @staticmethod
-  def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, alpha_long, docs) -> structs.CarParams:
+  def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, alpha_long, is_release, docs) -> structs.CarParams:
 
     params = Params()
     camera_scc = params.get_int("HyundaiCameraSCC")
@@ -54,12 +54,15 @@ class CarInterface(CarInterfaceBase):
       if 0x105 in fingerprint[CAN.ECAN]:
         ret.flags |= HyundaiFlags.HYBRID.value
 
-      if 0x4a3 in fingerprint[CAN.ECAN]:
-        ret.extFlags |= HyundaiExtFlags.CANFD_4A3.value
-
       if 203 in fingerprint[CAN.CAM]: # LFA_ALT
         print("##### Anglecontrol detected (LFA_ALT)")
         ret.flags |= HyundaiFlags.ANGLE_CONTROL.value
+
+      print("ACAN=", fingerprint[CAN.ACAN])
+
+      if 0x210 in fingerprint[CAN.ACAN]:
+        print("##### Radar Group 1 detected (0x210)")
+        ret.extFlags |= HyundaiExtFlags.RADAR_GROUP1.value
 
       # detect HDA2 with ADAS Driving ECU
       if hda2:
@@ -108,14 +111,6 @@ class CarInterface(CarInterfaceBase):
         ret.extFlags |= HyundaiExtFlags.CANFD_GEARS_NONE.value
         print("$$$CANFD GEARS_NONE")
           
-      if 0x161 in fingerprint[CAN.ECAN]: # 0x161(353)
-        ret.extFlags |= HyundaiExtFlags.CANFD_161.value
-        print("$$$CANFD 161(CCNC)")
-
-      if 0x2af in fingerprint[CAN.ECAN]: # 0x2af(687)
-        ret.extFlags |= HyundaiExtFlags.STEER_TOUCH.value
-        print("$$$STEER_TOUCH")
-        
       cfgs = [get_safety_config(structs.CarParams.SafetyModel.hyundaiCanfd), ]
       if CAN.ECAN >= 4:
         cfgs.insert(0, get_safety_config(structs.CarParams.SafetyModel.noOutput))
@@ -156,13 +151,6 @@ class CarInterface(CarInterfaceBase):
       if ret.flags & HyundaiFlags.CAMERA_SCC:
         ret.safetyConfigs[0].safetyParam |= HyundaiSafetyFlags.CAMERA_SCC.value
         print("$$$CAMERA_SCC")
-
-      if 1290 in fingerprint[2]:
-        ret.extFlags |= HyundaiExtFlags.HAS_SCC13.value
-        print("$$$HAS_SCC13")
-      if 905 in fingerprint[2]:
-        ret.extFlags |= HyundaiExtFlags.HAS_SCC14.value
-        print("$$$HAS_SCC14")
 
     # Common lateral control setup
 
@@ -206,18 +194,12 @@ class CarInterface(CarInterfaceBase):
 
     # *** feature detection ***
     if ret.flags & HyundaiFlags.CANFD:
-      #if candidate in (CAR.KIA_CARNIVAL_4TH_GEN, CAR.KIA_SORENTO_4TH_GEN, CAR.KIA_SORENTO_HEV_4TH_GEN, CAR.HYUNDAI_IONIQ_5_N, CAR.KIA_EV9) and hda2: ##카니발4th & hda2 인경우에만 BSM이 ADAS에서 나옴.
-      if (0x161 in fingerprint[CAN.ECAN] and hda2) or params.get_int("CanfdHDA2") == 2: # EV6일부모델은 BSM이 ADAS에서 나옴.
-        ret.extFlags |= HyundaiExtFlags.BSM_IN_ADAS.value
       print(f"$$$$$ CanFD ECAN = {CAN.ECAN}")
       if 0x1fa in fingerprint[CAN.ECAN]:
         ret.extFlags |= HyundaiExtFlags.NAVI_CLUSTER.value
         print("$$$$ NaviCluster = True")
       else:
         print("$$$$ NaviCluster = False")
-      if 0x3a0 in fingerprint[CAN.ECAN]: # 0x3a0(928): TPMS
-        ret.extFlags |= HyundaiExtFlags.CANFD_TPMS.value
-        print("$$$CANFD TPMS")
 
     else:
       if 1348 in fingerprint[0]:
@@ -226,11 +208,7 @@ class CarInterface(CarInterfaceBase):
       if 1157 in fingerprint[0] or 1157 in fingerprint[2]:
         ret.extFlags |= HyundaiExtFlags.HAS_LFAHDA.value
         print("$$$$ HasLFAHDA")
-      if 913 in fingerprint[0]:
-        ret.extFlags |= HyundaiExtFlags.HAS_LFA_BUTTON.value
-        print("$$$$ hasLFAButton")
       if 1007 in fingerprint[0]:
-        ret.extFlags |= HyundaiExtFlags.CRUISE_BUTTON_ALT.value
         print("#### cruiseButtonAlt")
 
     print(f"$$$$ enableBsm = {ret.enableBsm}")

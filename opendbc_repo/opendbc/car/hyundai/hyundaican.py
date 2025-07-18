@@ -1,3 +1,4 @@
+import copy
 import crcmod
 from opendbc.car.hyundai.values import CAR, HyundaiFlags
 
@@ -167,7 +168,7 @@ def create_acc_commands_scc(packer, enabled, accel, jerk, idx, hud_control, set_
 
   commands = []
   if CS.scc11 is not None:
-    values = CS.scc11
+    values = copy.copy(CS.scc11)
     values["MainMode_ACC"] = 1 if cruise_available else 0
     values["TauGapSet"] = hud_control.leadDistanceBars
     values["VSetDis"] = set_speed if enabled else 0
@@ -182,7 +183,7 @@ def create_acc_commands_scc(packer, enabled, accel, jerk, idx, hud_control, set_
     commands.append(packer.make_can_msg("SCC11", 0, values))
     
   if CS.scc12 is not None:
-    values = CS.scc12
+    values = copy.copy(CS.scc12)
     values["ACCMode"] = scc12_acc_mode #2 if enabled and long_override else 1 if long_enabled else 0
     values["StopReq"] = stop_req
     values["aReqRaw"] = accel
@@ -199,7 +200,7 @@ def create_acc_commands_scc(packer, enabled, accel, jerk, idx, hud_control, set_
     commands.append(packer.make_can_msg("SCC12", 0, values))
 
   if CS.scc14 is not None:
-    values = CS.scc14
+    values = copy.copy(CS.scc14)
     values["ComfortBandUpper"] = jerk.cb_upper
     values["ComfortBandLower"] = jerk.cb_lower
     values["JerkUpperLimit"] = jerk.jerk_u
