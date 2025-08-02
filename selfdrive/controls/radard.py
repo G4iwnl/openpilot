@@ -98,9 +98,8 @@ def laplacian_pdf(x: float, mu: float, b: float):
 
 def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks: dict[int, Track], radar_lat_factor = 0.0):
   offset_vision_dist = lead.x[0] - RADAR_TO_CAMERA
-  #vel_tolerance = 25.0 if lead.prob > 0.99 else 10.0
   max_offset_vision_dist = max(offset_vision_dist * 0.35, 5.0)
-  #max_offset_vision_vel = max(lead.v[0] * np.interp(lead.prob, [0.8, 0.98], [0.3, 0.6]), 5.0) # 확률이 낮으면 속도오차를 줄임.
+  #max_offset_vision_dist = max(offset_vision_dist * 0.7, 5.0)
 
   def prob(c):
     if abs(offset_vision_dist - c.dRel) > max_offset_vision_dist: # vision 측정한것보다 레이더 거리나 너무 낮으면 버림
@@ -196,8 +195,9 @@ def get_lead_side(v_ego, tracks, md, lane_width, model_v_ego, radar_lat_factor =
     # yRel값은 왼쪽이 +값, lead.y[0]값은 왼쪽이 -값
     d_y = c.yRel + np.interp(c.dRel, md_x, md_y) + c.yvLead * radar_lat_factor
     if abs(d_y) < lane_width / 2 * 0.8:
-      ld = c.get_RadarState(md, lead_msg.prob, float(-lead_msg.y[0]))
-      leads_center[c.dRel] = ld
+      if c.cnt > 4:
+        ld = c.get_RadarState(md, lead_msg.prob, float(-lead_msg.y[0]))
+        leads_center[c.dRel] = ld
     elif -next_lane_y < d_y < 0:
       ld = c.get_RadarState(md, 0, 0)
       leads_right[c.dRel] = ld
@@ -491,7 +491,7 @@ class RadarD:
           if leadCenter["dRel"] < self.radar_state.leadOne.dRel:
             leadCenter["modelProb"] = 0.01
             self.radar_state.leadOne = leadCenter
-        else:
+        elif False: #가끔 다리교랑이 검출됨.. 커브길..
           self.radar_detected = True
           leadCenter["modelProb"] = 0.02
           self.radar_state.leadOne = leadCenter
