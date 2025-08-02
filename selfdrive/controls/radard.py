@@ -25,7 +25,7 @@ V_EGO_STATIONARY = 4.   # no stationary object flag below this speed
 RADAR_TO_CENTER = 2.7   # (deprecated) RADAR is ~ 2.7m ahead from center of car
 RADAR_TO_CAMERA = 1.52  # RADAR is ~ 1.5m ahead from center of mesh frame
 
-MYLANE_WIDTH = 4.6
+MYLANE_WIDTH = 5.2 # 끼어드는 차량을 위해 약간더 범위를 줌..
 
 class Track:
   def __init__(self, identifier: int):
@@ -105,43 +105,24 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
     if lead.prob < 0.5 or abs(offset_vision_dist - c.dRel) > max_offset_vision_dist: # vision 측정한것보다 레이더 거리나 너무 낮으면 버림
       return -1e6
 
-    #dPath = c.dPath + c.yvLead * radar_lat_factor
-    #if c.cnt < 3 or lead.prob < 0.5 or abs(dPath) > MYLANE_WIDTH / 2:
-    #  return -1e6
+    dPath = c.dPath + c.yvLead * radar_lat_factor
+    if abs(dPath) > MYLANE_WIDTH / 2:
+      return -1e6
       
     prob_d = laplacian_pdf(c.dRel, offset_vision_dist, lead.xStd[0])
     prob_y = laplacian_pdf(c.yRel + c.yvLead * radar_lat_factor, -lead.y[0], lead.yStd[0])
     prob_v = laplacian_pdf(c.vLead, lead.v[0], lead.vStd[0])
 
-    return prob_d * prob_y * prob_v
+    return prob_d * prob_y * (1.0 + prob_v)
 
-  scored_tracks = []
+  best_track = None
+  best_score = -1e6
   for c in tracks.values():
     score = prob(c)
-    if score > -1e6:
-      scored_tracks.append((c, score))
-
-  scored_tracks.sort(key=lambda x: x[1], reverse=True)
-
-  top_scores = [s for _, s in scored_tracks]
-  if not top_scores:
-    return None
-
-  score_cutoff_ratio = 0.01
-  top_score = top_scores[0]
-  group = [c for c, s in scored_tracks if s >= top_score * score_cutoff_ratio]
-
-  if not group:
-    group = [scored_tracks[0][0]]
-
-  # 속도가 빠르고 거리가 가까운 트랙을 선택
-  def combined_score(c):
-    v = c.vLead
-    d = c.dRel
-    return (v ** 2 + 1.0) / (d + 1e-3)
-  best_track = max(group, key=combined_score)
+    if score > best_score:
+      best_track = c
     
-  return best_track
+  return best_track if best_score > 0.001 else None
 
 def get_RadarState_from_vision(md, lead_msg: capnp._DynamicStructReader, v_ego: float, model_v_ego: float):
   lead_v_rel_pred = lead_msg.v[0] - model_v_ego
