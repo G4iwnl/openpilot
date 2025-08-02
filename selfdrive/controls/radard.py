@@ -102,7 +102,7 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
   #max_offset_vision_dist = max(offset_vision_dist * 0.7, 5.0)
 
   def prob(c):
-    if abs(offset_vision_dist - c.dRel) > max_offset_vision_dist: # vision 측정한것보다 레이더 거리나 너무 낮으면 버림
+    if lead.prob < 0.5 or abs(offset_vision_dist - c.dRel) > max_offset_vision_dist: # vision 측정한것보다 레이더 거리나 너무 낮으면 버림
       return -1e6
 
     #dPath = c.dPath + c.yvLead * radar_lat_factor
