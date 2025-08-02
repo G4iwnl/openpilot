@@ -138,7 +138,7 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
   def combined_score(c):
     v = c.vLead
     d = c.dRel
-    return (v + 0.5) / (d + 1e-3)
+    return (v ** 2 + 1.0) / (d + 1e-3)
   best_track = max(group, key=combined_score)
     
   return best_track
