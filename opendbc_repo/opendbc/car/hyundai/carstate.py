@@ -417,7 +417,7 @@ class CarState(CarStateBase):
     right_blinker_lamp = blinkers_info["RIGHT_LAMP"] or blinkers_info["RIGHT_LAMP_ALT"]
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, left_blinker_lamp, right_blinker_lamp)
 
-    if self.CP.enableBsm and self.frame > 100:
+    if self.CP.enableBsm and self.frame > 500:
       if self.cp_bsm is None:
         if 442 in cp_cam.seen_addresses:
           self.cp_bsm = cp_cam
