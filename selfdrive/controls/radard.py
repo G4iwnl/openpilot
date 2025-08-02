@@ -122,7 +122,7 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
     if score > best_score:
       best_track = c
     
-  return best_track if best_score > 0.001 else None
+  return best_track if best_score > 0.0 else None
 
 def get_RadarState_from_vision(md, lead_msg: capnp._DynamicStructReader, v_ego: float, model_v_ego: float):
   lead_v_rel_pred = lead_msg.v[0] - model_v_ego
