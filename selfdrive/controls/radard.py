@@ -121,6 +121,7 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
     score = prob(c)
     if score > best_score:
       best_track = c
+      best_score = score
     
   return best_track if best_score > 0.0 else None
 
