@@ -106,7 +106,7 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
       return -1e6
 
     dPath = c.dPath + c.yvLead * radar_lat_factor
-    if abs(dPath) > MYLANE_WIDTH / 2:
+    if c.vLead < 0 or abs(dPath) > MYLANE_WIDTH / 2:
       return -1e6
       
     prob_d = laplacian_pdf(c.dRel, offset_vision_dist, lead.xStd[0])
