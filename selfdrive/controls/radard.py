@@ -113,7 +113,7 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
     prob_y = laplacian_pdf(c.yRel + c.yvLead * radar_lat_factor, -lead.y[0], lead.yStd[0])
     prob_v = laplacian_pdf(c.vLead, lead.v[0], lead.vStd[0])
 
-    return prob_d * prob_y * (1.0 + prob_v)
+    return prob_d * prob_y * prob_v
 
   best_track = None
   best_score = -1e6
