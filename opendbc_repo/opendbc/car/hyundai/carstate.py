@@ -59,6 +59,8 @@ class CarState(CarStateBase):
     self.is_metric = False
     self.buttons_counter = 0
 
+    self.frame = 0
+
     self.cruise_info = {}
     self.lfa_info = {}
     self.lfa_alt_info = {}
@@ -137,6 +139,7 @@ class CarState(CarStateBase):
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
 
+    self.frame += 1
     if self.CP.flags & HyundaiFlags.CANFD:
       return self.update_canfd(can_parsers)
 
@@ -414,9 +417,14 @@ class CarState(CarStateBase):
     right_blinker_lamp = blinkers_info["RIGHT_LAMP"] or blinkers_info["RIGHT_LAMP_ALT"]
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, left_blinker_lamp, right_blinker_lamp)
 
-    if self.CP.enableBsm:
+    if self.CP.enableBsm and self.frame > 100:
       if self.cp_bsm is None:
-        self.cp_bsm = cp_cam if 442 in cp_cam.seen_addresses else cp if 442 in cp.seen_addresses else None
+        if 442 in cp_cam.seen_addresses:
+          self.cp_bsm = cp_cam
+          print("######## BSM in CAM")
+        elif 442 in cp.seen_addresses:
+          self.cp_bsm = cp
+          print("######## BSM in ECAN")
       else:
         bsm_info = self.cp_bsm.vl["BLINDSPOTS_REAR_CORNERS"]
         ret.leftBlindspot = (bsm_info["FL_INDICATOR"] + bsm_info["INDICATOR_LEFT_TWO"] + bsm_info["INDICATOR_LEFT_FOUR"]) > 0
