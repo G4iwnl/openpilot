@@ -127,7 +127,7 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
   if not top_scores:
     return None
 
-  score_cutoff_ratio = 0.5
+  score_cutoff_ratio = 0.01
   top_score = top_scores[0]
   group = [c for c, s in scored_tracks if s >= top_score * score_cutoff_ratio]
 
