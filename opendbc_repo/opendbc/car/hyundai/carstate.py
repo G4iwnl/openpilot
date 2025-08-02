@@ -422,9 +422,13 @@ class CarState(CarStateBase):
         if 442 in cp_cam.seen_addresses:
           self.cp_bsm = cp_cam
           print("######## BSM in CAM")
+          print("######## BSM in CAM, cp_cam.seen_addresses =", cp_cam.seen_addresses)
+          print("######## BSM in CAM, cp.seen_addresses =", cp.seen_addresses)
         elif 442 in cp.seen_addresses:
           self.cp_bsm = cp
           print("######## BSM in ECAN")
+          print("######## BSM in CAM, cp_cam.seen_addresses =", cp_cam.seen_addresses)
+          print("######## BSM in CAM, cp.seen_addresses =", cp.seen_addresses)
       else:
         bsm_info = self.cp_bsm.vl["BLINDSPOTS_REAR_CORNERS"]
         ret.leftBlindspot = (bsm_info["FL_INDICATOR"] + bsm_info["INDICATOR_LEFT_TWO"] + bsm_info["INDICATOR_LEFT_FOUR"]) > 0
