@@ -98,8 +98,8 @@ def laplacian_pdf(x: float, mu: float, b: float):
 
 def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks: dict[int, Track], radar_lat_factor = 0.0):
   offset_vision_dist = lead.x[0] - RADAR_TO_CAMERA
-  max_offset_vision_dist = max(offset_vision_dist * 0.35, 5.0)
-  #max_offset_vision_dist = max(offset_vision_dist * 0.7, 5.0)
+  #max_offset_vision_dist = max(offset_vision_dist * 0.35, 5.0)
+  max_offset_vision_dist = max(offset_vision_dist * 0.7, 5.0)
 
   def prob(c):
     if lead.prob < 0.5 or abs(offset_vision_dist - c.dRel) > max_offset_vision_dist: # vision 측정한것보다 레이더 거리나 너무 낮으면 버림
@@ -113,7 +113,9 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
     prob_y = laplacian_pdf(c.yRel + c.yvLead * radar_lat_factor, -lead.y[0], lead.yStd[0])
     prob_v = laplacian_pdf(c.vLead, lead.v[0], lead.vStd[0])
 
-    return prob_d * prob_y * prob_v
+    #return prob_d * prob_y * prob_v
+    return prob_d * prob_y * prob_v * math.log(c.vLead + 1.0)
+
 
   best_track = None
   best_score = -1e6
