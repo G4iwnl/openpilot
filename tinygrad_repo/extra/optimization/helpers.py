@@ -5,6 +5,8 @@ from tinygrad.uop.ops import UOp, Ops, KernelInfo
 from tinygrad.dtype import dtypes, PtrDType
 from tinygrad.shape.shapetracker import ShapeTracker
 from tinygrad.shape.view import View
+from tinygrad.helpers import getenv
+from tinygrad.engine.realize import get_program
 inf, nan = float('inf'), float('nan')
 UOps = Ops
 
@@ -26,7 +28,7 @@ from tinygrad.helpers import dedup, DEBUG
 def load_worlds(filter_reduce=True, filter_noimage=True, filter_novariable=True):
   fn = Path(__file__).parent.parent / "datasets/sops.gz"
   ast_strs = dedup(gzip.open(fn).read().decode('utf-8').strip().split("\n"))
-  assert len(ast_strs) > 5000, f"dataset size = {len(ast_strs)} is too small"
+  assert len(ast_strs) >= getenv("MIN_ASTS", 1000), f"dataset size = {len(ast_strs)} is too small"
   if DEBUG >= 1: print(f"loaded {len(ast_strs)=} before filters")
   if filter_reduce: ast_strs = [x for x in ast_strs if "REDUCE_AXIS" in x]
   if filter_noimage: ast_strs = [x for x in ast_strs if "dtypes.image" not in x]
@@ -114,7 +116,7 @@ def time_linearizer(lin:Kernel, rawbufs:list[Buffer], allow_test_size=True, max_
 
   rawbufs = _ensure_buffer_alloc(rawbufs)
   var_vals: dict[Variable, int] = {k:int(k.vmax+k.vmin)//2 for k in lin.ast.variables()}
-  p = lin.to_program()
+  p = get_program(lin.get_optimized_ast(), lin.opts)
   tms = _time_program(p, dev.compiler.compile(p.src), var_vals, rawbufs,
                       max_global_size=max_global_size if allow_test_size else None, clear_l2=clear_l2, cnt=cnt, name=to_function_name(lin.name))
 
