@@ -558,8 +558,7 @@ class CarState(CarStateBase):
     ret.accFaulted = cp.vl["TCS"]["ACCEnable"] != 0  # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
 
     if self.CP.flags & HyundaiFlags.CANFD_HDA2 and not (self.CP.flags & HyundaiFlags.CAMERA_SCC):
-      self.hda2_lfa_block_msg = copy.copy(cp_cam.vl["CAM_0x362"] if self.CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING
-                                          else cp_cam.vl["CAM_0x2a4"])
+      self.hda2_lfa_block_msg = copy.copy(cp_cam.vl["CAM_0x362"] if self.CAM_0x362 else cp_cam.vl["CAM_0x2a4"])
 
     speed_conv = CV.KPH_TO_MS # if self.is_metric else CV.MPH_TO_MS
     cluSpeed = cp.vl["CRUISE_BUTTONS_ALT"]["CLU_SPEED"]
