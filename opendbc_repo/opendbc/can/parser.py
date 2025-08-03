@@ -103,6 +103,8 @@ class MessageState:
     if self.ignore_alive:
       return True
     if not self.timestamps:
+      if self.first_seen_nanos != 0 and (current_nanos - self.first_seen_nanos) < 2e9:  # 2초 유예
+        return True
       return False
     if (current_nanos - self.timestamps[-1]) > self.timeout_threshold:
       return False
@@ -195,7 +197,6 @@ class CANParser:
     for state in self.message_states.values():
       if state.counter_fail >= MAX_BAD_COUNTER:
         counters_valid = False
-        #print("counters_valid=", state.name)
       if not state.valid(nanos, self.bus_timeout):
         valid = False
         self.invalid_time_counter += 1
