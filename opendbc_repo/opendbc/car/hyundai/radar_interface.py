@@ -127,6 +127,7 @@ class RadarInterface(RadarInterfaceBase):
           self.pts[addr].vRel = msg['REL_SPEED1']
           self.pts[addr].vLead = self.pts[addr].vRel + self.v_ego
           self.pts[addr].aRel = msg['REL_ACCEL1']
+          self.pts[addr].aLeadRaw = self.pts[addr].aRel + self.a_ego
           self.pts[addr].yvRel = msg['LAT_SPEED1']
         elif self.canfd:
           self.pts[addr].measured = True
@@ -135,6 +136,7 @@ class RadarInterface(RadarInterfaceBase):
           self.pts[addr].vRel = msg['REL_SPEED']
           self.pts[addr].vLead = self.pts[addr].vRel + self.v_ego
           self.pts[addr].aRel = msg['REL_ACCEL']
+          self.pts[addr].aLeadRaw = self.pts[addr].aRel + self.a_ego
           self.pts[addr].yvRel = msg['LAT_SPEED']
         else:
           azimuth = math.radians(msg['AZIMUTH'])
@@ -144,6 +146,7 @@ class RadarInterface(RadarInterfaceBase):
           self.pts[addr].vRel = msg['REL_SPEED']
           self.pts[addr].vLead = self.pts[addr].vRel + self.v_ego
           self.pts[addr].aRel = msg['REL_ACCEL']
+          self.pts[addr].aLeadRaw = self.pts[addr].aRel + self.a_ego
           self.pts[addr].yvRel = 0.0
 
       else:
@@ -168,6 +171,7 @@ class RadarInterface(RadarInterfaceBase):
           self.pts[addr].vRel = msg['REL_SPEED2']
           self.pts[addr].vLead = self.pts[addr].vRel + self.v_ego
           self.pts[addr].aRel = msg['REL_ACCEL2']
+          self.pts[addr].aLeadRaw = self.pts[addr].aRel + self.a_ego
           self.pts[addr].yvRel = msg['LAT_SPEED2']
         else:
           del self.pts[addr]
@@ -203,6 +207,7 @@ class RadarInterface(RadarInterfaceBase):
           self.pts[ii].vRel = vRel
           self.pts[ii].vLead = self.vLead_filter.process(vLead)
           self.pts[ii].aRel = 0 #float('nan')
+          self.pts[ii].aLeadRaw = float('nan')
           self.pts[ii].yvRel = 0 #float('nan')
           self.pts[ii].measured = True
         else:
@@ -226,6 +231,7 @@ class RadarInterface(RadarInterfaceBase):
           self.pts[ii].vRel = vRel
           self.pts[ii].vLead = self.vLead_filter.process(vLead)
           self.pts[ii].aRel = 0 #float('nan')
+          self.pts[ii].aLeadRaw = float('nan')
           self.pts[ii].yvRel = 0 #float('nan')
           self.pts[ii].measured = True
         else:

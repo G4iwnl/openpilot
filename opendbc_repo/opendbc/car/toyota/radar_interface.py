@@ -83,6 +83,7 @@ class RadarInterface(RadarInterfaceBase):
           self.pts[ii].vRel = cpt['REL_SPEED']
           self.pts[ii].vLead = self.pts[ii].vRel + self.v_ego
           self.pts[ii].aRel = float('nan')
+          self.pts[ii].aLeadRaw = float('nan')
           self.pts[ii].yvRel = float('nan')
           self.pts[ii].measured = bool(cpt['VALID'])
         else:

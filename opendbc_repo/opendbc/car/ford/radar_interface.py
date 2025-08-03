@@ -162,6 +162,7 @@ class RadarInterface(RadarInterfaceBase):
         self.pts[ii].yRel = cpt['X_Rel'] * cpt['Angle'] * CV.DEG_TO_RAD  # in car frame's y axis, left is positive
         self.pts[ii].vRel = cpt['V_Rel']
         self.pts[ii].vLead = self.pts[ii].vRel + self.v_ego
+        self.pts[ii].aLeadRaw = float('nan')
         self.pts[ii].aRel = float('nan')
         self.pts[ii].yvRel = 0# float('nan')
         self.pts[ii].measured = True

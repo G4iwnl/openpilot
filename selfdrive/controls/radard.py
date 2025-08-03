@@ -43,6 +43,8 @@ class Track:
 
     self.vLead = self.vLeadK = pt.vLead
     self.aLead = self.aLeadK = pt.aLead
+    if not math.isnan(pt.aLeadRaw):
+      self.aLeadK = pt.aLeadRaw
     self.jLead = pt.jLead
     self.yvLead = pt.yvRel
     
