@@ -142,7 +142,7 @@ class CarState(CarStateBase):
         self.controls_ready_count += 1
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
-    if self.controls_ready_count == 1:
+    if self.controls_ready_count == 100:  # 1 sec later
       cp_alt = can_parsers[Bus.alt] if Bus.alt in can_parsers else None
       cp.controls_ready = cp_cam.controls_ready = True
       if cp_alt is not None:
