@@ -34,7 +34,7 @@ class Track:
 
     self.radar_reaction_factor = Params().get_float("RadarReactionFactor") * 0.01
 
-  def update(self, md, pt):
+  def update(self, md, pt, ready):
 
     #pt_yRel = -leads_v3[0].y[0] if track_id in [0, 1] and pt.yRel == 0 and self.ready and leads_v3[0].prob > 0.5 else pt.yRel
     self.dRel = pt.dRel
@@ -48,7 +48,8 @@ class Track:
     
     self.measured = pt.measured   # measured or estimate
 
-    self.dPath = self.yRel + np.interp(self.dRel, md.position.x, md.position.y)
+    if ready:
+      self.dPath = self.yRel + np.interp(self.dRel, md.position.x, md.position.y)
 
     a_lead_threshold = 0.5 * self.radar_reaction_factor
     if abs(self.aLead) < a_lead_threshold and abs(self.jLead) < 0.5:
@@ -416,7 +417,7 @@ class RadarD:
       if track_id not in self.tracks:
         self.tracks[track_id] = Track(track_id)
 
-      self.tracks[track_id].update(sm['modelV2'], pt)
+      self.tracks[track_id].update(sm['modelV2'], pt, self.ready)
 
     for tid in list(self.tracks.keys()):
       if tid not in valid_ids:
