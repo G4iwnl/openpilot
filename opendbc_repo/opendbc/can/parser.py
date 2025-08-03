@@ -132,7 +132,6 @@ class CANParser:
     self.ts_nanos: dict[int | str, dict[str, int]] = {}
     self.addresses: set[int] = set()
     self.message_states: dict[int, MessageState] = {}
-    self.frame = 0
     self.seen_addresses: set[int] = set()
     self.controls_ready = False
 
@@ -212,7 +211,6 @@ class CANParser:
     self.can_valid = self.can_invalid_cnt < CAN_INVALID_CNT and counters_valid
 
   def update(self, strings, sendcan: bool = False):
-    self.frame += 1
     if strings and not isinstance(strings[0], list | tuple):
       strings = [strings]
 
