@@ -90,7 +90,7 @@ class CarState(CarStateBase):
     self.speedLimitDistance = 0
     self.pcmCruiseGap = 0
 
-    self.cruise_buttons_alt =  True if self.CP.carFingerprint in (CAR.CASPER) else False
+    self.cruise_buttons_alt =  True if self.CP.carFingerprint in (CAR.HYUNDAI_CASPER, CAR.HYUNDAI_CASPER_EV) else False
     self.MainMode_ACC = False
     self.ACCMode = 0
     self.LFA_ICON = 0
