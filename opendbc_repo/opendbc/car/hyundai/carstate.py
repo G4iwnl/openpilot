@@ -137,7 +137,7 @@ class CarState(CarStateBase):
 
   def update(self, can_parsers) -> structs.CarState:
 
-    if self.controls_ready_count < 100:
+    if self.controls_ready_count < 200:
       if Params().get_bool("ControlsReady"):
         self.controls_ready_count += 1
     cp = can_parsers[Bus.pt]
