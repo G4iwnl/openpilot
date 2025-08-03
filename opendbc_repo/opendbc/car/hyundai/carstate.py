@@ -356,7 +356,8 @@ class CarState(CarStateBase):
     cp_cam = can_parsers[Bus.cam]
     cp_alt = can_parsers[Bus.alt] if Bus.alt in can_parsers else None
 
-    if cp.frame == 1000:
+    if cp.frame % 100 == 0:
+      print("cp.frame=", cp.frame)
       print("cp_cam.seen_addresses =", cp_cam.seen_addresses)
       print("cp.seen_addresses =", cp.seen_addresses)
       if cp_alt is not None:
