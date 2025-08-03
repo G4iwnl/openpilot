@@ -140,9 +140,13 @@ class CarState(CarStateBase):
     if self.controls_ready_count < 100:
       if Params().get_bool("ControlsReady"):
         self.controls_ready_count += 1
-
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
+    if self.controls_ready_count == 1:
+      cp_alt = can_parsers[Bus.alt] if Bus.alt in can_parsers else None
+      cp.controls_ready = cp_cam.controls_ready = True
+      if cp_alt is not None:
+        cp_alt.controls_ready = True
 
     if self.CP.flags & HyundaiFlags.CANFD:
       return self.update_canfd(can_parsers)
@@ -363,9 +367,7 @@ class CarState(CarStateBase):
     cp_cam = can_parsers[Bus.cam]
     cp_alt = can_parsers[Bus.alt] if Bus.alt in can_parsers else None
 
-    if cp.frame % 100 == 0:
-      print("controls_ready_count =", self.controls_ready_count)
-      print("cp.frame=", cp.frame)
+    if self.controls_ready_count == 100:
       print("cp_cam.seen_addresses =", cp_cam.seen_addresses)
       print("cp.seen_addresses =", cp.seen_addresses)
       if cp_alt is not None:

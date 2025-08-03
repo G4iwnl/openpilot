@@ -134,6 +134,7 @@ class CANParser:
     self.message_states: dict[int, MessageState] = {}
     self.frame = 0
     self.seen_addresses: set[int] = set()
+    self.controls_ready = False
 
     for name_or_addr, freq in messages:
       if isinstance(name_or_addr, numbers.Number):
@@ -200,7 +201,7 @@ class CANParser:
       if not state.valid(nanos, self.bus_timeout):
         valid = False
         self.invalid_time_counter += 1
-        if self.invalid_name is None or state.name != self.invalid_name or self.invalid_time_counter > 100:
+        if self.controls_ready and self.invalid_name is None or state.name != self.invalid_name or self.invalid_time_counter > 100:
           if self.invalid_print_counter < 200:  
             print("CAN_INVALID = ", state.name)
             self.invalid_print_counter += 1
