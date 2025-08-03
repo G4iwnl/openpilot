@@ -133,7 +133,14 @@ class CarState(CarStateBase):
 
     self.cp_bsm = None
 
+    self.controls_ready_count = 0
+
   def update(self, can_parsers) -> structs.CarState:
+
+    if self.controls_ready_count < 100:
+      if Params().get_bool("ControlsReady"):
+        self.controls_ready_count += 1
+
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
 
@@ -357,6 +364,7 @@ class CarState(CarStateBase):
     cp_alt = can_parsers[Bus.alt] if Bus.alt in can_parsers else None
 
     if cp.frame % 100 == 0:
+      print("controls_ready_count =", self.controls_ready_count)
       print("cp.frame=", cp.frame)
       print("cp_cam.seen_addresses =", cp_cam.seen_addresses)
       print("cp.seen_addresses =", cp.seen_addresses)
