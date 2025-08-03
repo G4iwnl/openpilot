@@ -34,36 +34,36 @@ class Track:
 
     self.radar_reaction_factor = Params().get_float("RadarReactionFactor") * 0.01
 
-  def update(self, md, d_rel: float, y_rel: float, v_rel: float, v_lead: float, a_lead: float, j_lead: float, measured: float, yv_lead: float):
+  def update(self, md, pt):
 
-    self.dRel = d_rel   # LONG_DIST
-    self.yRel = y_rel   # -LAT_DIST
-    self.vRel = v_rel   # REL_SPEED
+    #pt_yRel = -leads_v3[0].y[0] if track_id in [0, 1] and pt.yRel == 0 and self.ready and leads_v3[0].prob > 0.5 else pt.yRel
+    self.dRel = pt.dRel
+    self.yRel = pt.yRel
+    self.vRel = pt.vRel
 
-    self.vLead = self.vLeadK = v_lead
-    self.aLead = self.aLeadK = a_lead
-    self.jLead = j_lead
-    self.yvLead = yv_lead
+    self.vLead = self.vLeadK = pt.vLead
+    self.aLead = self.aLeadK = pt.aLead
+    self.jLead = pt.jLead
+    self.yvLead = pt.yvRel
     
-    self.measured = measured   # measured or estimate
+    self.measured = pt.measured   # measured or estimate
 
     self.dPath = self.yRel + np.interp(self.dRel, md.position.x, md.position.y)
 
     a_lead_threshold = 0.5 * self.radar_reaction_factor
-    if abs(self.aLead) < a_lead_threshold and abs(j_lead) < 0.5:
+    if abs(self.aLead) < a_lead_threshold and abs(self.jLead) < 0.5:
       self.aLeadTau.x = _LEAD_ACCEL_TAU * self.radar_reaction_factor
     else:
       self.aLeadTau.update(0.0)
 
     self.cnt += 1
 
-  def get_RadarState(self, md, model_prob: float = 0.0, vision_y_rel = 0.0):
+  def get_RadarState(self, model_prob: float = 0.0, vision_y_rel = 0.0):
     yRel = vision_y_rel if vision_y_rel != 0.0 else float(self.yRel)
-    dPath = yRel + np.interp(self.dRel, md.position.x, md.position.y)
     return {
       "dRel": float(self.dRel),
       "yRel": float(self.yRel) if vision_y_rel == 0.0 else vision_y_rel,
-      "dPath" : float(dPath),
+      "dPath" : float(self.dPath),
       "vRel": float(self.vRel),
       "vLead": float(self.vLead),
       "vLeadK": float(self.vLeadK),
@@ -181,13 +181,13 @@ def get_lead_side(v_ego, tracks, md, lane_width, model_v_ego, radar_lat_factor =
     d_y = c.yRel + np.interp(c.dRel, md_x, md_y) + c.yvLead * radar_lat_factor
     if abs(d_y) < lane_width / 2 * 0.8:
       if c.cnt > 6:
-        ld = c.get_RadarState(md, lead_msg.prob, float(-lead_msg.y[0]))
+        ld = c.get_RadarState(lead_msg.prob, float(-lead_msg.y[0]))
         leads_center[c.dRel] = ld
     elif -next_lane_y < d_y < 0:
-      ld = c.get_RadarState(md, 0, 0)
+      ld = c.get_RadarState(0, 0)
       leads_right[c.dRel] = ld
     elif 0 < d_y < next_lane_y:
-      ld = c.get_RadarState(md, 0, 0)
+      ld = c.get_RadarState(0, 0)
       leads_left[c.dRel] = ld
 
   if False: #lead_msg.prob > 0.5: # center에 비젼데이터 안넣음..
@@ -408,35 +408,19 @@ class RadarD:
       self.v_ego_hist.append(self.v_ego)
       self.last_v_ego_frame = sm.recv_frame['carState']
 
-    ar_pts = {}
+    valid_ids = set()
     for pt in rr.points:
-      pt_yRel = pt.yRel
-      if pt.trackId in [0, 1] and pt.yRel == 0: # scc radar for HKG
-        if self.ready and leads_v3[0].prob > 0.5:
-          pt_yRel = -leads_v3[0].y[0]
-      ar_pts[pt.trackId] = [pt.dRel, pt_yRel, pt.vRel, pt.measured, pt.vLead, pt.aLead, pt.jLead, pt.yvRel]
+      track_id = pt.trackId
+      valid_ids.add(track_id)      
 
-    # *** remove missing points from meta data ***
-    for ids in list(self.tracks.keys()):
-      if ids not in ar_pts:
-        self.tracks.pop(ids, None)
+      if track_id not in self.tracks:
+        self.tracks[track_id] = Track(track_id)
 
-    # *** compute the tracks ***
-    for ids in ar_pts:
-      rpt = ar_pts[ids]
+      self.tracks[track_id].update(sm['modelV2'], pt)
 
-      # align v_ego by a fixed time to align it with the radar measurement
-      #v_lead = rpt[2] + self.v_ego_hist[0]
-      v_lead = rpt[4] # carrot
-      a_lead = rpt[5]
-      j_lead = rpt[6]
-      yv_lead = rpt[7]
-
-      # create the track if it doesn't exist or it's a new track
-      if ids not in self.tracks:
-        self.tracks[ids] = Track(ids)
-      if self.ready:
-        self.tracks[ids].update(sm['modelV2'], rpt[0], rpt[1], rpt[2], v_lead, a_lead, j_lead, rpt[3], yv_lead)
+    for tid in list(self.tracks.keys()):
+      if tid not in valid_ids:
+        self.tracks.pop(tid)
 
     # *** publish radarState ***
     self.radar_state_valid = sm.all_checks()
@@ -452,7 +436,7 @@ class RadarD:
       model_v_ego = sm['modelV2'].velocity.x[0]
     else:
       model_v_ego = self.v_ego
-    #leads_v3 = sm['modelV2'].leadsV3
+
     if len(leads_v3) > 1:
 
       if model_updated:
@@ -462,13 +446,9 @@ class RadarD:
         self.vision_tracks[0].update(leads_v3[0], model_v_ego, self.v_ego, sm['modelV2'])
         self.vision_tracks[1].update(leads_v3[1], model_v_ego, self.v_ego, sm['modelV2'])
 
-      #self.radar_state.leadOne = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[0], model_v_ego, low_speed_override=False)
-      #self.radar_state.leadTwo = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[1], model_v_ego, low_speed_override=False)
       self.radar_state.leadOne, self.radar_detected = self.get_lead(sm['carState'], sm['modelV2'], self.tracks, 0, leads_v3[0], model_v_ego, low_speed_override=False)
       self.radar_state.leadTwo, _ = self.get_lead(sm['carState'], sm['modelV2'], self.tracks, 1, leads_v3[1], model_v_ego, low_speed_override=False)
 
-      # ll, lc, lr, leadCenter, self.radar_state.leadLeft, self.radar_state.leadRight = get_lead_side(self.v_ego, self.tracks, sm['modelV2'],
-      #                                                                                               sm['lateralPlan'].laneWidth, model_v_ego)
       ll, lc, lr, leadCenter, self.radar_state.leadLeft, self.radar_state.leadRight = get_lead_side(self.v_ego, self.tracks, sm['modelV2'], 3.2, model_v_ego, self.radar_lat_factor)
 
       if leadCenter is not None and leadCenter["status"]:
@@ -499,12 +479,11 @@ class RadarD:
 
     v_ego = self.v_ego
     ready = self.ready
-    ## SCC레이더는 일단 보관하고 리스트에서 삭제... (SCC Track은 0,1번으로 들어옴)
+
+    ## backup SCC radar(0, 1 trackid)
     track_scc = tracks.get(0)
     if track_scc is None:
       track_scc = tracks.get(1)
-    #if track_scc is not None:
-    #  del tracks[0]            ## tracks에서 삭제하면안됨... ㅠㅠ
 
     # Determine leads, this is where the essential logic happens
     if len(tracks) > 0 and ready and lead_msg.prob > .5:
@@ -512,29 +491,16 @@ class RadarD:
     else:
       track = None
 
-    # vision match후 발견된 track이 없으면
-    #  track_scc 가 있는 지 확인하고
-    #    비전과의 차이가 35%(5M)이상 차이나면 scc가 발견못한것이기 때문에 비전것으로 처리함.
-
-    ### 240807, SCC레이더가 옆차선의것을 많이 가져옴... 사용하지 말아야겠다...
-    # 250415: scc radar정보가 있지만.. vision 미검출시, 오류
     if self.enable_radar_tracks in [-1, 2]:  
       if track_scc is not None and track is None:
         track = track_scc
-    #  if self.vision_tracks[index].prob > .5:
-    #    if self.vision_tracks[index].dRel < track.dRel - 10.0: #끼어드는 차량이 있는 경우 처리..  5-> 10M바꿔보자... 240427
-    #      track = None
 
     lead_dict = {'status': False}
     radar = False
     if track is not None:
-      #lead_dict = track.get_RadarState(md, lead_msg.prob, self.vision_tracks[0].yRel, self.vision_tracks[0].vLat)
-      lead_dict = track.get_RadarState(md, lead_msg.prob, self.vision_tracks[0].yRel)
+      lead_dict = track.get_RadarState(lead_msg.prob, self.vision_tracks[0].yRel)
       radar = True
     elif (track is None) and ready and (lead_msg.prob > .8):
-      #if self.mixRadarInfo == 4 and v_ego * 3.6 > 30 and lead_msg.prob < 0.99: ##
-      #  pass
-      #else:
         lead_dict = self.vision_tracks[index].get_lead(md)
 
     if self.enable_corner_radar > 0:
@@ -547,8 +513,8 @@ class RadarD:
 
         # Only choose new track if it is actually closer than the previous one
         if (not lead_dict['status']) or (closest_track.dRel < lead_dict['dRel']):
-          #lead_dict = closest_track.get_RadarState(md, lead_msg.prob, self.vision_tracks[0].yRel, self.vision_tracks[0].vLat)
-          lead_dict = closest_track.get_RadarState(md, lead_msg.prob, self.vision_tracks[0].yRel)
+          #lead_dict = closest_track.get_RadarState(lead_msg.prob, self.vision_tracks[0].yRel, self.vision_tracks[0].vLat)
+          lead_dict = closest_track.get_RadarState(lead_msg.prob, self.vision_tracks[0].yRel)
 
     return lead_dict, radar
   
