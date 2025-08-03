@@ -152,6 +152,7 @@ class CANParser:
 
     self.invalid_name = None
     self.invalid_time_counter = 0
+    self.invalid_print_counter = 0
 
   def _add_message(self, name_or_addr: str | int, freq: int = None) -> None:
     if isinstance(name_or_addr, numbers.Number):
@@ -199,7 +200,9 @@ class CANParser:
         valid = False
         self.invalid_time_counter += 1
         if self.invalid_name is None or state.name != self.invalid_name or self.invalid_time_counter > 100:
-          print("CAN_INVALID = ", state.name)
+          if self.invalid_print_counter < 200:  
+            print("CAN_INVALID = ", state.name)
+            self.invalid_print_counter += 1
           self.invalid_name = state.name
           self.invalid_time_counter = 0
 
