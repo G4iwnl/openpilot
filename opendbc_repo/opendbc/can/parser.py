@@ -228,7 +228,7 @@ class CANParser:
       for address, dat, src in frames:
         if src != self.bus:
           continue
-        if self.frame > 800:
+        if self.controls_ready:
           self.seen_addresses.add(address)
         bus_empty = False
         state = self.message_states.get(address)
