@@ -141,6 +141,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"GMapKey", {PERSISTENT, STRING}},
     {"SearchInput", {PERSISTENT, INT}},
 
+
     {"CarSelected3", {PERSISTENT, STRING}},
     {"SupportedCars", {PERSISTENT, STRING}},
     {"SupportedCars_gm", {PERSISTENT, STRING}},
@@ -335,6 +336,12 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
 
     {"HardwareC3xLite", {PERSISTENT, INT, "0"}},
     {"ShareData", {PERSISTENT, INT, "0"}},
+    {"cruiselateral", {PERSISTENT, INT, "1"}},
+    {"DecreaseHDA", {PERSISTENT, INT, "1"}},
+    {"onlysofthold", {PERSISTENT, INT, "1"}},
+    {"VisionOnly", {PERSISTENT, INT, "1"}},
+    {"AutoNaviSpeedCtrlBump", {PERSISTENT, INT, "1"}},
+    {"IgnorePaddleShift", {PERSISTENT, INT, "1"}},
 
     // Model Selector
     {"DrivingModelName", {PERSISTENT, STRING}},  // 현재 사용 중인 모델 이름
