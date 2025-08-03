@@ -360,7 +360,6 @@ struct RadarData @0x888ad6581cf0aacb {
     vLead @7 :Float32; # m/s
     aLead @8 :Float32; # m/s^2
     jLead @9 :Float32; # m/s^3
-    aLeadRaw @10 :Float32; # m/s^2, raw acceleration from the radar, not filtered
   }
 
   enum ErrorDEPRECATED {

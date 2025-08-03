@@ -264,8 +264,6 @@ class RadarInterfaceBase(ABC):
     delay = CP.radarDelay
     self.v_ego_hist = deque([0.0], maxlen=int(round(delay / DT_CTRL)) + 1)
     self.v_ego = 0.0
-    self.a_ego_hist = deque([0.0], maxlen=int(round(delay / DT_CTRL)) + 1)
-    self.a_ego = 0.0
     self.last_timestamp = None
     self.dt = None
 
@@ -286,11 +284,9 @@ class RadarInterfaceBase(ABC):
       self.init_samples.append(rcv_time)
 
      
-  def update_carrot(self, a_ego, v_ego, rcv_time, can_packets: list[tuple[int, list[CanData]]]) -> structs.RadarDataT | None:
+  def update_carrot(self, v_ego, rcv_time, can_packets: list[tuple[int, list[CanData]]]) -> structs.RadarDataT | None:
     self.v_ego_hist.append(v_ego)
     self.v_ego = self.v_ego_hist[0]
-    self.a_ego_hist.append(a_ego)
-    self.a_ego = self.a_ego_hist[0]
     ret = self.update(can_packets)
 
     if ret is not None:
