@@ -4,7 +4,7 @@ BUILD_DIR=/data/openpilot
 cd $BUILD_DIR
 git init
 #git remote add origin https://github.com/ajouatom/openpilot
-git remote set-url --push origin https://github.com/ajouatom/openpilot.git
+git remote set-url --push origin https://github.com/G4iwnl/openpilot.git
 
 # Cleanup
 find . -name '*.a' -delete

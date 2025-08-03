@@ -432,8 +432,8 @@ class CarState(CarStateBase):
         ret.rightBlindspot = (bsm_info["FR_INDICATOR"] + bsm_info["INDICATOR_RIGHT_TWO"] + bsm_info["INDICATOR_RIGHT_FOUR"]) > 0
 
     # cruise state
-    if cp.vl[self.cruise_btns_msg_canfd]["CRUISE_BUTTONS"] in [Buttons.RES_ACCEL, Buttons.SET_DECEL] and self.CP.openpilotLongitudinalControl:
-      self.main_enabled = True
+    #if cp.vl[self.cruise_btns_msg_canfd]["CRUISE_BUTTONS"] in [Buttons.RES_ACCEL, Buttons.SET_DECEL] and self.CP.openpilotLongitudinalControl:
+    #  self.main_enabled = True
     # CAN FD cars enable on main button press, set available if no TCS faults preventing engagement
     ret.cruiseState.available = self.main_enabled #cp.vl["TCS"]["ACCEnable"] == 0
     if self.CP.flags & HyundaiFlags.CAMERA_SCC.value:
@@ -491,7 +491,8 @@ class CarState(CarStateBase):
         speedLimit = self.hda_info_4a3["SPEED_LIMIT"]
         if not self.is_metric:
           speedLimit *= CV.MPH_TO_KPH
-        ret.speedLimit = speedLimit if speedLimit < 255 else 0
+        if Params().get_int("DecreaseHDA") == 1:
+          ret.speedLimit = speedLimit if speedLimit < 255 else 0
         if int(self.hda_info_4a3["NEW_SIGNAL_4"]) == 17:
           speed_limit_cam = True
 
@@ -573,7 +574,8 @@ class CarState(CarStateBase):
     if self.cruise_btns_msg_canfd == "CRUISE_BUTTONS":
       paddle_button = 1 if cp.vl["CRUISE_BUTTONS"]["LEFT_PADDLE"] == 1 else 2 if cp.vl["CRUISE_BUTTONS"]["RIGHT_PADDLE"] == 1 else 0
     elif self.gear_msg_canfd == "GEAR":
-      paddle_button = 1 if cp.vl["GEAR"]["LEFT_PADDLE"] == 1 else 2 if cp.vl["GEAR"]["RIGHT_PADDLE"] == 1 else 0
+      if Params().get_int("IgnorePaddleShift") == 0:
+        paddle_button = 1 if cp.vl["GEAR"]["LEFT_PADDLE"] == 1 else 2 if cp.vl["GEAR"]["RIGHT_PADDLE"] == 1 else 0
 
     ret.buttonEvents = [*create_button_events(self.cruise_buttons[-1], prev_cruise_buttons, BUTTONS_DICT),
                         *create_button_events(paddle_button, self.paddle_button_prev, {1: ButtonType.paddleLeft, 2: ButtonType.paddleRight}),

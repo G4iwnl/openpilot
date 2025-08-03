@@ -710,6 +710,38 @@ class CarrotMan:
         print(f"ftp params sending error...: {e}")
 
     ftp.quit()
+    
+    directory = "CR2 " + car_selected + " " + Params().get("DongleId").decode('utf-8')
+    current_time = datetime.now().strftime("%Y%m%d-%H%M%S")
+    filename = tmux_why + "-" + current_time + "-" + Params().get("GitBranch").decode('utf-8') + ".txt"
+    
+    ftp_server = "g4nas.my"
+    ftp_port = 21
+    ftp_username = "sorento"
+    ftp_password = "Thfpsxh1111"
+    ftp = FTP()
+    ftp.connect(ftp_server, ftp_port)
+    ftp.login(ftp_username, ftp_password)
+    ftp.cwd("/sorento")
+    try:
+      ftp.mkd(directory)
+    except Exception as e:
+      print(f"Directory creation failed: {e}")
+    ftp.cwd(directory)
+    try:
+      with open("/data/media/tmux.log", "rb") as file:
+        ftp.storbinary(f'STOR {filename}', file)
+    except Exception as e:
+      print(f"ftp sending error...: {e}")
+    if send_settings:
+      self.save_toggle_values()
+      try:
+        #with open("/data/backup_params.json", "rb") as file:
+        with open("/data/toggle_values.json", "rb") as file:
+          ftp.storbinary(f'STOR toggles-{current_time}.json', file)
+      except Exception as e:
+        print(f"ftp params sending error...: {e}")
+    ftp.quit()
 
   def carrot_panda_debug(self):
     #time.sleep(2)
@@ -1079,6 +1111,7 @@ class CarrotServ:
     self.autoNaviSpeedBumpTime = float(self.params.get_int("AutoNaviSpeedBumpTime"))
     self.autoNaviSpeedCtrlEnd = float(self.params.get_int("AutoNaviSpeedCtrlEnd"))
     self.autoNaviSpeedCtrlMode = self.params.get_int("AutoNaviSpeedCtrlMode")
+    self.autoNaviSpeedCtrlBump = self.params.get_int("AutoNaviSpeedCtrlBump")
     self.autoNaviSpeedSafetyFactor = float(self.params.get_int("AutoNaviSpeedSafetyFactor")) * 0.01
     self.autoNaviSpeedDecelRate = float(self.params.get_int("AutoNaviSpeedDecelRate")) * 0.01
     self.autoNaviCountDownMode = self.params.get_int("AutoNaviCountDownMode")
@@ -1346,9 +1379,9 @@ class CarrotServ:
       if self.nSdiBlockType in [2,3]:
         self.xSpdDist = self.nSdiBlockDist
         self.xSpdType = 4
-      elif self.nSdiType == 7 and self.autoNaviSpeedCtrlMode < 3: #이동식카메라
+      elif self.nSdiType == 7 and self.autoNaviSpeedCtrlMode < 2: #이동식카메라
         self.xSpdLimit = self.xSpdDist = 0
-    elif (self.nSdiPlusType == 22 or self.nSdiType == 22) and self.roadcate > 1 and self.autoNaviSpeedCtrlMode >= 2: # speed bump, roadcate:0,1: highway
+    elif (self.nSdiPlusType == 22 or self.nSdiType == 22) and self.roadcate > 1 and self.autoNaviSpeedCtrlBump == 1: # speed bump, roadcate:0,1: highway
       self.xSpdLimit = self.autoNaviSpeedBumpSpeed
       self.xSpdDist = self.nSdiPlusDist if self.nSdiPlusType == 22 else self.nSdiDist
       self.xSpdType = 22
