@@ -132,10 +132,8 @@ class CarState(CarStateBase):
     self.TPMS = True if 0x3a0 in fingerprints[pt_bus] else False
 
     self.cp_bsm = None
-    self.frame = 0
 
   def update(self, can_parsers) -> structs.CarState:
-    self.frame += 1
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
 
@@ -358,11 +356,11 @@ class CarState(CarStateBase):
     cp_cam = can_parsers[Bus.cam]
     cp_alt = can_parsers[Bus.alt] if Bus.alt in can_parsers else None
 
-    if self.frame % 100 == 0:
-      print("######## BSM in CAM, cp_cam.seen_addresses =", cp_cam.seen_addresses)
-      print("######## BSM in CAM, cp.seen_addresses =", cp.seen_addresses)
+    if cp.frame == 1000:
+      print("cp_cam.seen_addresses =", cp_cam.seen_addresses)
+      print("cp.seen_addresses =", cp.seen_addresses)
       if cp_alt is not None:
-        print("######## BSM in ALT, cp_alt.seen_addresses =", cp_alt.seen_addresses)
+        print("cp_alt.seen_addresses =", cp_alt.seen_addresses)
 
 
     ret = structs.CarState()
