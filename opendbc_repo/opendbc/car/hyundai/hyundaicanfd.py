@@ -555,11 +555,11 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
         values = copy.copy(CS.adrv_info_1ea)
         #values["HDA_MODE1"] = 8
         #values["HDA_MODE2"] = 1
-        if hud_control.leadLeftDist > 0:
+        if values['LF_DETECT'] == 0 and hud_control.leadLeftDist > 0:
           values['LF_DETECT'] = 3 if hud_control.leadLeftDist > 30 else 4
           values['LF_DETECT_DISTANCE'] = hud_control.leadLeftDist
           values['LF_DETECT_LATERAL'] = hud_control.leadLeftLat
-        if hud_control.leadRightDist > 0:
+        if values['RF_DETECT'] == 0 and hud_control.leadRightDist > 0:
           values['RF_DETECT'] = 3 if hud_control.leadRightDist > 30 else 4
           values['RF_DETECT_DISTANCE'] = hud_control.leadRightDist
           values['RF_DETECT_LATERAL'] = hud_control.leadRightLat
@@ -576,11 +576,11 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
           #values["FF_DETECT_LAT"] = - hud_control.leadDPath
 
         if True:
-          if hud_control.leadLeftDist > 0:
+          if values['LF_DETECT'] == 0 and hud_control.leadLeftDist > 0:
             values['LF_DETECT'] = 3 if hud_control.leadLeftDist > 30 else 4
             values['LF_DETECT_DISTANCE'] = hud_control.leadLeftDist
             values['LF_DETECT_LATERAL'] = hud_control.leadLeftLat
-          if hud_control.leadRightDist > 0:
+          if values['RF_DETECT'] == 0 and hud_control.leadRightDist > 0:
             values['RF_DETECT'] = 3 if hud_control.leadRightDist > 30 else 4
             values['RF_DETECT_DISTANCE'] = hud_control.leadRightDist
             values['RF_DETECT_LATERAL'] = hud_control.leadRightLat
