@@ -60,7 +60,7 @@ BO_ {a} RADAR_TRACK_{a:x}: 32 RADAR
  SG_ REL_SPEED1 : 88|14@1- (0.01,0) [0|16383] "" XXX
  SG_ NEW_SIGNAL_16 : 103|2@0+ (1,0) [0|3] "" XXX
  SG_ LAT_SPEED1 : 104|13@1- (0.01,0) [0|8191] "" XXX
- SG_ REL_ACCEL1 : 118|10@1- (0.02,0) [0|1023] "" XXX
+ SG_ REL_ACCEL1 : 118|10@1- (0.05,0) [0|1023] "" XXX
  SG_ NEW_SIGNAL_27 : 154|3@0+ (1,0) [0|7] "" XXX
  SG_ NEW_SIGNAL_26 : 156|2@0+ (1,0) [0|3] "" XXX
  SG_ NEW_SIGNAL_23 : 164|5@0+ (1,0) [0|31] "" XXX
@@ -74,7 +74,7 @@ BO_ {a} RADAR_TRACK_{a:x}: 32 RADAR
  SG_ REL_SPEED2 : 216|14@1- (0.01,0) [0|16383] "" XXX
  SG_ NEW_SIGNAL_17 : 231|2@0+ (1,0) [0|3] "" XXX
  SG_ LAT_SPEED2 : 232|13@1- (0.01,0) [0|8191] "" XXX
- SG_ REL_ACCEL2 : 246|10@1- (0.02,0) [0|1023] "" XXX
+ SG_ REL_ACCEL2 : 246|10@1- (0.05,0) [0|1023] "" XXX
     """)
     for a in range(0x3a5, 0x3a5 + 32):
         f.write(f"""
@@ -92,5 +92,5 @@ BO_ {a} RADAR_TRACK_{a:x}: 24 RADAR
  SG_ REL_SPEED : 88|14@1- (0.01,0) [0|16383] "" XXX
  SG_ IN_MYLANE : 103|2@0+ (1,0) [0|3] "" XXX
  SG_ LAT_SPEED : 104|13@1- (0.01,0) [0|8191] "" XXX
- SG_ REL_ACCEL : 118|10@1- (0.02,0) [0|1023] "" XXX 
+ SG_ REL_ACCEL : 118|10@1- (0.05,0) [0|1023] "" XXX 
     """)
