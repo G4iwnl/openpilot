@@ -90,7 +90,7 @@ class CarState(CarStateBase):
     self.speedLimitDistance = 0
     self.pcmCruiseGap = 0
 
-    self.cruise_buttons_alt = False # for CASPER_EV
+    self.cruise_buttons_alt =  True if self.CP.carFingerprint in (CAR.CASPER) else False
     self.MainMode_ACC = False
     self.ACCMode = 0
     self.LFA_ICON = 0
@@ -279,7 +279,7 @@ class CarState(CarStateBase):
     prev_cruise_buttons = self.cruise_buttons[-1]
     #self.cruise_buttons.extend(cp.vl_all["CLU11"]["CF_Clu_CruiseSwState"])
     #carrot {{
-    if self.CRUISE_BUTTON_ALT and cp.vl["CRUISE_BUTTON_ALT"]["SET_ME_1"] == 1:
+    if (self.CRUISE_BUTTON_ALT and cp.vl["CRUISE_BUTTON_ALT"]["SET_ME_1"] == 1):
       self.cruise_buttons_alt = True
 
     cruise_button = [Buttons.NONE]
