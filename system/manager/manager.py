@@ -97,6 +97,7 @@ def get_default_params():
     ("CruiseButtonTest2", "30"),
     ("CruiseButtonTest3", "1"),
     ("CruiseSpeedUnit", "10"),
+    ("CruiseSpeedUnitBasic", "1"),
     ("CruiseSpeed1", "30"),
     ("CruiseSpeed2", "50"),
     ("CruiseSpeed3", "80"),

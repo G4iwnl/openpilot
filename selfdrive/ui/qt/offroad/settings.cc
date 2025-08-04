@@ -661,7 +661,8 @@ CarrotPanel::CarrotPanel(QWidget* parent) : QWidget(parent) {
   cruiseToggles = new ListWidget(this);
   cruiseToggles->addItem(new CValueControl("CruiseButtonMode", "Button: Cruise Button Mode", "0:Normal,1:User1,2:User2", 0, 2, 1));
   cruiseToggles->addItem(new CValueControl("LfaButtonMode", "Button: LFA Button Mode", "0:Normal,1:Decel&Stop&LeadCarReady", 0, 1, 1));
-  cruiseToggles->addItem(new CValueControl("CruiseSpeedUnit", "Button: Cruise Speed Unit", "", 1, 20, 1));
+  cruiseToggles->addItem(new CValueControl("CruiseSpeedUnitBasic", "Button: Cruise Speed Unit(Basic)", "", 1, 20, 1));
+  cruiseToggles->addItem(new CValueControl("CruiseSpeedUnit", "Button: Cruise Speed Unit(Extra)", "", 1, 20, 1));
   cruiseToggles->addItem(new CValueControl("CruiseEcoControl", "CRUISE: Eco control(4km/h)", "Temporarily increasing the set speed to improve fuel efficiency.", 0, 10, 1));
   cruiseToggles->addItem(new CValueControl("AutoSpeedUptoRoadSpeedLimit", "CRUISE: Auto speed up (0%)", "Auto speed up based on the lead car up to RoadSpeedLimit.", 0, 200, 10));
   cruiseToggles->addItem(new CValueControl("TFollowGap1", "GAP1: Apply TFollow (110)x0.01s", "", 70, 300, 5));
