@@ -181,6 +181,7 @@ class CANParser:
       signals=list(msg.sigs.values()),
       ignore_alive=freq is not None and math.isnan(freq),
     )
+    state.first_seen_nanos = self.last_nonempty_nanos  # 등록시 즉시 타임스탬프 설정
     if freq is not None and freq > 0:
       state.frequency = freq
       state.timeout_threshold = (1_000_000_000 / freq) * 10
