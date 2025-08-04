@@ -62,7 +62,7 @@ class CarState(CarStateBase):
     self.cruise_info = {}
     self.lfa_info = {}
     self.lfa_alt_info = {}
-    self.lfahda_cluster_info = {}
+    self.lfahda_cluster_info = None
     self.adrv_info_161 = None
     self.adrv_info_200 = None
     self.adrv_info_1ea = None
@@ -131,6 +131,7 @@ class CarState(CarStateBase):
     self.ADRV_0x200 = True if 0x200 in fingerprints[cam_bus] else False
     self.ADRV_0x1ea = True if 0x1ea in fingerprints[cam_bus] else False
     self.ADRV_0x160 = True if 0x160 in fingerprints[cam_bus] else False
+    self.LFAHDA_CLUSTER = True if 480 in fingerprints[cam_bus] else False
     self.HDA_INFO_4A3 = True if 0x4a3 in fingerprints[pt_bus] else False
     self.NEW_MSG_4B4 = True if 0x4b4 in fingerprints[pt_bus] else False
     self.GEAR = True if 69 in fingerprints[pt_bus] else False
@@ -485,7 +486,10 @@ class CarState(CarStateBase):
       self.lfa_info = copy.copy(cp_cam.vl["LFA"])
       if self.CP.flags & HyundaiFlags.ANGLE_CONTROL.value:
         self.lfa_alt_info = copy.copy(cp_cam.vl["LFA_ALT"])
-      self.lfahda_cluster_info = copy.copy(cp_cam.vl["LFAHDA_CLUSTER"])
+
+      if self.LFAHDA_CLUSTER:
+        self.lfahda_cluster_info = cp_cam.vl["LFAHDA_CLUSTER"]
+        
       corner = False
       self.adrv_info_161 = cp_cam.vl["ADRV_0x161"] if self.CCNC_0x161 else None
       self.adrv_info_162 = cp_cam.vl["CCNC_0x162"] if self.CCNC_0x162 else None
