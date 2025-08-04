@@ -107,11 +107,19 @@ class CarState(CarStateBase):
     fingerprints_str = Params().get("FingerPrints", encoding='utf-8')
     fingerprints = ast.literal_eval(fingerprints_str)
     #print("fingerprints =", fingerprints)
-    bus_cruise = 2 if self.CP.flags & HyundaiFlags.CAMERA_SCC else 0
-    self.SCC11 = True if 1056 in fingerprints[bus_cruise] else False
-    self.SCC12 = True if 1057 in fingerprints[bus_cruise] else False
-    self.SCC13 = True if 1290 in fingerprints[bus_cruise] else False
-    self.SCC14 = True if 905 in fingerprints[bus_cruise] else False
+    ecu_disabled = False
+    if self.CP.openpilotLongitudinalControl and not (self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC):
+      ecu_disabled = True
+
+    if ecu_disabled:
+      self.SCC11 = self.SCC12 = self.SCC13 = self.SCC14 = False
+    else:
+      bus_cruise = 2 if self.CP.flags & HyundaiFlags.CAMERA_SCC else 0
+      self.SCC11 = True if 1056 in fingerprints[bus_cruise] else False
+      self.SCC12 = True if 1057 in fingerprints[bus_cruise] else False
+      self.SCC13 = True if 1290 in fingerprints[bus_cruise] else False
+      self.SCC14 = True if 905 in fingerprints[bus_cruise] else False
+      
     self.HAS_LFA_BUTTON = True if 913 in fingerprints[0] else False
     self.CRUISE_BUTTON_ALT = True if 1007 in fingerprints[0] else False
 
