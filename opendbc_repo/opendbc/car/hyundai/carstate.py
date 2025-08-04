@@ -301,9 +301,9 @@ class CarState(CarStateBase):
 
     cruise_button = [Buttons.NONE]
     if self.cruise_buttons_alt:
-      lfa_button = cp.vl.get("CRUISE_BUTTON_LFA", {}).get("CruiseSwLfa", 0)
-      cruise_button = [Buttons.LFA_BUTTON] if lfa_button > 0 else cp.vl_all["CRUISE_BUTTON_ALT"]["CruiseSwState"]
-    elif self.HAS_LFA_BUTTON and cp.vl.get("BCM_PO_11", {}).get("LFA_Pressed", 0):
+      lfa_button = cp.vl["CRUISE_BUTTON_LFA"]["CruiseSwLfa"]
+      cruise_button = [Buttons.LFA_BUTTON] if lfa_button > 0 else cp.vl["CRUISE_BUTTON_ALT"]["CruiseSwState"]
+    elif self.HAS_LFA_BUTTON and cp.vl["BCM_PO_11"]["LFA_Pressed"] == 1:
       cruise_button = [Buttons.LFA_BUTTON]
     else:
       cruise_button = cp.vl_all["CLU11"]["CF_Clu_CruiseSwState"]
