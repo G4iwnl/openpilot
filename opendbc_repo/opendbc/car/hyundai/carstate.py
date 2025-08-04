@@ -147,7 +147,7 @@ class CarState(CarStateBase):
       cp.controls_ready = cp_cam.controls_ready = True
       if cp_alt is not None:
         cp_alt.controls_ready = True
-    elif self.controls_ready_count == 200:
+    elif self.controls_ready_count == 100:
       print("cp_cam.seen_addresses =", cp_cam.seen_addresses)
       print("cp.seen_addresses =", cp.seen_addresses)
       if cp_alt is not None:
