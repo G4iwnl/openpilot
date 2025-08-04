@@ -137,16 +137,21 @@ class CarState(CarStateBase):
 
   def update(self, can_parsers) -> structs.CarState:
 
-    if self.controls_ready_count < 200:
+    if self.controls_ready_count <= 200:
       if Params().get_bool("ControlsReady"):
         self.controls_ready_count += 1
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
+    cp_alt = can_parsers[Bus.alt] if Bus.alt in can_parsers else None
     if self.controls_ready_count == 100:  # 1 sec later
-      cp_alt = can_parsers[Bus.alt] if Bus.alt in can_parsers else None
       cp.controls_ready = cp_cam.controls_ready = True
       if cp_alt is not None:
         cp_alt.controls_ready = True
+    elif self.controls_ready_count == 200:
+      print("cp_cam.seen_addresses =", cp_cam.seen_addresses)
+      print("cp.seen_addresses =", cp.seen_addresses)
+      if cp_alt is not None:
+        print("cp_alt.seen_addresses =", cp_alt.seen_addresses)
 
     if self.CP.flags & HyundaiFlags.CANFD:
       return self.update_canfd(can_parsers)
@@ -366,13 +371,6 @@ class CarState(CarStateBase):
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
     cp_alt = can_parsers[Bus.alt] if Bus.alt in can_parsers else None
-
-    if self.controls_ready_count == 100:
-      print("cp_cam.seen_addresses =", cp_cam.seen_addresses)
-      print("cp.seen_addresses =", cp.seen_addresses)
-      if cp_alt is not None:
-        print("cp_alt.seen_addresses =", cp_alt.seen_addresses)
-
 
     ret = structs.CarState()
 
