@@ -103,11 +103,10 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
   max_offset_vision_vel = max(lead.v[0] * np.interp(lead.prob, [0.8, 0.98], [0.3, 0.5]), 5.0) # 확률이 낮으면 속도오차를 줄임.
 
   def prob(c):
-    #if abs(c.dRel - offset_vision_dist) > max_offset_vision_dist:
-    if abs(offset_vision_dist - c.dRel) > max_offset_vision_dist: # vision 측정한것보다 레이더 거리나 너무 낮으면 버림
+    if abs(offset_vision_dist - c.dRel) > max_offset_vision_dist: 
       return -1e6
 
-    if lead.prob < 0.5 or abs(lead.v[0] - c.vLead) > max_offset_vision_vel: # or c.vLead < 3:
+    if abs(lead.v[0] - c.vLead) > max_offset_vision_vel:
         return -1e6
       
     prob_d = laplacian_pdf(c.dRel, offset_vision_dist, lead.xStd[0])
