@@ -203,7 +203,7 @@ class CANParser:
         valid = False
         self.invalid_time_counter += 1
         if self.controls_ready and self.invalid_name is None or state.name != self.invalid_name or self.invalid_time_counter > 100:
-          if self.invalid_print_counter < 200:  
+          if self.invalid_print_counter < 100:  
             print("CAN_INVALID = ", state.name)
             self.invalid_print_counter += 1
           self.invalid_name = state.name
