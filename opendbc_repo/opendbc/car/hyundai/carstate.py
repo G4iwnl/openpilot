@@ -514,7 +514,7 @@ class CarState(CarStateBase):
     ret.gearStep = cp.vl["GEAR"]["GEAR_STEP"] if self.GEAR else 0
     ret.gearStep = cp.vl["GEAR_ALT"]["GEAR_STEP"] if self.GEAR_ALT else ret.gearStep
 
-    if cp_alt:
+    if cp_alt and self.CP.flags & HyundaiFlags.CAMERA_SCC:
       lane_info = None
       lane_info = cp_alt.vl["CAM_0x362"] if self.CAM_0x362 else None
       lane_info = cp_alt.vl["CAM_0x2a4"] if self.CAM_0x2a4 else lane_info
