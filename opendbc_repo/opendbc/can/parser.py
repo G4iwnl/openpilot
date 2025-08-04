@@ -1,3 +1,4 @@
+import time
 import math
 import numbers
 from collections import defaultdict, deque
@@ -103,8 +104,12 @@ class MessageState:
     if self.ignore_alive:
       return True
     if not self.timestamps:
+      if self.first_seen_nanos != 0 and (current_nanos - self.first_seen_nanos) < 2e9:  # 2초 유예
+        return True
+      #print(f"Not Seen {self.name} on bus {self.address} has no timestamps yet, first seen at {self.first_seen_nanos} ns")
       return False
     if (current_nanos - self.timestamps[-1]) > self.timeout_threshold:
+      #print(f"Timeout {self.name} on bus {self.address} timed out: {current_nanos - self.timestamps[-1]} ns since last update")
       return False
     return True
 
@@ -130,8 +135,8 @@ class CANParser:
     self.ts_nanos: dict[int | str, dict[str, int]] = {}
     self.addresses: set[int] = set()
     self.message_states: dict[int, MessageState] = {}
-    self.frame = 0
     self.seen_addresses: set[int] = set()
+    self.controls_ready = False
 
     for name_or_addr, freq in messages:
       if isinstance(name_or_addr, numbers.Number):
@@ -179,6 +184,7 @@ class CANParser:
       signals=list(msg.sigs.values()),
       ignore_alive=freq is not None and math.isnan(freq),
     )
+    state.first_seen_nanos = time.monotonic_ns()  # 등록시 즉시 타임스탬프 설정
     if freq is not None and freq > 0:
       state.frequency = freq
       state.timeout_threshold = (1_000_000_000 / freq) * 10
@@ -195,13 +201,12 @@ class CANParser:
     for state in self.message_states.values():
       if state.counter_fail >= MAX_BAD_COUNTER:
         counters_valid = False
-        #print("counters_valid=", state.name)
       if not state.valid(nanos, self.bus_timeout):
         valid = False
         self.invalid_time_counter += 1
-        if self.invalid_name is None or state.name != self.invalid_name or self.invalid_time_counter > 100:
-          if self.invalid_print_counter < 200:  
-            print("CAN_INVALID = ", state.name)
+        if self.controls_ready and self.invalid_name is None or state.name != self.invalid_name or self.invalid_time_counter > 100:
+          if self.invalid_print_counter < 100:  
+            print(f"CAN_INVALID = {state.name}, bus = {self.bus}")
             self.invalid_print_counter += 1
           self.invalid_name = state.name
           self.invalid_time_counter = 0
@@ -210,7 +215,6 @@ class CANParser:
     self.can_valid = self.can_invalid_cnt < CAN_INVALID_CNT and counters_valid
 
   def update(self, strings, sendcan: bool = False):
-    self.frame += 1
     if strings and not isinstance(strings[0], list | tuple):
       strings = [strings]
 
@@ -226,7 +230,7 @@ class CANParser:
       for address, dat, src in frames:
         if src != self.bus:
           continue
-        if self.frame > 800:
+        if self.controls_ready:
           self.seen_addresses.add(address)
         bus_empty = False
         state = self.message_states.get(address)

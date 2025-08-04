@@ -75,7 +75,8 @@ class CarState(CarStateBase):
     self.steer_touch_info = {}
 
     self.cruise_buttons_msg = None
-    self.hda2_lfa_block_msg = None
+    self.msg_0x362 = None
+    self.msg_0x2a4 = None
 
     # On some cars, CLU15->CF_Clu_VehicleSpeed can oscillate faster than the dash updates. Sample at 5 Hz
     self.cluster_speed = 0
@@ -133,9 +134,25 @@ class CarState(CarStateBase):
 
     self.cp_bsm = None
 
+    self.controls_ready_count = 0
+
   def update(self, can_parsers) -> structs.CarState:
+
+    if self.controls_ready_count <= 200:
+      if Params().get_bool("ControlsReady"):
+        self.controls_ready_count += 1
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
+    cp_alt = can_parsers[Bus.alt] if Bus.alt in can_parsers else None
+    if self.controls_ready_count == 50:
+      cp.controls_ready = cp_cam.controls_ready = True
+      if cp_alt is not None:
+        cp_alt.controls_ready = True
+    elif self.controls_ready_count == 100:
+      print("cp_cam.seen_addresses =", cp_cam.seen_addresses)
+      print("cp.seen_addresses =", cp.seen_addresses)
+      if cp_alt is not None:
+        print("cp_alt.seen_addresses =", cp_alt.seen_addresses)
 
     if self.CP.flags & HyundaiFlags.CANFD:
       return self.update_canfd(can_parsers)
@@ -419,13 +436,9 @@ class CarState(CarStateBase):
         if 442 in cp.seen_addresses:
           self.cp_bsm = cp
           print("######## BSM in ECAN")
-          print("######## BSM in CAM, cp_cam.seen_addresses =", cp_cam.seen_addresses)
-          print("######## BSM in CAM, cp.seen_addresses =", cp.seen_addresses)
         elif 442 in cp_cam.seen_addresses:
           self.cp_bsm = cp_cam
           print("######## BSM in CAM")
-          print("######## BSM in CAM, cp_cam.seen_addresses =", cp_cam.seen_addresses)
-          print("######## BSM in CAM, cp.seen_addresses =", cp.seen_addresses)
       else:
         bsm_info = self.cp_bsm.vl["BLINDSPOTS_REAR_CORNERS"]
         ret.leftBlindspot = (bsm_info["FL_INDICATOR"] + bsm_info["INDICATOR_LEFT_TWO"] + bsm_info["INDICATOR_LEFT_FOUR"]) > 0
@@ -502,7 +515,7 @@ class CarState(CarStateBase):
     ret.gearStep = cp.vl["GEAR"]["GEAR_STEP"] if self.GEAR else 0
     ret.gearStep = cp.vl["GEAR_ALT"]["GEAR_STEP"] if self.GEAR_ALT else ret.gearStep
 
-    if cp_alt:
+    if cp_alt and self.CP.flags & HyundaiFlags.CAMERA_SCC:
       lane_info = None
       lane_info = cp_alt.vl["CAM_0x362"] if self.CAM_0x362 else None
       lane_info = cp_alt.vl["CAM_0x2a4"] if self.CAM_0x2a4 else lane_info
@@ -558,9 +571,11 @@ class CarState(CarStateBase):
     self.buttons_counter = cp.vl[self.cruise_btns_msg_canfd]["COUNTER"]
     ret.accFaulted = cp.vl["TCS"]["ACCEnable"] != 0  # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
 
-    if self.CP.flags & HyundaiFlags.CANFD_HDA2 and not (self.CP.flags & HyundaiFlags.CAMERA_SCC):
-      self.hda2_lfa_block_msg = copy.copy(cp_cam.vl["CAM_0x362"] if self.CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING
-                                          else cp_cam.vl["CAM_0x2a4"])
+    if not (self.CP.flags & HyundaiFlags.CAMERA_SCC):
+      if self.msg_0x362 is not None or 0x362 in cp_cam.seen_addresses:
+        self.msg_0x362 = cp_cam.vl["CAM_0x362"]
+      elif self.msg_0x2a4 is not None or 0x2a4 in cp_cam.seen_addresses:
+        self.msg_0x2a4 = cp_cam.vl["CAM_0x2a4"]
 
     speed_conv = CV.KPH_TO_MS # if self.is_metric else CV.MPH_TO_MS
     cluSpeed = cp.vl["CRUISE_BUTTONS_ALT"]["CLU_SPEED"]
