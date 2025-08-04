@@ -224,7 +224,7 @@ def create_suppress_lfa(packer, CAN, CS):
   values["SET_ME_0_2"] = 0
   values["LEFT_LANE_LINE"] = 0
   values["RIGHT_LANE_LINE"] = 0
-  return packer.make_can_msg(suppress_msg, CAN.ACAN, values)
+  return [packer.make_can_msg(suppress_msg, CAN.ACAN, values)]
 
 def create_buttons(packer, CP, CAN, cnt, btn):
   values = {
