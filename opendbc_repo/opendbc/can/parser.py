@@ -106,8 +106,10 @@ class MessageState:
     if not self.timestamps:
       if self.first_seen_nanos != 0 and (current_nanos - self.first_seen_nanos) < 2e9:  # 2초 유예
         return True
+      print(f"Not Seen {self.name} on bus {self.address} has no timestamps yet, first seen at {self.first_seen_nanos} ns")
       return False
     if (current_nanos - self.timestamps[-1]) > self.timeout_threshold:
+      print(f"Timeout {self.name} on bus {self.address} timed out: {current_nanos - self.timestamps[-1]} ns since last update")
       return False
     return True
 
@@ -204,7 +206,7 @@ class CANParser:
         self.invalid_time_counter += 1
         if self.controls_ready and self.invalid_name is None or state.name != self.invalid_name or self.invalid_time_counter > 100:
           if self.invalid_print_counter < 100:  
-            print("CAN_INVALID = ", state.name)
+            print(f"CAN_INVALID = {state.name}, bus = {self.bus}")
             self.invalid_print_counter += 1
           self.invalid_name = state.name
           self.invalid_time_counter = 0

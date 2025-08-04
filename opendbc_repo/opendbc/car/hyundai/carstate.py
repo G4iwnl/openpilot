@@ -571,9 +571,9 @@ class CarState(CarStateBase):
     ret.accFaulted = cp.vl["TCS"]["ACCEnable"] != 0  # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
 
     if not (self.CP.flags & HyundaiFlags.CAMERA_SCC):
-      if 0x362 in cp_cam.seen_addresses:
+      if self.msg_0x362 is not None or 0x362 in cp_cam.seen_addresses:
         self.msg_0x362 = cp_cam.vl["CAM_0x362"]
-      elif 0x2a4 in cp_cam.seen_addresses:
+      elif self.msg_0x2a4 is not None or 0x2a4 in cp_cam.seen_addresses:
         self.msg_0x2a4 = cp_cam.vl["CAM_0x2a4"]
 
     speed_conv = CV.KPH_TO_MS # if self.is_metric else CV.MPH_TO_MS
