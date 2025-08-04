@@ -106,10 +106,10 @@ class MessageState:
     if not self.timestamps:
       if self.first_seen_nanos != 0 and (current_nanos - self.first_seen_nanos) < 2e9:  # 2초 유예
         return True
-      print(f"Not Seen {self.name} on bus {self.address} has no timestamps yet, first seen at {self.first_seen_nanos} ns")
+      #print(f"Not Seen {self.name} on bus {self.address} has no timestamps yet, first seen at {self.first_seen_nanos} ns")
       return False
     if (current_nanos - self.timestamps[-1]) > self.timeout_threshold:
-      print(f"Timeout {self.name} on bus {self.address} timed out: {current_nanos - self.timestamps[-1]} ns since last update")
+      #print(f"Timeout {self.name} on bus {self.address} timed out: {current_nanos - self.timestamps[-1]} ns since last update")
       return False
     return True
 
