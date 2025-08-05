@@ -62,7 +62,7 @@ class RadarInterface(RadarInterfaceBase):
         self.pts[addr].yRel = 0.5 * -math.sin(azimuth) * msg['LONG_DIST']
         self.pts[addr].vRel = msg['REL_SPEED']
         self.pts[addr].aRel = float('nan')
-        self.pts[addr].yvRel = float('nan')
+        self.pts[addr].yvRel = 0 #float('nan')
 
       else:
         del self.pts[addr]
