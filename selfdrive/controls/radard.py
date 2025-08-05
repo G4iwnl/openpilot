@@ -33,6 +33,8 @@ class Track:
     self.aLeadTau = FirstOrderFilter(_LEAD_ACCEL_TAU, 0.45, DT_MDL)
 
     self.radar_reaction_factor = Params().get_float("RadarReactionFactor") * 0.01
+    self.is_stopped_car_count = 0
+    self.selected_count = 0
 
   def update(self, md, pt, ready):
 
@@ -103,12 +105,11 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
   max_offset_vision_vel = max(lead.v[0] * np.interp(lead.prob, [0.8, 0.98], [0.3, 0.5]), 5.0) # 확률이 낮으면 속도오차를 줄임.
 
   def prob(c):
-    #if abs(c.dRel - offset_vision_dist) > max_offset_vision_dist:
-    if abs(offset_vision_dist - c.dRel) > max_offset_vision_dist: # vision 측정한것보다 레이더 거리나 너무 낮으면 버림
+    if abs(offset_vision_dist - c.dRel) > max_offset_vision_dist: 
       return -1e6
 
-    if lead.prob < 0.5 or abs(lead.v[0] - c.vLead) > max_offset_vision_vel: # or c.vLead < 3:
-        return -1e6
+    #if abs(lead.v[0] - c.vLead) > max_offset_vision_vel:
+    #    return -1e6
       
     prob_d = laplacian_pdf(c.dRel, offset_vision_dist, lead.xStd[0])
     prob_y = laplacian_pdf(c.yRel + c.yvLead * radar_lat_factor, -lead.y[0], lead.yStd[0])
@@ -127,7 +128,22 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
     if score > best_score:
       best_score = score
       best_track = c
-  return best_track if best_score > -1e6 else None  
+
+  if best_track is not None:
+    if abs(lead.v[0] - best_track.vLead) > max_offset_vision_vel:
+      best_track.is_stopped_car_count += 1
+      # 직전에 사용되었던것이라면 재사용, 3초간 유지된다면 정지차로 간주.
+      if best_track.selected_count < 1 and best_track.is_stopped_car_count < int(3.0/DT_MDL):
+        best_track = None
+
+    if best_track is not None:
+      best_track.selected_count += 1
+
+  for c in tracks.values():
+    if c is not best_track:
+      c.selected_count = 0
+      
+  return best_track
 
 def get_RadarState_from_vision(md, lead_msg: capnp._DynamicStructReader, v_ego: float, model_v_ego: float):
   lead_v_rel_pred = lead_msg.v[0] - model_v_ego

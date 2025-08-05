@@ -62,7 +62,7 @@ class CarState(CarStateBase):
     self.cruise_info = {}
     self.lfa_info = {}
     self.lfa_alt_info = {}
-    self.lfahda_cluster_info = {}
+    self.lfahda_cluster_info = None
     self.adrv_info_161 = None
     self.adrv_info_200 = None
     self.adrv_info_1ea = None
@@ -107,11 +107,19 @@ class CarState(CarStateBase):
     fingerprints_str = Params().get("FingerPrints", encoding='utf-8')
     fingerprints = ast.literal_eval(fingerprints_str)
     #print("fingerprints =", fingerprints)
-    bus_cruise = 2 if self.CP.flags & HyundaiFlags.CAMERA_SCC else 0
-    self.SCC11 = True if 1056 in fingerprints[bus_cruise] else False
-    self.SCC12 = True if 1057 in fingerprints[bus_cruise] else False
-    self.SCC13 = True if 1290 in fingerprints[bus_cruise] else False
-    self.SCC14 = True if 905 in fingerprints[bus_cruise] else False
+    ecu_disabled = False
+    if self.CP.openpilotLongitudinalControl and not (self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC):
+      ecu_disabled = True
+
+    if ecu_disabled:
+      self.SCC11 = self.SCC12 = self.SCC13 = self.SCC14 = False
+    else:
+      bus_cruise = 2 if self.CP.flags & HyundaiFlags.CAMERA_SCC else 0
+      self.SCC11 = True if 1056 in fingerprints[bus_cruise] else False
+      self.SCC12 = True if 1057 in fingerprints[bus_cruise] else False
+      self.SCC13 = True if 1290 in fingerprints[bus_cruise] else False
+      self.SCC14 = True if 905 in fingerprints[bus_cruise] else False
+      
     self.HAS_LFA_BUTTON = True if 913 in fingerprints[0] else False
     self.CRUISE_BUTTON_ALT = True if 1007 in fingerprints[0] else False
 
@@ -123,6 +131,7 @@ class CarState(CarStateBase):
     self.ADRV_0x200 = True if 0x200 in fingerprints[cam_bus] else False
     self.ADRV_0x1ea = True if 0x1ea in fingerprints[cam_bus] else False
     self.ADRV_0x160 = True if 0x160 in fingerprints[cam_bus] else False
+    self.LFAHDA_CLUSTER = True if 480 in fingerprints[cam_bus] else False
     self.HDA_INFO_4A3 = True if 0x4a3 in fingerprints[pt_bus] else False
     self.NEW_MSG_4B4 = True if 0x4b4 in fingerprints[pt_bus] else False
     self.GEAR = True if 69 in fingerprints[pt_bus] else False
@@ -296,14 +305,14 @@ class CarState(CarStateBase):
     prev_cruise_buttons = self.cruise_buttons[-1]
     #self.cruise_buttons.extend(cp.vl_all["CLU11"]["CF_Clu_CruiseSwState"])
     #carrot {{
-    if (self.CRUISE_BUTTON_ALT and cp.vl["CRUISE_BUTTON_ALT"]["SET_ME_1"] == 1):
-      self.cruise_buttons_alt = True
+    #if self.CRUISE_BUTTON_ALT and cp.vl["CRUISE_BUTTON_ALT"]["SET_ME_1"] == 1:
+    #  self.cruise_buttons_alt = True
 
     cruise_button = [Buttons.NONE]
     if self.cruise_buttons_alt:
-      lfa_button = cp.vl.get("CRUISE_BUTTON_LFA", {}).get("CruiseSwLfa", 0)
+      lfa_button = cp.vl["CRUISE_BUTTON_LFA"]["CruiseSwLfa"]
       cruise_button = [Buttons.LFA_BUTTON] if lfa_button > 0 else cp.vl_all["CRUISE_BUTTON_ALT"]["CruiseSwState"]
-    elif self.HAS_LFA_BUTTON and cp.vl.get("BCM_PO_11", {}).get("LFA_Pressed", 0):
+    elif self.HAS_LFA_BUTTON and cp.vl["BCM_PO_11"]["LFA_Pressed"] == 1:  # for K5
       cruise_button = [Buttons.LFA_BUTTON]
     else:
       cruise_button = cp.vl_all["CLU11"]["CF_Clu_CruiseSwState"]
@@ -477,7 +486,10 @@ class CarState(CarStateBase):
       self.lfa_info = copy.copy(cp_cam.vl["LFA"])
       if self.CP.flags & HyundaiFlags.ANGLE_CONTROL.value:
         self.lfa_alt_info = copy.copy(cp_cam.vl["LFA_ALT"])
-      self.lfahda_cluster_info = copy.copy(cp_cam.vl["LFAHDA_CLUSTER"])
+
+      if self.LFAHDA_CLUSTER:
+        self.lfahda_cluster_info = cp_cam.vl["LFAHDA_CLUSTER"]
+        
       corner = False
       self.adrv_info_161 = cp_cam.vl["ADRV_0x161"] if self.CCNC_0x161 else None
       self.adrv_info_162 = cp_cam.vl["CCNC_0x162"] if self.CCNC_0x162 else None

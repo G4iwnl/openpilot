@@ -495,13 +495,13 @@ BO_ 474 ADRV_0x1da: 32 ADRV
 BO_ 480 LFAHDA_CLUSTER: 16 ADRV
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
- SG_ HDA_ICON : 31|1@1+ (1,0) [0|1] "" XXX
+ SG_ OptUsmState : 26|3@0+ (1,0) [0|7] "" XXX
+ SG_ HDA_ICON : 30|2@1+ (1,0) [0|3] "" XXX
+ SG_ LFA_State : 34|3@0+ (1,0) [0|7] "" XXX
  SG_ LFA_ICON : 47|2@1+ (1,0) [0|3] "" XXX
- SG_ NEW_SIGNAL_1 : 32|3@1+ (1,0) [0|7] "" XXX
- SG_ NEW_SIGNAL_2 : 30|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_3 : 49|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_4 : 24|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_5 : 25|1@0+ (1,0) [0|1] "" XXX
+ SG_ LFA_WrnSnd : 49|2@1+ (1,0) [0|3] "" XXX
+ SG_ HDA_InfoPopup : 51|3@1+ (1,0) [0|7] "" XXX
+ SG_ LFA_Deactive : 54|2@1+ (1,0) [0|3] "" XXX
 
 BO_ 490 ADRV_0x1ea: 32 ADRV
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX

@@ -168,6 +168,7 @@ class VCruiseCarrot:
     self.v_ego_kph_set = 0
     self._cruise_speed_min, self._cruise_speed_max = 5, 161
     self._cruise_speed_unit = 10
+    self._cruise_speed_unit_basic = 1
     self._cruise_button_mode = 2
     self._lfa_button_mode = 0
 
@@ -254,6 +255,7 @@ class VCruiseCarrot:
 
       self.speed_from_pcm = self.params.get_int("SpeedFromPCM")
       self._cruise_speed_unit = self.params.get_int("CruiseSpeedUnit")
+      self._cruise_speed_unit_basic = self.params.get_int("CruiseSpeedUnitBasic")
       self._paddle_mode = self.params.get_int("PaddleMode")
       self._cruise_button_mode = self.params.get_int("CruiseButtonMode")
       self._lfa_button_mode = self.params.get_int("LfaButtonMode")
@@ -372,8 +374,8 @@ class VCruiseCarrot:
     button_type = 0
     buttonEvents = CS.buttonEvents
 
-    SPEED_UP_UNIT = self._cruise_speed_unit
-    SPEED_DOWN_UNIT = self._cruise_speed_unit # if self._cruise_button_mode in [1, 2, 3] else 1
+    SPEED_UP_UNIT = self._cruise_speed_unit_basic
+    SPEED_DOWN_UNIT = self._cruise_speed_unit if self._cruise_button_mode in [1, 2, 3] else self._cruise_speed_unit_basic
     V_CRUISE_DELTA = 10
     is_metric = self.is_metric
 
@@ -601,7 +603,7 @@ class VCruiseCarrot:
     elif v_cruise_kph < 30: #self.nRoadLimitSpeed:
       v_cruise_kph = 30 #self.nRoadLimitSpeed
     else:
-      for speed in range (40, 160, max(self._cruise_speed_unit, 10)):
+      for speed in range (40, 160, self._cruise_speed_unit):
         if v_cruise_kph < speed:
           v_cruise_kph = speed
           break
