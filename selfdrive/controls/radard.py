@@ -110,6 +110,9 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
 
     #if abs(lead.v[0] - c.vLead) > max_offset_vision_vel:
     #    return -1e6
+
+    if abs(c.yRel + c.yvLead * radar_lat_factor + lead.y[0]) > 1.5: # lead.y[0]는 반대..
+      return -1e6
       
     prob_d = laplacian_pdf(c.dRel, offset_vision_dist, lead.xStd[0])
     prob_y = laplacian_pdf(c.yRel + c.yvLead * radar_lat_factor, -lead.y[0], lead.yStd[0])
