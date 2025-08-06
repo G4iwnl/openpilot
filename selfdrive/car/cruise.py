@@ -744,8 +744,11 @@ class VCruiseCarrot:
       elif self._paddle_decel_active:
         if self.xState in [3]:
           self._paddle_decel_active = False
+          v_cruise_kph = self.v_ego_kph_set
         elif self.d_rel > 0:
           self._paddle_decel_active = False
+          v_cruise_kph = self.v_ego_kph_set
+          
 
     if self._gas_pressed_count > self._gas_tok_timer:
       if CS.aEgo < -0.5:
