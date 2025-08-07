@@ -1382,7 +1382,6 @@ private:
     int     show_path_color_normal = 14;
     int     show_path_mode_lane = 13;
     int     show_path_color_lane = 14;
-    int     show_path_mode_cruise_off = 13;
     int     show_path_color_cruise_off = 14;
     float   show_path_width = 1.0;
     Params  params;
@@ -1602,19 +1601,16 @@ protected:
 
         auto selfdrive_state = sm["selfdriveState"].getSelfdriveState();
         longActive = selfdrive_state.getEnabled();
-        if (longActive == false) {
-            show_path_mode = show_path_mode_cruise_off;
-            show_path_color = show_path_color_cruise_off;
+        if (active_lane_line) {
+          show_path_mode = show_path_mode_lane;
+          show_path_color = show_path_color_lane;
         }
         else {
-			    if (active_lane_line) {
-				    show_path_mode = show_path_mode_lane;
-				    show_path_color = show_path_color_lane;
-			    }
-          else {
-              show_path_mode = show_path_mode_normal;
-              show_path_color = show_path_color_normal;
-          }
+          show_path_mode = show_path_mode_normal;
+          show_path_color = show_path_color_normal;
+        }
+        if (longActive == false) {
+            show_path_color = show_path_color_cruise_off;
         }
 
         if (show_path_mode == 0) {
@@ -1639,7 +1635,6 @@ public:
             show_path_color_normal = params.getInt("ShowPathColor");
             show_path_mode_lane = params.getInt("ShowPathModeLane");
             show_path_color_lane = params.getInt("ShowPathColorLane");
-            show_path_mode_cruise_off = params.getInt("ShowPathModeCruiseOff");
             show_path_color_cruise_off = params.getInt("ShowPathColorCruiseOff");
         }
         if (!make_data(s)) return;

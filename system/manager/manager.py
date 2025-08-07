@@ -51,7 +51,6 @@ def get_default_params():
     ("ShowRouteInfo", "1"),
     ("ShowPathMode", "9"),
     ("ShowPathColor", "13"),
-    ("ShowPathModeCruiseOff", "0"),
     ("ShowPathColorCruiseOff", "19"),
     ("ShowPathModeLane", "14"),
     ("ShowPathColorLane", "13"),

@@ -151,7 +151,6 @@ inline static std::unordered_map<std::string, uint32_t> keys = {
     {"ShowRouteInfo", PERSISTENT },
     {"ShowPathMode", PERSISTENT},
     {"ShowPathColor", PERSISTENT},
-    {"ShowPathModeCruiseOff", PERSISTENT},
     {"ShowPathColorCruiseOff", PERSISTENT},
     {"ShowPathModeLane", PERSISTENT},
     {"ShowPathColorLane", PERSISTENT},
