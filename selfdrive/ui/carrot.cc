@@ -764,7 +764,7 @@ public:
         NVGcolor rcolor = isLeadSCC() ? COLOR_RED : COLOR_ORANGE;
         NVGcolor  pcolor = !isRadarDetected() ? ((trafficState == 1) ? rcolor : COLOR_GREEN) : isRadarDetected() ? rcolor : COLOR_BLUE;
         bool show_path_end = true;
-        if (show_path_end && !isLeadDetected()) {
+        if (false && show_path_end && !isLeadDetected()) {
             px[0] = path_x - path_width / 2;
             px[1] = path_x + path_width / 2;
             px[2] = path_x + path_width / 2;
