@@ -408,7 +408,9 @@ class VCruiseCarrot:
           if bt == ButtonType.accelCruise:
             button_kph += SPEED_UP_UNIT if is_metric else SPEED_UP_UNIT * CV.MPH_TO_KPH
           elif bt == ButtonType.decelCruise:
-            button_kph -= SPEED_DOWN_UNIT if is_metric else SPEED_DOWN_UNIT * CV.MPH_TO_KPH
+            #button_kph -= SPEED_DOWN_UNIT if is_metric else SPEED_DOWN_UNIT * CV.MPH_TO_KPH
+            unit = SPEED_DOWN_UNIT * CV.MPH_TO_KPH
+            button_kph = math.floor((button_kph - 0.01) / unit) * unit
           button_type = bt
         self.long_pressed = False
         self.button_cnt = 0
