@@ -135,8 +135,8 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
   if best_track is not None:
     if abs(lead.v[0] - best_track.vLead) > max_offset_vision_vel:
       best_track.is_stopped_car_count += 1
-      # 직전에 사용되었던것이라면 재사용, 3초간 유지된다면 정지차로 간주.
-      if best_track.selected_count < 1 and best_track.is_stopped_car_count < int(3.0/DT_MDL):
+      # 직전에 사용되었던것이라면 재사용, 2초간 유지된다면 정지차로 간주.
+      if best_track.selected_count < 1 and best_track.is_stopped_car_count < int(2.0/DT_MDL):
         best_track = None
 
     if best_track is not None:
