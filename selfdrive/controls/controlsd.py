@@ -56,6 +56,11 @@ class Controls:
     self.desired_curvature = 0.0
     self.yStd = 0.0
 
+    self.lead_left_dRel = None
+    self.lead_left_Lat = None
+    self.lead_right_dRel = None
+    self.lead_right_Lat = None
+
     self.LoC = LongControl(self.CP)
     self.VM = VehicleModel(self.CP)
     self.LaC: LatControl
@@ -253,20 +258,35 @@ class Controls:
           return None
         valid_leads = [
             lead for lead in leads
-            #if lead.status and abs(lead.dPath) < 3.5 and lead.vLead > 2.0 and 5 < lead.dRel < 100
-            if lead.status and abs(lead.dPath) < 4.2 and ((lead.vLead >= 2.0 and 5 < lead.dRel < 100) or (lead.vLead < 2.0 and 3 < lead.dRel < 30))
+            if lead.status and abs(lead.dPath) < 4.2 and lead.vLead > 2.0 and 2 < lead.dRel < 130
+            #if lead.status and abs(lead.dPath) < 4.2 and ((lead.vLead >= 2.0 and 5 < lead.dRel < 100) or (lead.vLead < 2.0 and 3 < lead.dRel < 30))
         ]
         return min(valid_leads, key=lambda l: l.dRel) if valid_leads else None
 
     lead_left = _find_closest_lead(radarState.leadsLeft, road_edge_left)
     lead_right = _find_closest_lead(radarState.leadsRight, road_edge_right)
     if lead_left is not None:
-      hudControl.leadLeftDist = lead_left.dRel
-      hudControl.leadLeftLat = abs(lead_left.dPath)
-      #print(f"Lead left: {lead_left.dRel:.2f}m, {lead_left.dPath:.2f}m, {lead_left.vRel:.2f}m/s")
+      if self.lead_left_dRel is None:
+        self.lead_left_dRel = lead_left.dRel
+        self.lead_left_Lat = abs(lead_left.dPath)
+      else:
+        self.lead_left_dRel = self.lead_left_dRel * 0.98 + lead_left.dRel * 0.02
+        self.lead_left_Lat = self.lead_left_Lat * 0.98 + abs(lead_left.dPath) * 0.02
+      hudControl.leadLeftDist = self.lead_left_dRel
+      hudControl.leadLeftLat = self.lead_left_Lat
+    else:
+      self.lead_left_dRel = None
     if lead_right is not None:
-      hudControl.leadRightDist = lead_right.dRel
-      hudControl.leadRightLat = abs(lead_right.dPath)
+      if self.lead_right_dRel is None:
+        self.lead_right_dRel = lead_right.dRel
+        self.lead_right_Lat = abs(lead_right.dPath)
+      else:
+        self.lead_right_dRel = self.lead_right_dRel * 0.98 + lead_right.dRel * 0.02
+        self.lead_right_Lat = self.lead_right_Lat * 0.98 + abs(lead_right.dPath) * 0.02
+      hudControl.leadRightDist = self.lead_right_dRel
+      hudControl.leadRightLat = self.lead_right_Lat
+    else:
+      self.lead_right_dRel = None
 
 
     hudControl.rightLaneVisible = True

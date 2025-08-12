@@ -660,6 +660,7 @@ CarrotPanel::CarrotPanel(QWidget* parent) : QWidget(parent) {
 
   cruiseToggles = new ListWidget(this);
   cruiseToggles->addItem(new CValueControl("CruiseButtonMode", "Button: Cruise Button Mode", "0:Normal,1:User1,2:User2", 0, 2, 1));
+  cruiseToggles->addItem(new CValueControl("CancelButtonMode", "Button: Cancel Button Mode", "0:Long,1:Long+Lat", 0, 1, 1));
   cruiseToggles->addItem(new CValueControl("LfaButtonMode", "Button: LFA Button Mode", "0:Normal,1:Decel&Stop&LeadCarReady", 0, 1, 1));
   cruiseToggles->addItem(new CValueControl("CruiseSpeedUnitBasic", "Button: Cruise Speed Unit(Basic)", "", 1, 20, 1));
   cruiseToggles->addItem(new CValueControl("CruiseSpeedUnit", "Button: Cruise Speed Unit(Extra)", "", 1, 20, 1));
@@ -747,7 +748,6 @@ CarrotPanel::CarrotPanel(QWidget* parent) : QWidget(parent) {
   //dispToggles->addItem(new CValueControl("ShowDmInfo", "DM Info", "0:None,1:Display,-1:Disable(Reboot)", -1, 1, 1));
 
   pathToggles = new ListWidget(this);
-  pathToggles->addItem(new CValueControl("ShowPathModeCruiseOff", "Path Mode: Cruise OFFF", "0:Normal,1,2:Rec,3,4:^^,5,6:Rec,7,8:^^,9,10,11,12:Smooth^^", 0, 15, 1));
   pathToggles->addItem(new CValueControl("ShowPathColorCruiseOff", "Path Color: Cruise OFF", "(+10:Stroke)0:Red,1:Orange,2:Yellow,3:Green,4:Blue,5:Indigo,6:Violet,7:Brown,8:White,9:Black", 0, 19, 1));
   pathToggles->addItem(new CValueControl("ShowPathMode", "Path Mode: Laneless", "0:Normal,1,2:Rec,3,4:^^,5,6:Rec,7,8:^^,9,10,11,12:Smooth^^", 0, 15, 1));
   pathToggles->addItem(new CValueControl("ShowPathColor", "Path Color: Laneless", "(+10:Stroke)0:Red,1:Orange,2:Yellow,3:Green,4:Blue,5:Indigo,6:Violet,7:Brown,8:White,9:Black", 0, 19, 1));
@@ -822,7 +822,7 @@ CarrotPanel::CarrotPanel(QWidget* parent) : QWidget(parent) {
   startToggles->addItem(new CValueControl("SoundVolumeAdjust", "Sound Volume(100%)", "", 5, 200, 5));
   startToggles->addItem(new CValueControl("SoundVolumeAdjustEngage", "Sound Volume, Engage(10%)", "", 5, 200, 5));
   startToggles->addItem(new CValueControl("MaxTimeOffroadMin", "Power off time (min)", "", 1, 600, 10));
-  startToggles->addItem(new CValueControl("EnableConnect", "EnableConnect", "Your device may be banned by Comma", 0, 1, 1));
+  startToggles->addItem(new CValueControl("EnableConnect", "EnableConnect", "Your device may be banned by Comma", 0, 2, 1));
   startToggles->addItem(new CValueControl("MapboxStyle", "Mapbox Style(0)", "", 0, 2, 1));
   startToggles->addItem(new CValueControl("RecordRoadCam", "Record Road camera(0)", "1:RoadCam, 2:RoadCam+WideRoadCam", 0, 2, 1));
   startToggles->addItem(new CValueControl("HDPuse", "Use HDP(CCNC)(0)", "1:While Using APN, 2:Always", 0, 2, 1));

@@ -760,6 +760,17 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
 </context>
 <context>
+    <name>TurnInfoDrawer</name>
+    <message>
+        <source>ETA</source>
+        <translation>도착</translation>
+    </message>
+    <message>
+        <source>MIN</source>
+        <translation>분</translation>
+    </message>
+</context>
+<context>
     <name>PrimeAdWidget</name>
     <message>
         <source>Upgrade Now</source>

@@ -375,7 +375,7 @@ class CarrotMan:
   def carrot_navi_route(self):
 
     if self.carrot_serv.active_carrot > 1:
-      if self.navd_active:
+      if False and self.navd_active:  # mabox always active
         self.navd_active = False
         self.params.remove("NavDestination")
     if not self.navi_points_active or not SHAPELY_AVAILABLE or (self.carrot_serv.active_carrot <= 1 and not self.navd_active):
@@ -868,9 +868,10 @@ class CarrotMan:
         self.navd_active = True
 
         # 경로수신 -> carrotman active되고 약간의 시간지연이 발생함..
-        self.carrot_serv.active_count = 80
-        self.carrot_serv.active_sdi_count = self.carrot_serv.active_sdi_count_max
-        self.carrot_serv.active_carrot = 2
+        if not from_navd:
+          self.carrot_serv.active_count = 80
+          self.carrot_serv.active_sdi_count = self.carrot_serv.active_sdi_count_max
+          self.carrot_serv.active_carrot = 2
 
         coords = [{"latitude": c.latitude, "longitude": c.longitude} for c in coords]
         #print("navdNaviPoints=", self.navi_points)
@@ -1653,6 +1654,7 @@ class CarrotServ:
       self.nTBTTurnType = self.nTBTTurnTypeNext = -1
       self.roadcate = 8
       self.nGoPosDist = 0
+    if self.active_carrot <= 1 or self.active_kisa_count > 0:
       self.update_nav_instruction(sm)
 
     if self.xSpdType < 0 or (self.xSpdType not in [100,101] and self.xSpdDist <= 0) or (self.xSpdType in [100,101] and self.xSpdDist < -250):
@@ -1826,7 +1828,7 @@ class CarrotServ:
     pm.send('carrotMan', msg)
 
     inst = messaging.new_message('navInstructionCarrot')
-    if self.active_carrot > 1:
+    if self.active_carrot > 1 and self.active_kisa_count <= 0:
       inst.valid = True
     
       instruction = inst.navInstructionCarrot

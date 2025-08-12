@@ -172,7 +172,7 @@ void ScreenRecoder::update_screen() {
 
   if(recording) {
 
-    if(milliseconds() - started > 1000*60*3) {
+    if(milliseconds() - started > 1000*60*20) {   // 20 minutes
       stop();
       start();
       return;

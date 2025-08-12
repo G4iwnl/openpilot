@@ -170,6 +170,7 @@ class VCruiseCarrot:
     self._cruise_speed_unit = 10
     self._cruise_speed_unit_basic = 1
     self._cruise_button_mode = 2
+    self._cancel_button_mode = 0
     self._lfa_button_mode = 0
 
     self._gas_pressed_count = 0
@@ -258,6 +259,7 @@ class VCruiseCarrot:
       self._cruise_speed_unit_basic = self.params.get_int("CruiseSpeedUnitBasic")
       self._paddle_mode = self.params.get_int("PaddleMode")
       self._cruise_button_mode = self.params.get_int("CruiseButtonMode")
+      self._cancel_button_mode = self.params.get_int("CancelButtonMode")
       self._lfa_button_mode = self.params.get_int("LfaButtonMode")
       self.autoRoadSpeedLimitOffset = self.params.get_int("AutoRoadSpeedLimitOffset")
       self.autoNaviSpeedSafetyFactor = self.params.get_float("AutoNaviSpeedSafetyFactor") * 0.01
@@ -409,7 +411,9 @@ class VCruiseCarrot:
           if bt == ButtonType.accelCruise:
             button_kph += SPEED_UP_UNIT if is_metric else SPEED_UP_UNIT * CV.MPH_TO_KPH
           elif bt == ButtonType.decelCruise:
-            button_kph -= SPEED_DOWN_UNIT if is_metric else SPEED_DOWN_UNIT * CV.MPH_TO_KPH
+            #button_kph -= SPEED_DOWN_UNIT if is_metric else SPEED_DOWN_UNIT * CV.MPH_TO_KPH
+            unit = SPEED_DOWN_UNIT * 1 if is_metric else CV.MPH_TO_KPH
+            button_kph = math.floor((button_kph - 0.01) / unit) * unit
           button_type = bt
         self.long_pressed = False
         self.button_cnt = 0
@@ -550,9 +554,9 @@ class VCruiseCarrot:
         print("lfaButton")
       elif button_type == ButtonType.cancel:
         self._paddle_decel_active = False
-        #if self._cruise_cancel_state:
-        #  self._lat_enabled = not self._lat_enabled
-        #  self._add_log("Lateral " + "enabled" if self._lat_enabled else "disabled")
+        if self._cancel_button_mode in [1]:
+          self._lat_enabled = False
+          self._add_log("Lateral " + "enabled" if self._lat_enabled else "disabled")
         self._cruise_cancel_state = True
         #self._v_cruise_kph_at_brake = 0
     else:
@@ -574,6 +578,7 @@ class VCruiseCarrot:
         self._lat_enabled = False
         self._paddle_decel_active = False
         self.params.put_bool_nonblocking("ExperimentalMode", not self.params.get_bool("ExperimentalMode"))
+        self._add_log("Lateral " + "enabled" if self._lat_enabled else "disabled")
 
     if self._paddle_mode > 0 and button_type in [ButtonType.paddleLeft, ButtonType.paddleRight]:  # paddle button
       self._cruise_control(-2, -1, "Cruise off & Ready (paddle)")
@@ -765,8 +770,11 @@ class VCruiseCarrot:
       elif self._paddle_decel_active:
         if self.xState in [3]:
           self._paddle_decel_active = False
+          v_cruise_kph = self.v_ego_kph_set
         elif self.d_rel > 0:
           self._paddle_decel_active = False
+          v_cruise_kph = self.v_ego_kph_set
+          
 
     if self._gas_pressed_count > self._gas_tok_timer:
       if CS.aEgo < -0.5:

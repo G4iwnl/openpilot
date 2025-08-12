@@ -1,3 +1,31 @@
+Carrot2-v9 (2025-08-12)
+========================
+* TombRaider16 v2 model.
+* Remove ShowPathMode CruiseOff
+* Add CancelButtonMode (0: Long Only, 1: Long + Lat)
+* fix CASPER cruise button
+* bugfix. Mapbox ATC with Waze
+* ScreenRecorder 3 -> 20min
+* fix RadarTrack processing
+
+Carrot2-v9 (2025-08-04)
+========================
+* CruiseSpeedUnit
+* fix RadarTrack processing
+
+Carrot2-v9 (2025-08-03)
+========================
+* IONIQ9 support
+* fix StockSCC bug.
+* fix CPU usage(card: core 4->6)
+
+Carrot2-v9 (2025-08-01)
+========================
+* SpaceLab V3 model
+* RadarTracks support(CANFD)
+* new CanParser
+
+
 Version 0.9.9 (2025-04-30)
 ========================
 * New driving model

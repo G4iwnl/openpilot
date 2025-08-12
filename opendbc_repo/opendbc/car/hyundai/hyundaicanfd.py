@@ -268,10 +268,13 @@ def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
 
 def create_lfahda_cluster(packer, CS, CAN, long_active, lat_active):
+
   if CS.lfahda_cluster_info is not None:
     values = {} #
-    values["HDA_ICON"] = 1 if long_active else 0
-    values["LFA_ICON"] = 2 if lat_active else 0
+    values["HDA_CntrlModSta"] = 2 if long_active else 0
+    values["HDA_LFA_SymSta"] = 2 if lat_active else 0
+
+    # 
   else:
     return []
   return [packer.make_can_msg("LFAHDA_CLUSTER", CAN.ECAN, values)]
@@ -511,7 +514,7 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
         values["NAV_ICON"] = 2 if nav_active else 0
         values["HDA_ICON"] = 5 if hdp_active else 2 if cruise_enabled else 1 if main_enabled else 0
         values["LFA_ICON"] = 5 if hdp_active else 2 if lat_active else 1 if lat_enabled else 0
-        values["LKA_ICON"] = 4 if lat_active else 3 if lat_enabled else 1
+        values["LKA_ICON"] = 4 if lat_active else 3 if lat_enabled else 0
         values["FCA_ALT_ICON"] = 0
 
         if values["ALERTS_2"] in [1, 2, 5]:

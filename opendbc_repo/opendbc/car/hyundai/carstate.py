@@ -311,7 +311,7 @@ class CarState(CarStateBase):
     cruise_button = [Buttons.NONE]
     if self.cruise_buttons_alt:
       lfa_button = cp.vl["CRUISE_BUTTON_LFA"]["CruiseSwLfa"]
-      cruise_button = [Buttons.LFA_BUTTON] if lfa_button > 0 else cp.vl_all["CRUISE_BUTTON_ALT"]["CruiseSwState"]
+      cruise_button = [Buttons.LFA_BUTTON] if lfa_button > 0 else [cp.vl["CRUISE_BUTTON_ALT"]["CruiseSwState"]]
     elif self.HAS_LFA_BUTTON and cp.vl["BCM_PO_11"]["LFA_Pressed"] == 1:  # for K5
       cruise_button = [Buttons.LFA_BUTTON]
     else:
@@ -461,7 +461,7 @@ class CarState(CarStateBase):
     if self.CP.flags & HyundaiFlags.CAMERA_SCC.value:
       self.MainMode_ACC = cp_cam.vl["SCC_CONTROL"]["MainMode_ACC"] == 1
       self.ACCMode = cp_cam.vl["SCC_CONTROL"]["ACCMode"]
-      self.LFA_ICON = cp_cam.vl["LFAHDA_CLUSTER"]["LFA_ICON"]
+      self.LFA_ICON = cp_cam.vl["LFAHDA_CLUSTER"]["HDA_LFA_SymSta"]
       
     if self.CP.openpilotLongitudinalControl:
       # These are not used for engage/disengage since openpilot keeps track of state using the buttons
@@ -525,6 +525,8 @@ class CarState(CarStateBase):
       self.tcs_info_373 = cp.vl["TCS"]
     
     ret.gearStep = cp.vl["GEAR"]["GEAR_STEP"] if self.GEAR else 0
+    if 1 <= ret.gearStep <= 8 and ret.gearShifter == GearShifter.unknown:
+      ret.gearShifter = GearShifter.drive
     ret.gearStep = cp.vl["GEAR_ALT"]["GEAR_STEP"] if self.GEAR_ALT else ret.gearStep
 
     if cp_alt and self.CP.flags & HyundaiFlags.CAMERA_SCC:
