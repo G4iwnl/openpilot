@@ -54,8 +54,10 @@ class Track:
 
     if self.cnt == 0:
       self.yRel_filtered = self.yRel
+      self.yvLead_filtered = self.yvLead
     else:
-      self.yRel_filtered = self.yRel_filtered * 0.98 + self.yRel * 0.02
+      self.yRel_filtered = self.yRel_filtered * 0.95 + self.yRel * 0.05
+      self.yvLead_filtered = self.yvLead_filtered * 0.95 + self.yvLead * 0.05
 
     a_lead_threshold = 0.5 * radar_reaction_factor
     if abs(self.aLead) < a_lead_threshold and abs(self.jLead) < 0.5:
@@ -109,17 +111,8 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
   max_offset_vision_vel = max(lead.v[0] * np.interp(lead.prob, [0.8, 0.98], [0.3, 0.5]), 5.0) # 확률이 낮으면 속도오차를 줄임.
 
   def prob(c):
-    #if abs(offset_vision_dist - c.dRel) > max_offset_vision_dist: 
-    #  return -1e6
-
-    #if abs(lead.v[0] - c.vLead) > max_offset_vision_vel:
-    #    return -1e6
-
-    #if abs(c.yRel + c.yvLead * radar_lat_factor + lead.y[0]) > 3.0: # lead.y[0]는 반대..
-    #  return -1e6
-      
     prob_d = laplacian_pdf(c.dRel, offset_vision_dist, lead.xStd[0])
-    prob_y = laplacian_pdf(c.yRel + c.yvLead * radar_lat_factor, -lead.y[0], lead.yStd[0])
+    prob_y = laplacian_pdf(c.yRel + c.yvLead_filtered * radar_lat_factor, -lead.y[0], lead.yStd[0])
     prob_v = laplacian_pdf(c.vLead, lead.v[0], lead.vStd[0])
 
     weight_v = np.interp(c.vLead, [0, 10], [0.3, 1])
@@ -142,7 +135,7 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
   #if best_track is not None and lead.v[0] - best_track.vLead > max_offset_vision_vel:
   #  best_track = None
 
-  if best_track is not None and abs(best_track.yRel + best_track.yvLead * radar_lat_factor + lead.y[0]) > 3.0: # lead.y[0]는 반대..
+  if best_track is not None and abs(best_track.yRel + best_track.yvLead_filtered * radar_lat_factor + lead.y[0]) > 3.0: # lead.y[0]는 반대..
     best_track = None
 
   if best_track is not None:
@@ -213,7 +206,7 @@ def get_lead_side(v_ego, tracks, md, lane_width, model_v_ego, radar_lat_factor =
   for c in tracks.values():
     # d_y :  path_y - traks_y 의 diff값
     # yRel값은 왼쪽이 +값, lead.y[0]값은 왼쪽이 -값
-    d_y = c.yRel_filtered + np.interp(c.dRel, md_x, md_y) + c.yvLead * radar_lat_factor
+    d_y = c.yRel_filtered + np.interp(c.dRel, md_x, md_y) + c.yvLead_filtered * radar_lat_factor
     if abs(d_y) < lane_width / 2 * 0.8:
       if c.cnt > 6:
         ld = c.get_RadarState(lead_msg.prob, float(-lead_msg.y[0]))
@@ -225,7 +218,8 @@ def get_lead_side(v_ego, tracks, md, lane_width, model_v_ego, radar_lat_factor =
       ld = c.get_RadarState(0, 0)
       leads_left[c.dRel] = ld
 
-    if abs(d_y) < 2.3 and 4 < c.dRel < 20.0 and c.vLead > 4.0:
+    # 레이더가 3.4m 차폭보다 적으면, 
+    if abs(d_y) < 3.4/2 and 4 < c.dRel < 20.0 and c.vLead > 4.0 and c.cnt > int(2.0/DT_MDL) and d_y * c.yvLead_filtered < 0:
       if leadCutIn['status'] is False or c.dRel < leadCutIn['dRel']:
         leadCutIn = c.get_RadarState(lead_msg.prob)
 
