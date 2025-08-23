@@ -79,6 +79,7 @@ def get_default_params():
 
     ("AutoNaviSpeedCtrlEnd", "7"),
     ("AutoNaviSpeedCtrlMode", "2"),
+    ("AutoNaviSpeedCtrlBump", "1"),
     ("AutoNaviSpeedBumpTime", "1"),
     ("AutoNaviSpeedBumpSpeed", "35"),
     ("AutoNaviSpeedSafetyFactor", "105"),
@@ -171,6 +172,7 @@ def get_default_params():
     ("MuteSeatbelt", "0"),
     ("RecordRoadCam", "0"),
     ("HDPuse", "0"),
+    ("cruiselateral", "1"),
     ("CruiseOnDist", "400"),
     ("HotspotOnBoot", "0"),
     ("SoftwareMenu", "1"),
@@ -178,6 +180,9 @@ def get_default_params():
     ("SteerRatioRate", "100"),
     ("NNFF", "0"),
     ("NNFFLite", "0"),
+    ("onlysofthold", "1"),
+    ("VisionOnly", "0"),
+    ("IgnorePaddleShift", "1"),
   ]
   return default_params
 

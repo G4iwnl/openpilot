@@ -157,8 +157,12 @@ inline static std::unordered_map<std::string, uint32_t> keys = {
     {"ShowPlotMode", PERSISTENT},
     {"RecordRoadCam", PERSISTENT },
     {"HDPuse", PERSISTENT },
+	
+    {"cruiselateral", PERSISTENT },
 
     {"AutoCruiseControl", PERSISTENT},
+    {"onlysofthold", PERSISTENT},
+    {"VisionOnly", PERSISTENT},
     {"CruiseEcoControl", PERSISTENT},
     {"CarrotCruiseDecel", PERSISTENT},
     {"CarrotCruiseAtcDecel", PERSISTENT},
@@ -176,6 +180,7 @@ inline static std::unordered_map<std::string, uint32_t> keys = {
     {"AutoTurnMapChange", PERSISTENT },
     {"AutoNaviSpeedCtrlEnd", PERSISTENT},
     {"AutoNaviSpeedCtrlMode", PERSISTENT},
+    {"AutoNaviSpeedCtrlBump", PERSISTENT},
     {"AutoRoadSpeedLimitOffset", PERSISTENT},
     {"AutoNaviSpeedBumpTime", PERSISTENT},
     {"AutoNaviSpeedBumpSpeed", PERSISTENT},
@@ -273,6 +278,7 @@ inline static std::unordered_map<std::string, uint32_t> keys = {
     {"SpeedFromPCM", PERSISTENT},
     {"MaxTimeOffroadMin", PERSISTENT},
     {"DisableDM", PERSISTENT},
+    {"IgnorePaddleShift", PERSISTENT},
     {"EnableConnect", PERSISTENT},
     {"MuteDoor", PERSISTENT},
     {"MuteSeatbelt", PERSISTENT},

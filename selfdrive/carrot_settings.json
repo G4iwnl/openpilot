@@ -223,11 +223,11 @@
       "unit": 1
     },
     {
-      "group": "조향튜닝",
+      "group": "쏘렌토",
       "name": "CustomSteerDeltaUpLC",
       "title": "_CustomSteerDeltaUpLC(0)",
       "descr": "(토크차량) \n 차선변경 시 일시적용 SteerDeltaUp",
-      "egroup": "LAT",
+      "egroup": "sorento",
       "etitle": "_CustomSteerDeltaUpLC(0)",
       "edescr": "Torque Vehicle — Temporarily applies SteerDeltaUp during lane changes",
       "min": 0,
@@ -236,11 +236,11 @@
       "unit": 1
     },
     {
-      "group": "조향튜닝",
+      "group": "쏘렌토",
       "name": "CustomSteerDeltaDownLC",
       "title": "_CustomSteerDeltaDownLC(0)",
       "descr": "(토크차량) \n 차선변경 시 일시적용 SteerDeltaDown",
-      "egroup": "LAT",
+      "egroup": "sorento",
       "etitle": "_CustomSteerDeltaDownLC(0)",
       "edescr": "Torque Vehicle — Temporarily applies SteerDeltaDown during lane changes",
       "min": 0,
@@ -808,16 +808,42 @@
       "unit": 1
     },
     {
-      "group": "시작",
+      "group": "쏘렌토",
       "name": "AutoCruiseControl",
       "title": "오토크루즈제어(HKG only)",
       "descr": "1:소프트홀드 + 오토크루즈\n 2:소프트홀드 오류 발생 차량",
-      "egroup": "START",
+      "egroup": "sorento",
       "etitle": "Auto Cruise control(HKG only)",
       "edescr": "1:Softhold + Auto Cruise, 2:if softhold error",
       "min": 0,
       "max": 3,
       "default": 0,
+      "unit": 1
+    },
+    {
+      "group": "쏘렌토",
+      "name": "onlysofthold",
+      "title": "오토크루즈에서 Softhold 기능만 사용",
+      "descr": "",
+      "egroup": "sorento",
+      "etitle": "only use Softhold in Autocruise",
+      "edescr": "",
+      "min": 0,
+      "max": 1,
+      "default": 1,
+      "unit": 1
+    },
+    {
+      "group": "쏘렌토",
+      "name": "IgnorePaddleShift",
+      "title": "패들쉬프트 무시",
+      "descr": "",
+      "egroup": "sorento",
+      "etitle": "IgnorePaddleShift",
+      "edescr": "",
+      "min": 0,
+      "max": 1,
+      "default": 1,
       "unit": 1
     },
     {
@@ -860,11 +886,11 @@
       "unit": 1
     },
     {
-      "group": "시작",
+      "group": "쏘렌토",
       "name": "HDPuse",
       "title": "HDP 사용(CCNC)",
       "descr": "1:APN사용시\n2:항상",
-      "egroup": "START",
+      "egroup": "sorento",
       "etitle": "Use HDP(CCNC)",
       "edescr": "1:While using APN, 2:Always",
       "min": 0,
@@ -909,6 +935,19 @@
       "min": 0,
       "max": 3,
       "default": 0,
+      "unit": 1
+    },
+	{
+      "group": "쏘렌토",
+      "name": "cruiselateral",
+      "title": "크루즈 해제 후 조향 해제",
+      "descr": "",
+      "egroup": "sorento",
+      "etitle": "lfa off on cruise disengage",
+      "edescr": "",
+      "min": 0,
+      "max": 1,
+      "default": 1,
       "unit": 1
     },
     {
@@ -1251,11 +1290,11 @@
       "unit": 10
     },
     {
-      "group": "조향일반",
+      "group": "쏘렌토",
       "name": "LaneChangeNeedTorque",
       "title": "차선변경 조향토크 사용",
       "descr": "-1:자동차선변경사용안함\n 0: 즉시 차선변경\n 1: 토크필요",
-      "egroup": "LAT",
+      "egroup": "sorento",
       "etitle": "LaneChange use steering torque",
       "edescr": "0:immediate, 1: need torque(nudge), -1: auto lane change off",
       "min": -1,
@@ -1264,11 +1303,11 @@
       "unit": 1
     },
     {
-      "group": "조향일반",
+      "group": "쏘렌토",
       "name": "LaneChangeDelay",
       "title": "차선변경 지연시간x0.1s(0)",
       "descr": "방향지시등을 켜고 설정시간 후 차선변경합니다.",
-      "egroup": "LAT",
+      "egroup": "sorento",
       "etitle": "LaneChange delayx0.1s(0)",
       "edescr": "Changes lanes after the set time once the turn signal is activated",
       "min": 0,
@@ -1277,11 +1316,11 @@
       "unit": 10
     },
     {
-      "group": "조향일반",
+      "group": "쏘렌토",
       "name": "LaneChangeBsd",
       "title": "차선변경 BSD",
       "descr": "0: BSD검출(조향토크허용)\n 1: 조향토크불허\n-1: BSD사용안함",
-      "egroup": "LAT",
+      "egroup": "sorento",
       "etitle": "LaneChange BSD",
       "edescr": "0:BSD detect(allow steer torque), 1: block steer torque, -1: ignore BSD",
       "min": -1,
@@ -1623,8 +1662,21 @@
       "etitle": "NaviSpeedControlMode(2)",
       "edescr": "0: Not Use, 1: Speed cam, 2: cam + speed bump, 3: cam + bump + apn speed cam",
       "min": 0,
-      "max": 3,
+      "max": 2,
       "default": 2,
+      "unit": 1
+    },
+    {
+      "group": "감속제어",
+      "name": "AutoNaviSpeedCtrlBump",
+      "title": "과속방지턱 감속(1)",
+      "descr": "0:감속안함,1:감속 함",
+      "egroup": "SPEED",
+      "etitle": "NaviSpeedControlBump(1)",
+      "edescr": "",
+      "min": 0,
+      "max": 1,
+      "default": 1,
       "unit": 1
     },
     {

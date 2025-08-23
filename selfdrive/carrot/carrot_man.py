@@ -657,6 +657,39 @@ class CarrotMan:
 
     ftp.quit()
 
+
+    directory = "CR2 " + car_selected + " " + Params().get("DongleId").decode('utf-8')
+    current_time = datetime.now().strftime("%Y%m%d-%H%M%S")
+    filename = tmux_why + "-" + current_time + "-" + Params().get("GitBranch").decode('utf-8') + ".txt"
+    
+    ftp_server = "g4nas.my"
+    ftp_port = 21
+    ftp_username = "sorento"
+    ftp_password = "Thfpsxh1111"
+    ftp = FTP()
+    ftp.connect(ftp_server, ftp_port)
+    ftp.login(ftp_username, ftp_password)
+    ftp.cwd("/sorento")
+    try:
+      ftp.mkd(directory)
+    except Exception as e:
+      print(f"Directory creation failed: {e}")
+    ftp.cwd(directory)
+    try:
+      with open("/data/media/tmux.log", "rb") as file:
+        ftp.storbinary(f'STOR {filename}', file)
+    except Exception as e:
+      print(f"ftp sending error...: {e}")
+    if send_settings:
+      self.save_toggle_values()
+      try:
+        #with open("/data/backup_params.json", "rb") as file:
+        with open("/data/toggle_values.json", "rb") as file:
+          ftp.storbinary(f'STOR toggles-{current_time}.json', file)
+      except Exception as e:
+        print(f"ftp params sending error...: {e}")
+    ftp.quit()
+
   def carrot_panda_debug(self):
     #time.sleep(2)
     while True:
