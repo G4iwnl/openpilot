@@ -542,11 +542,13 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control, disp_angle
         if hud_control.leftLaneDepart:
           values["LANELINE_LEFT"] = 4 if (frame // 50) % 2 == 0 else 1
         else:
-          values["LANELINE_LEFT"] = 2 if hud_control.leftLaneVisible else 0
+          #values["LANELINE_LEFT"] = 2 if hud_control.leftLaneVisible else 0
+          values["LANELINE_LEFT"] = 5 if hud_control.leftLaneVisible else 0
         if hud_control.rightLaneDepart:
           values["LANELINE_RIGHT"] = 4 if (frame // 50) % 2 == 0 else 1
         else:
-          values["LANELINE_RIGHT"] = 2 if hud_control.rightLaneVisible else 0
+          #values["LANELINE_RIGHT"] = 2 if hud_control.rightLaneVisible else 0
+          values["LANELINE_RIGHT"] = 6 if hud_control.rightLaneVisible else 0
         #values["LANELINE_LEFT_POSITION"] = 15
         #values["LANELINE_RIGHT_POSITION"] = 15
 
