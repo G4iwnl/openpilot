@@ -57,8 +57,8 @@ class Track:
       self.yRel_filtered = self.yRel
       self.yvLead_filtered = self.yvLead
     else:
-      self.yRel_filtered = self.yRel_filtered * 0.95 + self.yRel * 0.05
-      self.yvLead_filtered = self.yvLead_filtered * 0.95 + self.yvLead * 0.05
+      self.yRel_filtered = self.yRel_filtered * 0.9 + self.yRel * 0.1
+      self.yvLead_filtered = self.yvLead_filtered * 0.9 + self.yvLead * 0.1
 
     a_lead_threshold = 0.5 * radar_reaction_factor
     if abs(self.aLead) < a_lead_threshold and abs(self.jLead) < 0.5:
@@ -105,7 +105,7 @@ def laplacian_pdf(x: float, mu: float, b: float):
   diff = abs(x - mu) / max(b, 1e-4)
   return 0.0 if diff > 50.0 else math.exp(-diff)
 
-def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks: dict[int, Track], radar_lat_factor = 0.0):
+def match_vision_to_track_carrot(v_ego: float, lead: capnp._DynamicStructReader, tracks: dict[int, Track], radar_lat_factor = 0.0):
   offset_vision_dist = lead.x[0] - RADAR_TO_CAMERA
   #vel_tolerance = 25.0 if lead.prob > 0.99 else 10.0
   max_vision_dist = max(offset_vision_dist * 1.25, 5.0)
@@ -122,10 +122,25 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
     return prob_d * prob_y * prob_v * weight_v
 
   best_track = max(tracks.values(), key=prob)
+
+
+  # 끼어드는차량을 간헐적 멀리있는 차량으로 검출하는 문제가 있음..
+  y_gate  = max(1.5,  lead.yStd[0] * 2.0)
+  v_gate  = max(5.0,  lead.vStd[0] * 2.0)
+
+  yv_candidates = [
+    c for c in tracks.values()
+    if (min_vision_dist < c.dRel < max_vision_dist)
+       and (abs(c.yRel + lead.y[0]) < y_gate)
+       and (abs(c.vLead - lead.v[0]) < v_gate)
+  ]
+
+  if False and yv_candidates:
+    best_track = min(yv_candidates, key=lambda c: c.dRel)
+
   dist_sane = min_vision_dist < best_track.dRel < max_vision_dist #abs(best_track.dRel - offset_vision_dist) < max([(offset_vision_dist)*.35, 5.0])
   vel_sane = (abs(best_track.vLead - lead.v[0]) < 10) or (best_track.vLead > 3)
 
-  y_gate = max(1.5, lead.yStd[0] * 3.0)
   y_sane = abs(best_track.yRel + lead.y[0]) < y_gate
 
   if dist_sane:
@@ -147,6 +162,66 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
       c.is_stopped_car_count = 0
     else:
       c.selected_count = 0      
+      
+  return best_track
+
+def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks: dict[int, Track], radar_lat_factor = 0.0):
+  offset_vision_dist = lead.x[0] - RADAR_TO_CAMERA
+  #vel_tolerance = 25.0 if lead.prob > 0.99 else 10.0
+  max_offset_vision_dist = max(offset_vision_dist * 0.35, 5.0)
+  max_offset_vision_vel = max(lead.v[0] * np.interp(lead.prob, [0.8, 0.98], [0.3, 0.5]), 5.0) # 확률이 낮으면 속도오차를 줄임.
+
+  def prob(c):
+    #if abs(offset_vision_dist - c.dRel) > max_offset_vision_dist: 
+    #  return -1e6
+
+    #if abs(lead.v[0] - c.vLead) > max_offset_vision_vel:
+    #    return -1e6
+
+    #if abs(c.yRel + c.yvLead * radar_lat_factor + lead.y[0]) > 3.0: # lead.y[0]는 반대..
+    #  return -1e6
+      
+    prob_d = laplacian_pdf(c.dRel, offset_vision_dist, lead.xStd[0])
+    prob_y = laplacian_pdf(c.yRel + c.yvLead * radar_lat_factor, -lead.y[0], lead.yStd[0])
+    prob_v = laplacian_pdf(c.vLead, lead.v[0], lead.vStd[0])
+
+    weight_v = np.interp(c.vLead, [0, 10], [0.3, 1])
+
+    return prob_d * prob_y * prob_v * weight_v
+
+  #track = max(tracks.values(), key=prob, default=None)
+  #return track if track and prob(track) > -1e6 else None
+  best_track = None
+  best_score = -1e6
+  for c in tracks.values():
+    score = prob(c)
+    if score > best_score:
+      best_score = score
+      best_track = c
+
+  if best_track is not None and offset_vision_dist - best_track.dRel > max_offset_vision_dist: 
+    best_track = None
+
+  #if best_track is not None and lead.v[0] - best_track.vLead > max_offset_vision_vel:
+  #  best_track = None
+
+  if best_track is not None and abs(best_track.yRel + best_track.yvLead * radar_lat_factor + lead.y[0]) > 3.0: # lead.y[0]는 반대..
+    best_track = None
+
+  if best_track is not None:
+
+    if lead.v[0] - best_track.vLead > max_offset_vision_vel:
+      best_track.is_stopped_car_count += 1
+      # 직전에 사용되었던것이라면 재사용, 2초간 유지된다면 정지차로 간주.
+      if best_track.selected_count < 1 and best_track.is_stopped_car_count < int(2.0/DT_MDL):
+        best_track = None
+
+    if best_track is not None:
+      best_track.selected_count += 1
+
+  for c in tracks.values():
+    if c is not best_track:
+      c.selected_count = 0
       
   return best_track
 
@@ -447,7 +522,8 @@ class RadarD:
     left_list, right_list, center_list = [], [], []
 
     for c in tracks.values():
-      dy = c.yRel_filtered + np.interp(c.dRel, md_x, md_y) + c.yvLead_filtered * self.radar_lat_factor
+      dy = c.yRel_filtered + np.interp(c.dRel, md_x, md_y) # + c.yvLead_filtered * self.radar_lat_factor
+      dy_with_vel = dy + c.yvLead_filtered * self.radar_lat_factor
 
       # center
       if abs(dy) < lane_width / 2 * 0.8:
@@ -465,7 +541,7 @@ class RadarD:
 
       # cut-in
       cut_in_width = 2.6 #3.4  # 끼어들기 차폭
-      if abs(dy) < cut_in_width / 2 and (4 < c.dRel < 20 and c.vLead > 4 and c.cnt > int(2.0/DT_MDL) and  dy * c.yvLead_filtered < 0):
+      if abs(dy_with_vel) < cut_in_width / 2 and (3 < c.dRel < 20 and c.vLead > 4 and c.cnt > int(2.0/DT_MDL) and  dy * c.yvLead_filtered < 0):
         if not self.leadCutIn['status'] or c.dRel < self.leadCutIn['dRel']:
           self.leadCutIn = c.get_RadarState(lead_msg.prob)
 
