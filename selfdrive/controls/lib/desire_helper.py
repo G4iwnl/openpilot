@@ -149,6 +149,7 @@ class DesireHelper:
     self.desire_disable_count = 0
     self.blindspot_detected_counter = 0
     self.auto_lane_change_enable = False
+    self.next_lane_change = False
 
   def check_lane_state(self, modeldata):
     lane_width_left, self.distance_to_road_edge_left, self.distance_to_road_edge_left_far, lane_prob_left = calculate_lane_width(modeldata.laneLines[0], modeldata.laneLineProbs[0],
@@ -331,6 +332,7 @@ class DesireHelper:
         # 맨끝차선이 아니면(측면에 차선이 있으면), ATC 자동작동 안함.
         #self.auto_lane_change_enable = False if lane_exist_counter > 0 else True
         self.auto_lane_change_enable = False if lane_exist_counter > 0 or lane_change_available else True
+        self.next_lane_change = False
          
 
       # LaneChangeState.preLaneChange
@@ -363,7 +365,7 @@ class DesireHelper:
             if self.blindspot_detected_counter > 0 and not ignore_bsd:  # BSD검출시
               if torque_applied and not block_lanechange_bsd:
                 self.lane_change_state = LaneChangeState.laneChangeStarting
-            elif self.laneChangeNeedTorque > 0: # 조향토크필요
+            elif self.laneChangeNeedTorque > 0 or self.next_lane_change: # 조향토크필요
               if torque_applied:
                 self.lane_change_state = LaneChangeState.laneChangeStarting
             elif driver_desire_enabled:
@@ -391,6 +393,7 @@ class DesireHelper:
           self.lane_change_direction = LaneChangeDirection.none
           if desire_enabled:
             self.lane_change_state = LaneChangeState.preLaneChange
+            self.next_lane_change = True
           else:
             self.lane_change_state = LaneChangeState.off
 
