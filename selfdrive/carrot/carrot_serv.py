@@ -641,7 +641,7 @@ class CarrotServ:
           self.xTurnInfo = value[2]
           break
 
-      self.debugText = f"{self.nRoadLimitSpeed},{msg_nav.maneuverType},{msg_nav.maneuverModifier} "
+      self.debugText = f"{self.nRoadLimitSpeed if self.is_metric else self.nRoadLimitSpeed * CV.KPH_TO_MPH:.0f},{msg_nav.maneuverType},{msg_nav.maneuverModifier} "
       #print(msg_nav)
       #print(f"navInstruction: {self.xTurnInfo}, {self.xDistToTurn}, {self.szTBTMainText}")
 
