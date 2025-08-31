@@ -79,13 +79,12 @@ BO_ {a} RADAR_TRACK_{a:x}: 32 RADAR
     for a in range(0x3a5, 0x3a5 + 32):
         f.write(f"""
 BO_ {a} RADAR_TRACK_{a:x}: 24 RADAR
- SG_ NEW_SIGNAL_9 : 24|1@0+ (1,0) [0|1] "" XXX
- SG_ VALID : 25|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_5 : 30|10@1+ (1,0) [0|1023] "" XXX
- SG_ NEW_SIGNAL_3 : 40|10@1+ (1,0) [0|1023] "" XXX
- SG_ NEW_SIGNAL_6 : 50|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_8 : 51|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_7 : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ VALID : 25|2@0+ (1,0) [0|3] "" XXX
+ SG_ VALID2 : 28|2@0+ (1,0) [0|3] "" XXX
+ SG_ PROB : 30|10@1+ (1,0) [0|1023] "" XXX
+ SG_ VALID_CNT : 47|8@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_7 : 51|4@0+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_6 : 55|4@0+ (1,0) [0|15] "" XXX
  SG_ NEW_SIGNAL_2 : 62|7@0- (1,0) [0|127] "" XXX
  SG_ LONG_DIST : 63|13@1+ (0.05,0) [0|8191] "" XXX
  SG_ LAT_DIST : 76|12@1- (0.05,0) [0|4095] "" XXX
