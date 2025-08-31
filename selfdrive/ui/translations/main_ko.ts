@@ -774,7 +774,7 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     <name>PrimeAdWidget</name>
     <message>
         <source>Upgrade Now</source>
-        <translation>지금 업그레이드하세요</translation>
+        <translation>절대 업그레이드마세요</translation>
     </message>
     <message>
         <source>Become a comma prime member at connect.comma.ai</source>
@@ -782,7 +782,7 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
     <message>
         <source>PRIME FEATURES:</source>
-        <translation>PRIME 기능:</translation>
+        <translation>PRIME 기능(주행성능과 전혀관련 없음):</translation>
     </message>
     <message>
         <source>Remote access</source>

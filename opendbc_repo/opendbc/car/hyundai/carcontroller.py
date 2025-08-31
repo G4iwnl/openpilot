@@ -569,7 +569,7 @@ class HyundaiJerk:
       #a_error = actuators.aTarget - CS.out.aEgo
       self.jerk = jerk# + a_error
 
-    jerk_max_l = 10.0 #5.0
+    jerk_max_l = 5.0
     jerk_max_u = jerk_max_l
     if actuators.longControlState == LongCtrlState.off:
       self.jerk_u = jerk_max_u
