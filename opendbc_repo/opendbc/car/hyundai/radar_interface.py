@@ -114,9 +114,9 @@ class RadarInterface(RadarInterfaceBase):
         self.track_id += 1
 
       if self.radar_group1:
-        valid = msg['VALID_CNT1'] > 0
+        valid = msg['VALID_CNT1'] > 10
       elif self.canfd:
-        valid = msg['VALID'] > 0
+        valid = msg['VALID_CNT'] > 10
       else:
         valid = msg['STATE'] in (3, 4)
       if valid:
@@ -160,7 +160,7 @@ class RadarInterface(RadarInterfaceBase):
           self.pts[addr].trackId = self.track_id
           self.track_id += 1
 
-        valid = msg['VALID_CNT2'] > 0
+        valid = msg['VALID_CNT2'] > 10
         if valid:
           self.pts[addr].measured = True
           self.pts[addr].dRel = msg['LONG_DIST2']

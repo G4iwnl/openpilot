@@ -245,7 +245,7 @@ class MyTrack:
 
     j_lead = (a_lead - self.aLead) / self.dt
     self.aLead = a_lead
-    self.jLead = self.jLead_avg.update(j_lead)
+    self.jLead = self.jLead_avg.update(j_lead if self.cnt > 2 else 0.0)
 
     # Store latest values
     self.dRel = radar_point.dRel
