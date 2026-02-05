@@ -142,28 +142,51 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
 
   # lane lines
   modelV2.init('laneLines', 4)
-  for i in range(4):
-    lane_line = modelV2.laneLines[i]
-    fill_xyzt(lane_line, LINE_T_IDXS, np.array(ModelConstants.X_IDXS), net_output_data['lane_lines'][0,i,:,0], net_output_data['lane_lines'][0,i,:,1])
-  modelV2.laneLineStds = net_output_data['lane_lines_stds'][0,:,0,0].tolist()
-  modelV2.laneLineProbs = net_output_data['lane_lines_prob'][0,1::2].tolist()
+  if 'lane_lines' in net_output_data:
+    for i in range(4):
+      lane_line = modelV2.laneLines[i]
+      fill_xyzt(lane_line, LINE_T_IDXS, np.array(ModelConstants.X_IDXS), net_output_data['lane_lines'][0,i,:,0], net_output_data['lane_lines'][0,i,:,1])
+    modelV2.laneLineStds = net_output_data['lane_lines_stds'][0,:,0,0].tolist()
+    modelV2.laneLineProbs = net_output_data['lane_lines_prob'][0,1::2].tolist()
+  else:
+    nan_arr = np.full(ModelConstants.IDX_N, np.nan)
+    for i in range(4):
+      lane_line = modelV2.laneLines[i]
+      fill_xyzt(lane_line, LINE_T_IDXS, np.array(ModelConstants.X_IDXS), nan_arr, nan_arr)
+    modelV2.laneLineStds = [0.0] * ModelConstants.NUM_LANE_LINES
+    modelV2.laneLineProbs = [0.0] * ModelConstants.NUM_LANE_LINES
 
   fill_lane_line_meta(driving_model_data.laneLineMeta, modelV2.laneLines, modelV2.laneLineProbs)
 
   # road edges
   modelV2.init('roadEdges', 2)
-  for i in range(2):
-    road_edge = modelV2.roadEdges[i]
-    fill_xyzt(road_edge, LINE_T_IDXS, np.array(ModelConstants.X_IDXS), net_output_data['road_edges'][0,i,:,0], net_output_data['road_edges'][0,i,:,1])
-  modelV2.roadEdgeStds = net_output_data['road_edges_stds'][0,:,0,0].tolist()
+  if 'road_edges' in net_output_data:
+    for i in range(2):
+      road_edge = modelV2.roadEdges[i]
+      fill_xyzt(road_edge, LINE_T_IDXS, np.array(ModelConstants.X_IDXS), net_output_data['road_edges'][0,i,:,0], net_output_data['road_edges'][0,i,:,1])
+    modelV2.roadEdgeStds = net_output_data['road_edges_stds'][0,:,0,0].tolist()
+  else:
+    nan_arr = np.full(ModelConstants.IDX_N, np.nan)
+    for i in range(2):
+      road_edge = modelV2.roadEdges[i]
+      fill_xyzt(road_edge, LINE_T_IDXS, np.array(ModelConstants.X_IDXS), nan_arr, nan_arr)
+    modelV2.roadEdgeStds = [0.0] * ModelConstants.NUM_ROAD_EDGES
 
   # leads
   modelV2.init('leadsV3', 3)
-  for i in range(3):
-    lead = modelV2.leadsV3[i]
-    fill_xyvat(lead, ModelConstants.LEAD_T_IDXS, *net_output_data['lead'][0,i].T, *net_output_data['lead_stds'][0,i].T)
-    lead.prob = net_output_data['lead_prob'][0,i].tolist()
-    lead.probTime = ModelConstants.LEAD_T_OFFSETS[i]
+  if 'lead' in net_output_data:
+    for i in range(3):
+      lead = modelV2.leadsV3[i]
+      fill_xyvat(lead, ModelConstants.LEAD_T_IDXS, *net_output_data['lead'][0,i].T, *net_output_data['lead_stds'][0,i].T)
+      lead.prob = net_output_data['lead_prob'][0,i].tolist()
+      lead.probTime = ModelConstants.LEAD_T_OFFSETS[i]
+  else:
+    nan_arr = np.full(ModelConstants.LEAD_TRAJ_LEN, np.nan)
+    for i in range(3):
+      lead = modelV2.leadsV3[i]
+      fill_xyvat(lead, ModelConstants.LEAD_T_IDXS, nan_arr, nan_arr, nan_arr, nan_arr)
+      lead.prob = [0.0]
+      lead.probTime = ModelConstants.LEAD_T_OFFSETS[i]
 
   # meta
   meta = modelV2.meta
