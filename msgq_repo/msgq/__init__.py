@@ -3,7 +3,7 @@ from msgq.ipc_pyx import Context, Poller, SubSocket, PubSocket, SocketEventHandl
                                 set_fake_prefix, get_fake_prefix, delete_fake_prefix, wait_for_one_event
 from msgq.ipc_pyx import MultiplePublishersError, IpcError
 
-from typing import Optional, List
+from typing import Optional, List, Union
 
 assert MultiplePublishersError
 assert IpcError
@@ -18,24 +18,24 @@ NO_TRAVERSAL_LIMIT = 2**64-1
 context = Context()
 
 
-def fake_event_handle(endpoint: str, identifier: Optional[str] = None, override: bool = True, enable: bool = False) -> SocketEventHandle:
-  identifier = identifier or get_fake_prefix()
-  handle = SocketEventHandle(endpoint, identifier, override)
+def fake_event_handle(endpoint: str, identifier: Optional[Union[str, bytes]] = None, override: bool = True, enable: bool = False) -> SocketEventHandle:
+  ident = identifier if identifier is not None else get_fake_prefix()
+  handle = SocketEventHandle(endpoint, ident, override)
   if override:
     handle.enabled = enable
 
   return handle
 
-def pub_sock(endpoint: str) -> PubSocket:
+def pub_sock(endpoint: str, segment_size: int = 0) -> PubSocket:
   sock = PubSocket()
-  sock.connect(context, endpoint)
+  sock.connect(context, endpoint, segment_size)
   return sock
 
 
 def sub_sock(endpoint: str, poller: Optional[Poller] = None, addr: str = "127.0.0.1",
-             conflate: bool = False, timeout: Optional[int] = None) -> SubSocket:
+             conflate: bool = False, timeout: Optional[int] = None, segment_size: int = 0) -> SubSocket:
   sock = SubSocket()
-  sock.connect(context, endpoint, addr.encode('utf8'), conflate)
+  sock.connect(context, endpoint, addr.encode('utf8'), conflate, segment_size)
 
   if timeout is not None:
     sock.setTimeout(timeout)

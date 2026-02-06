@@ -254,7 +254,7 @@ void ChartsWidget::settingChanged() {
   if (std::exchange(current_theme, settings.theme) != current_theme) {
     undo_zoom_action->setIcon(utils::icon("arrow-counterclockwise"));
     redo_zoom_action->setIcon(utils::icon("arrow-clockwise"));
-    auto theme = settings.theme == DARK_THEME ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight;
+    auto theme = utils::isDarkTheme() ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight;
     for (auto c : charts) {
       c->setTheme(theme);
     }
@@ -319,6 +319,32 @@ void ChartsWidget::splitChart(ChartView *src_chart) {
     src_chart->updateAxisY();
     src_chart->updateTitle();
     QTimer::singleShot(0, src_chart, &ChartView::resetChartCache);
+  }
+}
+
+QStringList ChartsWidget::serializeChartIds() const {
+  QStringList chart_ids;
+  for (auto c : charts) {
+    QStringList ids;
+    for (const auto& s : c->sigs)
+      ids += QString("%1|%2").arg(s.msg_id.toString(), s.sig->name);
+    chart_ids += ids.join(',');
+  }
+  std::reverse(chart_ids.begin(), chart_ids.end());
+  return chart_ids;
+}
+
+void ChartsWidget::restoreChartsFromIds(const QStringList& chart_ids) {
+  for (const auto& chart_id : chart_ids) {
+    int index = 0;
+    for (const auto& part : chart_id.split(',')) {
+      const auto sig_parts = part.split('|');
+      if (sig_parts.size() != 2) continue;
+      MessageId msg_id = MessageId::fromString(sig_parts[0]);
+      if (auto* msg = dbc()->msg(msg_id))
+        if (auto* sig = msg->sig(sig_parts[1]))
+          showChart(msg_id, sig, true, index++ > 0);
+    }
   }
 }
 

@@ -87,6 +87,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     laneChange @50;
     lowMemory @51;
     stockAeb @52;
+    stockLkas @98;
     ldw @53;
     carUnrecognized @54;
     invalidLkasSetting @55;
@@ -127,14 +128,16 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     espActive @90;
     personalityChanged @91;
     aeb @92;
-    userFlag @95;
+    userBookmark @95;
+    excessiveActuation @96;
+    audioFeedback @97;
 
     softHold @115;
     trafficStopping @116;
     audioPrompt @117;
-    audioRefuse @96;
-    stopStop @97;
-    audioLaneChange @98;
+    audioRefuse @119;
+    stopStop @120;
+    audioLaneChange @121;
     audioTurn @99;
     trafficSignGreen @100;
     trafficSignChanged @101;
@@ -518,7 +521,6 @@ struct DeviceState @0xa4d8b5af2aa492eb {
   gpuTempC @27 :List(Float32);
   dspTempC @49 :Float32;
   memoryTempC @28 :Float32;
-  nvmeTempC @35 :List(Float32);
   modemTempC @36 :List(Float32);
   pmicTempC @39 :List(Float32);
   intakeTempC @46 :Float32;
@@ -594,6 +596,7 @@ struct DeviceState @0xa4d8b5af2aa492eb {
   chargingDisabledDEPRECATED @18 :Bool;
   usbOnlineDEPRECATED @12 :Bool;
   ambientTempCDEPRECATED @30 :Float32;
+  nvmeTempCDEPRECATED @35 :List(Float32);
 }
 
 struct PandaState @0xa7649e2575e4591e {
@@ -956,7 +959,9 @@ struct ControlsState @0x97ff69c53601abf1 {
     saturated @7 :Bool;
     actualLateralAccel @9 :Float32;
     desiredLateralAccel @10 :Float32;
-    nnLog @11 :List(Float32);
+    desiredLateralJerk @11 :Float32;
+    version @12 :Int32;
+    nnLog @13 :List(Float32);
    }
 
   struct LateralLQRState {
@@ -1124,7 +1129,7 @@ struct ModelDataV2 {
   confidence @23: ConfidenceClass;
 
   # Model perceived motion
-  temporalPose @21 :Pose;
+  temporalPoseDEPRECATED @21 :Pose;
 
   # e2e lateral planner
   action @26: Action;
@@ -1537,6 +1542,11 @@ struct ProcLog {
 
     cmdline @15 :List(Text);
     exe @16 :Text;
+
+    # from /proc/<pid>/smaps_rollup (proportional/private memory)
+    memPss @17 :UInt64;        # Pss ? shared pages split by mapper count
+    memPssAnon @18 :UInt64;    # Pss_Anon ? private anonymous (heap, stack)
+    memPssShmem @19 :UInt64;   # Pss_Shmem ? proportional MSGQ/tmpfs share
   }
 
   struct CPUTimes {
@@ -2535,7 +2545,7 @@ struct DebugAlert {
   alertText2 @1 :Text;
 }
 
-struct UserFlag {
+struct UserBookmark @0xfe346a9de48d9b50 {
 }
 
 struct SoundPressure @0xdc24138990726023 {
@@ -2551,6 +2561,11 @@ struct SoundPressure @0xdc24138990726023 {
 struct AudioData {
   data @0 :Data;
   sampleRate @1 :UInt32;
+}
+
+struct AudioFeedback {
+  audio @0 :AudioData;
+  blockNum @1 :UInt16;
 }
 
 struct Touch {
@@ -2579,13 +2594,10 @@ struct Event {
     controlsState @7 :ControlsState;
     selfdriveState @130 :SelfdriveState;
     gyroscope @99 :SensorEventData;
-    gyroscope2 @100 :SensorEventData;
     accelerometer @98 :SensorEventData;
-    accelerometer2 @101 :SensorEventData;
     magnetometer @95 :SensorEventData;
     lightSensor @96 :SensorEventData;
     temperatureSensor @97 :SensorEventData;
-    temperatureSensor2 @123 :SensorEventData;
     pandaStates @81 :List(PandaState);
     peripheralState @80 :PeripheralState;
     radarState @13 :RadarState;
@@ -2653,8 +2665,12 @@ struct Event {
     mapRenderState @105: MapRenderState;
 
     # UI services
-    userFlag @93 :UserFlag;
     uiDebug @102 :UIDebug;
+
+    # driving feedback
+    userBookmark @93 :UserBookmark;
+    bookmarkButton @148 :UserBookmark;
+    audioFeedback @149 :AudioFeedback;
 
     # *********** debug ***********
     testJoystick @52 :Joystick;
@@ -2741,8 +2757,11 @@ struct Event {
     lateralPlan @64 :LateralPlan;
     navModel @104 :NavModelData;
     uiPlanDEPRECATED @106 :UiPlan;
-    liveLocationKalman @72 :LiveLocationKalman;
+    liveLocationKalmanDEPRECATED @72 :LiveLocationKalman;
     liveTracksDEPRECATED @16 :List(LiveTracksDEPRECATED);
     onroadEventsDEPRECATED @68: List(Car.OnroadEventDEPRECATED);
+    gyroscope2DEPRECATED @100 :SensorEventData;
+    accelerometer2DEPRECATED @101 :SensorEventData;
+    temperatureSensor2DEPRECATED @123 :SensorEventData;
   }
 }

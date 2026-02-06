@@ -6,16 +6,16 @@ import time
 import signal
 import subprocess
 
-from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH
+from panda import Panda, PandaDFU, PandaProtocolMismatch, McuType, FW_PATH
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.system.hardware import HARDWARE
 from openpilot.common.swaglog import cloudlog
 
 
-def get_expected_signature(panda: Panda) -> bytes:
+def get_expected_signature() -> bytes:
   try:
-    fn = os.path.join(FW_PATH, panda.get_mcu_type().config.app_fn)
+    fn = os.path.join(FW_PATH, McuType.H7.config.app_fn)
     return Panda.get_signature_from_firmware(fn)
   except Exception:
     cloudlog.exception("Error computing expected signature")
@@ -29,7 +29,7 @@ def flash_panda(panda_serial: str) -> Panda:
     HARDWARE.recover_internal_panda()
     raise
 
-  fw_signature = get_expected_signature(panda)
+  fw_signature = get_expected_signature()
   internal_panda = panda.is_internal()
 
   panda_version = "bootstub" if panda.bootstub else panda.get_version()
@@ -84,11 +84,6 @@ def main() -> None:
       count += 1
       cloudlog.event("pandad.flash_and_connect", count=count)
       params.remove("PandaSignatures")
-
-      # TODO: remove this in the next AGNOS
-      # wait until USB is up before counting
-      if time.monotonic() < 25.:
-        no_internal_panda_count = 0
 
       # Handle missing internal panda
       if no_internal_panda_count > 0:

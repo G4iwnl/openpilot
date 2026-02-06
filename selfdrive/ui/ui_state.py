@@ -62,6 +62,7 @@ class UIState:
 
     # UI Status tracking
     self.status: UIStatus = UIStatus.DISENGAGED
+    self.lat_active: bool = False
     self.started_frame: int = 0
     self.started_time: float = 0.0
     self._engaged_prev: bool = False
@@ -151,6 +152,8 @@ class UIState:
         self.status = UIStatus.OVERRIDE
       else:
         self.status = UIStatus.ENGAGED if ss.enabled else UIStatus.DISENGAGED
+
+      self.lat_active = self.sm["carControl"].latActive
 
     # Check for engagement state changes
     if self.engaged != self._engaged_prev:

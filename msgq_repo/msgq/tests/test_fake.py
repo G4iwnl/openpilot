@@ -1,5 +1,4 @@
 import pytest
-import os
 import multiprocessing
 import platform
 import msgq
@@ -64,7 +63,6 @@ class TestEvents:
 
 
 @pytest.mark.skipif(condition=platform.system() == "Darwin", reason="FakeSockets not supported on macOS")
-@pytest.mark.skipif(condition="ZMQ" in os.environ, reason="FakeSockets not supported on ZMQ")
 @parameterized_class([{"prefix": None}, {"prefix": "test"}])
 class TestFakeSockets:
   prefix: Optional[str] = None

@@ -3,11 +3,13 @@ import datetime
 import os
 import signal
 import sys
+import time
 import traceback
 
 from cereal import log
 import cereal.messaging as messaging
 import openpilot.system.sentry as sentry
+from openpilot.common.utils import atomic_write
 from openpilot.common.params import Params, ParamKeyFlag
 from openpilot.common.text_window import TextWindow
 from openpilot.system.hardware import HARDWARE
@@ -16,7 +18,7 @@ from openpilot.system.manager.process import ensure_running
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.athena.registration import register, UNREGISTERED_DONGLE_ID
 from openpilot.common.swaglog import cloudlog, add_file_handler
-from openpilot.system.version import get_build_metadata, terms_version, training_version
+from openpilot.system.version import get_build_metadata
 from openpilot.system.hardware.hw import Paths
 
 def set_default_params():
@@ -66,8 +68,6 @@ def manager_init() -> None:
   # set params
   serial = HARDWARE.get_serial()
   params.put("Version", build_metadata.openpilot.version)
-  params.put("TermsVersion", terms_version)
-  params.put("TrainingVersion", training_version)
   params.put("GitCommit", build_metadata.openpilot.git_commit)
   params.put("GitCommitDate", build_metadata.openpilot.git_commit_date)
   params.put("GitBranch", build_metadata.channel)
@@ -131,10 +131,6 @@ def manager_thread() -> None:
     ignore.append("pandad")
   ignore += [x for x in os.getenv("BLOCK", "").split(",") if len(x) > 0]
 
-  if params.get_bool("HardwareC3xLite"):
-    ignore += ["micd", "soundd", "loggerd"]
-    params.put("RecordAudio", "0")
-
   sm = messaging.SubMaster(['deviceState', 'carParams', 'pandaStates'], poll='deviceState')
   pm = messaging.PubMaster(['managerState'])
 
@@ -180,6 +176,14 @@ def manager_thread() -> None:
     msg = messaging.new_message('managerState', valid=True)
     msg.managerState.processes = [p.get_process_state_msg() for p in managed_processes.values()]
     pm.send('managerState', msg)
+
+    # kick AGNOS power monitoring watchdog
+    try:
+      if sm.all_checks(['deviceState']):
+        with atomic_write("/var/tmp/power_watchdog", "w", overwrite=True) as f:
+          f.write(str(time.monotonic()))
+    except Exception:
+      pass
 
     # Exit main loop when uninstall/shutdown/reboot is needed
     shutdown = False

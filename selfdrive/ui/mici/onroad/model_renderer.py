@@ -138,12 +138,13 @@ class ModelRenderer(Widget):
       self._transform_dirty = False
 
     # Draw elements (hide when disengaged)
+    self._draw_lane_lines()
     if ui_state.status != UIStatus.DISENGAGED:
-      self._draw_lane_lines()
+      #self._draw_lane_lines()
       self._draw_path(sm)
 
-    # if render_lead_indicator and radar_state:
-    #   self._draw_lead_indicator()
+    if render_lead_indicator and radar_state:
+      self._draw_lead_indicator()
 
   def _update_raw_points(self, model):
     """Update raw 3D points from model data"""
@@ -284,7 +285,7 @@ class ModelRenderer(Widget):
   def _get_ll_color(self, prob: float, adjacent: bool, left: bool):
     alpha = np.clip(prob, 0.0, 0.7)
     if adjacent:
-      _base_color = LANE_LINE_COLORS.get(ui_state.status, LANE_LINE_COLORS[UIStatus.DISENGAGED])
+      _base_color = LANE_LINE_COLORS.get(ui_state.status, LANE_LINE_COLORS[UIStatus.DISENGAGED if not ui_state.lat_active else UIStatus.ENGAGED])
       color = rl.Color(_base_color.r, _base_color.g, _base_color.b, int(alpha * 255))
 
       # turn adjacent lls orange if torque is high
@@ -299,7 +300,7 @@ class ModelRenderer(Widget):
     else:
       color = rl.Color(255, 255, 255, int(alpha * 255))
 
-    if ui_state.status == UIStatus.DISENGAGED:
+    if ui_state.status == UIStatus.DISENGAGED and not ui_state.lat_active:
       color = rl.Color(0, 0, 0, int(alpha * 255))
 
     return color

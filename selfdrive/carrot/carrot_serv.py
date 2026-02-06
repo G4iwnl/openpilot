@@ -18,7 +18,7 @@ from openpilot.common.params import Params
 from openpilot.common.filter_simple import MyMovingAverage
 from openpilot.system.hardware import PC, TICI
 from openpilot.selfdrive.navd.helpers import Coordinate
-from opendbc.car.common.conversions import Conversions as CV
+from openpilot.common.constants import CV
 from openpilot.common.gps import get_gps_location_service
 
 nav_type_mapping = {

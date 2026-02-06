@@ -12,13 +12,6 @@ from openpilot.common.timeout import Timeout
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.manager.process_config import managed_processes
 
-BMX = {
-  ('bmx055', 'acceleration'),
-  ('bmx055', 'gyroUncalibrated'),
-  ('bmx055', 'magneticUncalibrated'),
-  ('bmx055', 'temperature'),
-}
-
 LSM = {
   ('lsm6ds3', 'acceleration'),
   ('lsm6ds3', 'gyroUncalibrated'),
@@ -30,45 +23,26 @@ MMC = {
   ('mmc5603nj', 'magneticUncalibrated'),
 }
 
-SENSOR_CONFIGURATIONS: list[set] = [
-  BMX | LSM,
-  MMC | LSM,
-  BMX | LSM_C,
-  MMC| LSM_C,
-]
-if HARDWARE.get_device_type() == "mici":
-  SENSOR_CONFIGURATIONS = [
-    LSM,
-    LSM_C,
-  ]
+SENSOR_CONFIGURATIONS: list[set] = {
+  "mici": [LSM, LSM_C],
+  "tizi": [MMC | LSM, MMC | LSM_C],
+  "tici": [LSM, LSM_C, MMC | LSM, MMC | LSM_C],
+}.get(HARDWARE.get_device_type(), [])
 
 Sensor = log.SensorEventData.SensorSource
 SensorConfig = namedtuple('SensorConfig', ['type', 'sanity_min', 'sanity_max'])
 ALL_SENSORS = {
-  Sensor.lsm6ds3: {
-    SensorConfig("acceleration", 5, 15),
-    SensorConfig("gyroUncalibrated", 0, .2),
-    SensorConfig("temperature", 0, 60),
-  },
-
   Sensor.lsm6ds3trc: {
     SensorConfig("acceleration", 5, 15),
     SensorConfig("gyroUncalibrated", 0, .2),
-    SensorConfig("temperature", 0, 60),
-  },
-
-  Sensor.bmx055: {
-    SensorConfig("acceleration", 5, 15),
-    SensorConfig("gyroUncalibrated", 0, .2),
-    SensorConfig("magneticUncalibrated", 0, 300),
-    SensorConfig("temperature", 0, 60),
+    SensorConfig("temperature", 10, 40),  # set for max range of our office
   },
 
   Sensor.mmc5603nj: {
     SensorConfig("magneticUncalibrated", 0, 300),
   }
 }
-
+ALL_SENSORS[Sensor.lsm6ds3] = ALL_SENSORS[Sensor.lsm6ds3trc]
 
 def get_irq_count(irq: int):
   with open(f"/sys/kernel/irq/{irq}/per_cpu_count") as f:
@@ -76,8 +50,7 @@ def get_irq_count(irq: int):
     return sum(per_cpu)
 
 def read_sensor_events(duration_sec):
-  sensor_types = ['accelerometer', 'gyroscope', 'magnetometer', 'accelerometer2',
-                  'gyroscope2', 'temperatureSensor', 'temperatureSensor2']
+  sensor_types = ['accelerometer', 'gyroscope', 'magnetometer', 'temperatureSensor',]
   socks = {}
   poller = messaging.Poller()
   events = defaultdict(list)

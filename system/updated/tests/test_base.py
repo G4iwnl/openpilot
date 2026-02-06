@@ -133,7 +133,7 @@ class TestBaseUpdate:
 class ParamsBaseUpdateTest(TestBaseUpdate):
   def _test_finalized_update(self, branch, version, agnos_version, release_notes):
     assert self.params.get("UpdaterNewDescription").startswith(f"{version} / {branch}")
-    assert self.params.get("UpdaterNewReleaseNotes") == f"{release_notes}\n"
+    assert self.params.get("UpdaterNewReleaseNotes") == f"{release_notes}\n".encode()
     super()._test_finalized_update(branch, version, agnos_version, release_notes)
 
   def send_check_for_updates_signal(self, updated: ManagerProcess):
@@ -148,11 +148,11 @@ class ParamsBaseUpdateTest(TestBaseUpdate):
     assert self.params.get_bool("UpdateAvailable") == update_available
 
   def wait_for_idle(self):
-    self.wait_for_condition(lambda: self.params.get("UpdaterState", encoding="utf-8") == "idle")
+    self.wait_for_condition(lambda: self.params.get("UpdaterState") == "idle")
 
   def wait_for_failed(self):
     self.wait_for_condition(lambda: self.params.get("UpdateFailedCount") is not None and \
-                                              int(self.params.get("UpdateFailedCount")) > 0)
+                                              self.params.get("UpdateFailedCount") > 0)
 
   def wait_for_fetch_available(self):
     self.wait_for_condition(lambda: self.params.get_bool("UpdaterFetchAvailable"))

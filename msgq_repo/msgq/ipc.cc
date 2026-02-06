@@ -3,26 +3,8 @@
 #include <string>
 
 #include "msgq/ipc.h"
-#include "msgq/impl_zmq.h"
 #include "msgq/impl_msgq.h"
 #include "msgq/impl_fake.h"
-
-#ifdef __APPLE__
-const bool MUST_USE_ZMQ = true;
-#else
-const bool MUST_USE_ZMQ = false;
-#endif
-
-bool messaging_use_zmq(){
-  if (std::getenv("ZMQ") || MUST_USE_ZMQ) {
-    if (std::getenv("OPENPILOT_PREFIX")) {
-      std::cerr << "OPENPILOT_PREFIX not supported with ZMQ backend\n";
-      assert(false);
-    }
-    return true;
-  }
-  return false;
-}
 
 bool messaging_use_fake(){
   char* fake_enabled = std::getenv("CEREAL_FAKE");
@@ -30,37 +12,19 @@ bool messaging_use_fake(){
 }
 
 Context * Context::create(){
-  Context * c;
-  if (messaging_use_zmq()){
-    c = new ZMQContext();
-  } else {
-    c = new MSGQContext();
-  }
-  return c;
+  return new Context();
 }
 
 SubSocket * SubSocket::create(){
-  SubSocket * s;
   if (messaging_use_fake()) {
-    if (messaging_use_zmq()) {
-      s = new FakeSubSocket<ZMQSubSocket>();
-    } else {
-      s = new FakeSubSocket<MSGQSubSocket>();
-    }
-  } else {
-    if (messaging_use_zmq()){
-      s = new ZMQSubSocket();
-    } else {
-      s = new MSGQSubSocket();
-    }
+    return new FakeSubSocket<MSGQSubSocket>();
   }
-
-  return s;
+  return new MSGQSubSocket();
 }
 
-SubSocket * SubSocket::create(Context * context, std::string endpoint, std::string address, bool conflate, bool check_endpoint){
+SubSocket * SubSocket::create(Context * context, std::string endpoint, std::string address, bool conflate, bool check_endpoint, size_t segment_size){
   SubSocket *s = SubSocket::create();
-  int r = s->connect(context, endpoint, address, conflate, check_endpoint);
+  int r = s->connect(context, endpoint, address, conflate, check_endpoint, segment_size);
 
   if (r == 0) {
     return s;
@@ -73,19 +37,12 @@ SubSocket * SubSocket::create(Context * context, std::string endpoint, std::stri
 }
 
 PubSocket * PubSocket::create(){
-  PubSocket * s;
-  if (messaging_use_zmq()){
-    s = new ZMQPubSocket();
-  } else {
-    s = new MSGQPubSocket();
-  }
-
-  return s;
+  return new PubSocket();
 }
 
-PubSocket * PubSocket::create(Context * context, std::string endpoint, bool check_endpoint){
+PubSocket * PubSocket::create(Context * context, std::string endpoint, bool check_endpoint, size_t segment_size){
   PubSocket *s = PubSocket::create();
-  int r = s->connect(context, endpoint, check_endpoint);
+  int r = s->connect(context, endpoint, check_endpoint, segment_size);
 
   if (r == 0) {
     return s;
@@ -98,17 +55,10 @@ PubSocket * PubSocket::create(Context * context, std::string endpoint, bool chec
 }
 
 Poller * Poller::create(){
-  Poller * p;
   if (messaging_use_fake()) {
-    p = new FakePoller();
-  } else {
-    if (messaging_use_zmq()){
-      p = new ZMQPoller();
-    } else {
-      p = new MSGQPoller();
-    }
+    return new FakePoller();
   }
-  return p;
+  return new MSGQPoller();
 }
 
 Poller * Poller::create(std::vector<SubSocket*> sockets){

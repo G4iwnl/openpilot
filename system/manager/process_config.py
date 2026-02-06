@@ -1,5 +1,6 @@
 import os
 import operator
+import platform
 import importlib.util
 
 from cereal import car
@@ -78,29 +79,26 @@ def enable_connect(started, params, CP: car.CarParams) -> bool:
 def enable_xiaoge_data(started, params, CP: car.CarParams) -> bool:
   return params.get_bool("ShareData")
 
-def c3x_lite(started: bool, params: Params, CP: car.CarParams) -> bool:
-  return started and params.get_bool("HardwareC3xLite")
+def enable_webrtc(started, params, CP: car.CarParams) -> bool:
+  return params.get_int("DisableDM") == 2
 
 procs = [
   DaemonProcess("manage_athenad", "system.athena.manage_athenad", "AthenadPid"),
 
   NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging),
   NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad),
-  NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], notcar),
+  NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], or_(notcar, and_(only_onroad, enable_webrtc))),
   PythonProcess("logmessaged", "system.logmessaged", always_run),
 
   NativeProcess("camerad", "system/camerad", ["./camerad"], driverview, enabled=not WEBCAM),
   PythonProcess("webcamerad", "tools.webcam.camerad", driverview, enabled=WEBCAM),
-  NativeProcess("logcatd", "system/logcatd", ["./logcatd"], only_onroad),
-  NativeProcess("proclogd", "system/proclogd", ["./proclogd"], only_onroad),
+  PythonProcess("proclogd", "system.proclogd", only_onroad, enabled=platform.system() != "Darwin"),
+  PythonProcess("journald", "system.journald", only_onroad, platform.system() != "Darwin"),
   PythonProcess("micd", "system.micd", iscar),
   PythonProcess("timed", "system.timed", always_run, enabled=not PC),
 
   PythonProcess("modeld", "selfdrive.modeld.modeld", only_onroad),
   PythonProcess("dmonitoringmodeld", "selfdrive.modeld.dmonitoringmodeld", enable_dm, enabled=(WEBCAM or not PC)),
-  #NativeProcess("mapsd", "selfdrive/navd", ["./mapsd"], only_onroad),
-  #NativeProcess("mapsd", "selfdrive/navd", ["./mapsd"], always_run),
-  #PythonProcess("navmodeld", "selfdrive.modeld.navmodeld", only_onroad),
   PythonProcess("sensord", "system.sensord.sensord", only_onroad, enabled=not PC),
   PythonProcess("ui", "selfdrive.ui.ui", always_run, restart_if_crash=True),
   PythonProcess("soundd", "selfdrive.ui.soundd", driverview),
@@ -129,10 +127,11 @@ procs = [
   PythonProcess("updated", "system.updated.updated", enable_updated, enabled=not PC),
   PythonProcess("uploader", "system.loggerd.uploader", enable_connect),
   PythonProcess("statsd", "system.statsd", always_run),
+  PythonProcess("feedbackd", "selfdrive.ui.feedback.feedbackd", only_onroad),
 
   # debug procs
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
-  PythonProcess("webrtcd", "system.webrtc.webrtcd", notcar),
+  PythonProcess("webrtcd", "system.webrtc.webrtcd", or_(notcar, and_(only_onroad, enable_webrtc))),
   PythonProcess("webjoystick", "tools.bodyteleop.web", notcar),
   PythonProcess("joystick", "tools.joystick.joystick_control", and_(joystick, iscar)),
 
@@ -140,10 +139,10 @@ procs = [
   PythonProcess("fleet_manager", "selfdrive.frogpilot.fleetmanager.fleet_manager", check_fleet),
   PythonProcess("carrot_man", "selfdrive.carrot.carrot_man", always_run),#, enabled=not PC),
 
+  PythonProcess("carrot_server", "selfdrive.carrot.carrot_server", always_run),
+
   #Xiaoge data broadcaster (conditional on ShareData param)
   PythonProcess("xiaoge_data", "selfdrive.carrot.xiaoge_data", enable_xiaoge_data),
-  # c3x lite
-  PythonProcess("beep", "selfdrive.controls.beep", c3x_lite, enabled=TICI),
 ]
 
 managed_processes = {p.name: p for p in procs}

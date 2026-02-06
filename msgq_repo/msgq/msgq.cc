@@ -87,12 +87,16 @@ int msgq_new_queue(msgq_queue_t * q, const char * path, size_t size){
   assert(size < 0xFFFFFFFF); // Buffer must be smaller than 2^32 bytes
   std::signal(SIGUSR2, sigusr2_handler);
 
-  std::string full_path = "/dev/shm/";
+#ifdef __APPLE__
+  std::string base_path = "/tmp/msgq_";
+#else
+  std::string base_path = "/dev/shm/msgq_";
+#endif
   const char* prefix = std::getenv("OPENPILOT_PREFIX");
   if (prefix) {
-    full_path += std::string(prefix) + "/";
+    base_path += std::string(prefix) + "/";
   }
-  full_path += path;
+  std::string full_path = base_path + path;
 
   auto fd = open(full_path.c_str(), O_RDWR | O_CREAT, 0664);
   if (fd < 0) {
@@ -105,12 +109,21 @@ int msgq_new_queue(msgq_queue_t * q, const char * path, size_t size){
     close(fd);
     return -1;
   }
-  char * mem = (char*)mmap(NULL, size + sizeof(msgq_header_t), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+
+  int mmap_flags = MAP_SHARED;
+#ifdef MAP_POPULATE
+  if (std::getenv("MSGQ_PREALLOC")) {
+    mmap_flags |= MAP_POPULATE;
+  }
+#endif
+
+  char * mem = (char*)mmap(NULL, size + sizeof(msgq_header_t), PROT_READ | PROT_WRITE, mmap_flags, fd, 0);
   close(fd);
 
   if (mem == MAP_FAILED){
     return -1;
   }
+
   q->mmap_p = mem;
 
   msgq_header_t *header = (msgq_header_t *)mem;
@@ -159,8 +172,11 @@ void msgq_init_publisher(msgq_queue_t * q) {
 }
 
 static void thread_signal(uint32_t tid) {
-  #ifndef SYS_tkill
-    // TODO: this won't work for multithreaded programs
+  #ifdef __APPLE__
+    // macOS doesn't have tkill, rely on polling instead
+    (void)tid;
+  #elif !defined(SYS_tkill)
+    // fallback for systems without tkill
     kill(tid, SIGUSR2);
   #else
     syscall(SYS_tkill, tid, SIGUSR2);
@@ -430,9 +446,18 @@ int msgq_poll(msgq_pollitem_t * items, size_t nitems, int timeout){
   }
 
   int ms = (timeout == -1) ? 100 : timeout;
+
+#ifdef __APPLE__
+  // On macOS, signals can't interrupt nanosleep, so poll more frequently
+  int poll_ms = std::min(ms, 10);
+  int remaining_ms = ms;
+#else
+  int poll_ms = ms;
+#endif
+
   struct timespec ts;
-  ts.tv_sec = ms / 1000;
-  ts.tv_nsec = (ms % 1000) * 1000 * 1000;
+  ts.tv_sec = poll_ms / 1000;
+  ts.tv_nsec = (poll_ms % 1000) * 1000 * 1000;
 
 
   while (num == 0) {
@@ -448,10 +473,23 @@ int msgq_poll(msgq_pollitem_t * items, size_t nitems, int timeout){
       }
     }
 
+#ifdef __APPLE__
+    // exit if we had a timeout and we've exhausted it
+    if (timeout != -1 && ret == 0){
+      remaining_ms -= poll_ms;
+      if (remaining_ms <= 0){
+        break;
+      }
+      poll_ms = std::min(remaining_ms, 10);
+      ts.tv_sec = poll_ms / 1000;
+      ts.tv_nsec = (poll_ms % 1000) * 1000 * 1000;
+    }
+#else
     // exit if we had a timeout and the sleep finished
     if (timeout != -1 && ret == 0){
       break;
     }
+#endif
   }
 
   return num;

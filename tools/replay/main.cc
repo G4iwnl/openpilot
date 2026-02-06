@@ -1,11 +1,13 @@
 #include <getopt.h>
 
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <string>
 #include <vector>
 
 #include "common/prefix.h"
+#include "common/timing.h"
 #include "tools/replay/consoleui.h"
 #include "tools/replay/replay.h"
 #include "tools/replay/util.h"
@@ -19,6 +21,8 @@ Options:
   -s, --start        Start from <seconds>
   -x, --playback     Playback <speed>
       --demo         Use a demo route instead of providing your own
+      --auto         Auto load the route from the best available source (no video):
+                     internal, openpilotci, comma_api, car_segments, testing_closet
   -d, --data_dir     Local directory with routes
   -p, --prefix       Set OPENPILOT_PREFIX
       --dcam         Load driver camera
@@ -28,7 +32,8 @@ Options:
       --qcam         Load qcamera
       --no-hw-decoder Disable HW video decoding
       --no-vipc      Do not output video
-      --all          Output all messages including uiDebug, userFlag
+      --all          Output all messages including bookmarkButton, uiDebug, userBookmark
+      --benchmark    Run in benchmark mode (process all events then exit with stats)
   -h, --help         Show this help message
 )";
 
@@ -39,6 +44,7 @@ struct ReplayConfig {
   std::string data_dir;
   std::string prefix;
   uint32_t flags = REPLAY_FLAG_NONE;
+  bool auto_source = false;
   int start_seconds = 0;
   int cache_segments = -1;
   float playback_speed = -1;
@@ -52,6 +58,7 @@ bool parseArgs(int argc, char *argv[], ReplayConfig &config) {
       {"start", required_argument, nullptr, 's'},
       {"playback", required_argument, nullptr, 'x'},
       {"demo", no_argument, nullptr, 0},
+      {"auto", no_argument, nullptr, 0},
       {"data_dir", required_argument, nullptr, 'd'},
       {"prefix", required_argument, nullptr, 'p'},
       {"dcam", no_argument, nullptr, 0},
@@ -62,6 +69,7 @@ bool parseArgs(int argc, char *argv[], ReplayConfig &config) {
       {"no-hw-decoder", no_argument, nullptr, 0},
       {"no-vipc", no_argument, nullptr, 0},
       {"all", no_argument, nullptr, 0},
+      {"benchmark", no_argument, nullptr, 0},
       {"help", no_argument, nullptr, 'h'},
       {nullptr, 0, nullptr, 0},  // Terminating entry
   };
@@ -75,6 +83,7 @@ bool parseArgs(int argc, char *argv[], ReplayConfig &config) {
       {"no-hw-decoder", REPLAY_FLAG_NO_HW_DECODER},
       {"no-vipc", REPLAY_FLAG_NO_VIPC},
       {"all", REPLAY_FLAG_ALL_SERVICES},
+      {"benchmark", REPLAY_FLAG_BENCHMARK},
   };
 
   if (argc == 1) {
@@ -94,11 +103,9 @@ bool parseArgs(int argc, char *argv[], ReplayConfig &config) {
       case 'p': config.prefix = optarg; break;
       case 0: {
         std::string name = cli_options[option_index].name;
-        if (name == "demo") {
-          config.route = DEMO_ROUTE;
-        } else {
-          config.flags |= flag_map.at(name);
-        }
+        if (name == "demo") config.route = DEMO_ROUTE;
+        else if (name == "auto") config.auto_source = true;
+        else config.flags |= flag_map.at(name);
         break;
       }
       case 'h': std::cout << helpText; return false;
@@ -136,7 +143,7 @@ int main(int argc, char *argv[]) {
     op_prefix = std::make_unique<OpenpilotPrefix>(config.prefix);
   }
 
-  Replay replay(config.route, config.allow, config.block, nullptr, config.flags, config.data_dir);
+  Replay replay(config.route, config.allow, config.block, nullptr, config.flags, config.data_dir, config.auto_source);
   if (config.cache_segments > 0) {
     replay.setSegmentCacheLimit(config.cache_segments);
   }
@@ -145,6 +152,28 @@ int main(int argc, char *argv[]) {
   }
   if (!replay.load()) {
     return 1;
+  }
+
+  if (config.flags & REPLAY_FLAG_BENCHMARK) {
+    replay.start(config.start_seconds);
+    replay.waitForFinished();
+
+    const auto &stats = replay.getBenchmarkStats();
+    uint64_t process_start = stats.process_start_ts;
+
+    std::cout << "\n===== REPLAY BENCHMARK RESULTS =====\n";
+    std::cout << "Route: " << replay.route().name() << "\n\n";
+
+    std::cout << "TIMELINE:\n";
+    std::cout << "  t=0 ms        process start\n";
+    for (const auto &[ts, event] : stats.timeline) {
+      double ms = (ts - process_start) / 1e6;
+      std::cout << "  t=" << std::fixed << std::setprecision(0) << ms << " ms"
+                << std::string(std::max(1, 8 - static_cast<int>(std::to_string(static_cast<int>(ms)).length())), ' ')
+                << event << "\n";
+    }
+
+    return 0;
   }
 
   ConsoleUI console_ui(&replay);

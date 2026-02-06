@@ -1,15 +1,12 @@
-import os
-import time
 import random
+from typing import Optional
 import numpy as np
 from msgq.visionipc import VisionIpcServer, VisionIpcClient, VisionStreamType
 
-def zmq_sleep(t=1):
-  if "ZMQ" in os.environ:
-    time.sleep(t)
-
 
 class TestVisionIpc:
+  server: VisionIpcServer
+  client: Optional[VisionIpcClient]
 
   def setup_vipc(self, name, *stream_types, num_buffers=1, width=100, height=100, conflate=False):
     self.server = VisionIpcServer(name)
@@ -23,11 +20,11 @@ class TestVisionIpc:
     else:
       self.client = None
 
-    zmq_sleep()
     return self.server, self.client
 
   def test_connect(self):
     self.setup_vipc("camerad", VisionStreamType.VISION_STREAM_ROAD)
+    assert self.client is not None
     assert self.client.is_connected
     del self.client
     del self.server
@@ -44,16 +41,18 @@ class TestVisionIpc:
   def test_buffers(self):
     width, height, num_buffers = 100, 200, 5
     self.setup_vipc("camerad", VisionStreamType.VISION_STREAM_ROAD, num_buffers=num_buffers, width=width, height=height)
+    assert self.client is not None
     assert self.client.width == width
     assert self.client.height == height
-    assert self.client.buffer_len > 0
+    assert self.client.buffer_len is not None and self.client.buffer_len > 0
     assert self.client.num_buffers == num_buffers
     del self.client
     del self.server
 
   def test_send_single_buffer(self):
     self.setup_vipc("camerad", VisionStreamType.VISION_STREAM_ROAD)
-
+    assert self.client is not None
+    assert self.client.buffer_len is not None
     buf = np.zeros(self.client.buffer_len, dtype=np.uint8)
     buf.view('<i4')[0] = 1234
     self.server.send(VisionStreamType.VISION_STREAM_ROAD, buf, frame_id=1337)
@@ -67,7 +66,8 @@ class TestVisionIpc:
 
   def test_no_conflate(self):
     self.setup_vipc("camerad", VisionStreamType.VISION_STREAM_ROAD)
-
+    assert self.client is not None
+    assert self.client.buffer_len is not None
     buf = np.zeros(self.client.buffer_len, dtype=np.uint8)
     self.server.send(VisionStreamType.VISION_STREAM_ROAD, buf, frame_id=1)
     self.server.send(VisionStreamType.VISION_STREAM_ROAD, buf, frame_id=2)
@@ -84,7 +84,8 @@ class TestVisionIpc:
 
   def test_conflate(self):
     self.setup_vipc("camerad", VisionStreamType.VISION_STREAM_ROAD, conflate=True)
-
+    assert self.client is not None
+    assert self.client.buffer_len is not None
     buf = np.zeros(self.client.buffer_len, dtype=np.uint8)
     self.server.send(VisionStreamType.VISION_STREAM_ROAD, buf, frame_id=1)
     self.server.send(VisionStreamType.VISION_STREAM_ROAD, buf, frame_id=2)

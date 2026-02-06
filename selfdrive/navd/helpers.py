@@ -4,7 +4,7 @@ import json
 import math
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from openpilot.common.conversions import Conversions
+from openpilot.common.constants import CV
 import numpy as np
 from openpilot.common.params import Params
 
@@ -13,8 +13,8 @@ MODIFIABLE_DIRECTIONS = ('left', 'right')
 
 EARTH_MEAN_RADIUS = 6371007.2
 SPEED_CONVERSIONS = {
-    'km/h': Conversions.KPH_TO_MS,
-    'mph': Conversions.MPH_TO_MS,
+    'km/h': CV.KPH_TO_MS,
+    'mph': CV.MPH_TO_MS,
   }
 
 

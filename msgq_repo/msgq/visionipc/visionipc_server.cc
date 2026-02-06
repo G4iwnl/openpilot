@@ -10,18 +10,12 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "msgq/ipc.h"
 #include "msgq/visionipc/visionipc.h"
 #include "msgq/visionipc/visionipc_server.h"
 #include "msgq/logger/logger.h"
 
 std::string get_endpoint_name(std::string name, VisionStreamType type){
-  if (messaging_use_zmq()){
-    assert(name == "camerad" || name == "navd");
-    return std::to_string(9000 + static_cast<int>(type));
-  } else {
-    return "visionipc_" + name + "_" + std::to_string(type);
-  }
+  return "visionipc_" + name + "_" + std::to_string(type);
 }
 
 std::string get_ipc_path(const std::string& name) {
@@ -32,7 +26,7 @@ std::string get_ipc_path(const std::string& name) {
   return path + "visionipc_" + name;
 }
 
-VisionIpcServer::VisionIpcServer(std::string name, cl_device_id device_id, cl_context ctx) : name(name), device_id(device_id), ctx(ctx) {
+VisionIpcServer::VisionIpcServer(std::string name) : name(name) {
   msg_ctx = Context::create();
 
   std::random_device rd("/dev/urandom");
@@ -63,8 +57,6 @@ void VisionIpcServer::create_buffers_with_sizes(VisionStreamType type, size_t nu
     buf->idx = i;
     buf->type = type;
 
-    if (device_id) buf->init_cl(device_id, ctx);
-
     buf->init_yuv(width, height, stride, uv_offset);
 
     buffers[type].push_back(buf);
@@ -73,7 +65,6 @@ void VisionIpcServer::create_buffers_with_sizes(VisionStreamType type, size_t nu
   cur_idx[type] = 0;
 
   // Create msgq publisher for each of the `name` + type combos
-  // TODO: compute port number directly if using zmq
   sockets[type] = PubSocket::create(msg_ctx, get_endpoint_name(name, type), false);
 }
 
@@ -84,7 +75,7 @@ void VisionIpcServer::start_listener(){
 
 
 void VisionIpcServer::listener(){
-  std::cout << "Starting listener for: " << name << std::endl;
+  LOGD("Starting listener for: %s", name.c_str());
 
   const std::string ipc_path = get_ipc_path(name);
   int sock = ipc_bind(ipc_path.c_str());
@@ -134,17 +125,15 @@ void VisionIpcServer::listener(){
       continue;
     }
 
-    int fds[VISIONIPC_MAX_FDS];
+    int fds[VISIONIPC_MAX_FDS] = {};
     int num_fds = buffers[type].size();
-    VisionBuf bufs[VISIONIPC_MAX_FDS];
+    VisionBuf bufs[VISIONIPC_MAX_FDS] = {};
 
     for (int i = 0; i < num_fds; i++){
       fds[i] = buffers[type][i]->fd;
       bufs[i] = *buffers[type][i];
 
-      // Remove some private openCL/ion metadata
-      bufs[i].buf_cl = 0;
-      bufs[i].copy_q = 0;
+      // Remove some private ion metadata
       bufs[i].handle = 0;
 
       bufs[i].server_id = server_id;
@@ -155,7 +144,7 @@ void VisionIpcServer::listener(){
     close(fd);
   }
 
-  std::cout << "Stopping listener for: " << name << std::endl;
+  LOGD("Stopping listener for: %s", name.c_str());
   close(sock);
   unlink(ipc_path.c_str());
 }

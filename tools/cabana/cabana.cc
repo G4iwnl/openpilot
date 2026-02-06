@@ -1,7 +1,6 @@
 #include <QApplication>
 #include <QCommandLineParser>
 
-#include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/mainwin.h"
 #include "tools/cabana/streams/devicestream.h"
 #include "tools/cabana/streams/pandastream.h"
@@ -23,6 +22,7 @@ int main(int argc, char *argv[]) {
   cmd_parser.addHelpOption();
   cmd_parser.addPositionalArgument("route", "the drive to replay. find your drives at connect.comma.ai");
   cmd_parser.addOption({"demo", "use a demo route instead of providing your own"});
+  cmd_parser.addOption({"auto", "Auto load the route from the best available source (no video): internal, openpilotci, comma_api, car_segments, testing_closet"});
   cmd_parser.addOption({"qcam", "load qcamera"});
   cmd_parser.addOption({"ecam", "load wide road camera"});
   cmd_parser.addOption({"dcam", "load driver camera"});
@@ -69,7 +69,8 @@ int main(int argc, char *argv[]) {
     }
     if (!route.isEmpty()) {
       auto replay_stream = std::make_unique<ReplayStream>(&app);
-      if (!replay_stream->loadRoute(route, cmd_parser.value("data_dir"), replay_flags)) {
+      bool auto_source = cmd_parser.isSet("auto");
+      if (!replay_stream->loadRoute(route, cmd_parser.value("data_dir"), replay_flags, auto_source)) {
         return 0;
       }
       stream = replay_stream.release();

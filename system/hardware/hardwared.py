@@ -1,31 +1,30 @@
 #!/usr/bin/env python3
 import fcntl
 import os
-import json
 import queue
 import struct
 import threading
 import time
 from collections import OrderedDict, namedtuple
-from pathlib import Path
 
 import psutil
 
 import cereal.messaging as messaging
 from cereal import log
 from cereal.services import SERVICE_LIST
-from openpilot.common.dict_helpers import strip_deprecated_keys
+from openpilot.common.utils import strip_deprecated_keys
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_HW
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
-from openpilot.system.hardware import HARDWARE, TICI, AGNOS
+from openpilot.system.hardware import HARDWARE, TICI, AGNOS, PC
 from openpilot.system.loggerd.config import get_available_percent
 from openpilot.system.statsd import statlog
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware.power_monitoring import PowerMonitoring
-from openpilot.system.hardware.fan_controller import TiciFanController
+from openpilot.system.hardware.fan_controller import FanController
 from openpilot.system.version import terms_version, training_version
+from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 
 ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType
@@ -34,10 +33,11 @@ CURRENT_TAU = 15.   # 15s time constant
 TEMP_TAU = 5.   # 5s time constant
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
 PANDA_STATES_TIMEOUT = round(1000 / SERVICE_LIST['pandaStates'].frequency * 1.5)  # 1.5x the expected pandaState frequency
+ONROAD_CYCLE_TIME = 1  # seconds to wait offroad after requesting an onroad cycle
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
 HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'network_strength', 'network_stats',
-                                             'network_metered', 'nvme_temps', 'modem_temps'])
+                                             'network_metered', 'modem_temps'])
 
 # List of thermal bands. We will stay within this region as long as we are within the bounds.
 # When exiting the bounds, we'll jump to the lower or higher band. Bands are ordered in the dict.
@@ -103,8 +103,8 @@ def hw_state_thread(end_event, hw_queue):
 
   modem_version = None
   modem_configured = False
-  modem_restarted = False
   modem_missing_count = 0
+  modem_restart_count = 0
 
   while not end_event.is_set():
     # these are expensive calls. update every 10s
@@ -121,16 +121,18 @@ def hw_state_thread(end_event, hw_queue):
 
           if modem_version is not None:
             cloudlog.event("modem version", version=modem_version)
-          else:
-            if not modem_restarted:
-              # TODO: we may be able to remove this with a MM update
-              # ModemManager's probing on startup can fail
-              # rarely, restart the service to probe again.
-              modem_missing_count += 1
-              if modem_missing_count > 3:
-                modem_restarted = True
-                cloudlog.event("restarting ModemManager")
-                os.system("sudo systemctl restart --no-block ModemManager")
+
+        if AGNOS and modem_restart_count < 3 and HARDWARE.get_modem_version() is None:
+          # TODO: we may be able to remove this with a MM update
+          # ModemManager's probing on startup can fail
+          # rarely, restart the service to probe again.
+          # Also, AT commands sometimes timeout resulting in ModemManager not
+          # trying to use this modem anymore.
+          modem_missing_count += 1
+          if (modem_missing_count % 4) == 0:
+            modem_restart_count += 1
+            cloudlog.event("restarting ModemManager")
+            os.system("sudo systemctl restart --no-block ModemManager")
 
         tx, rx = HARDWARE.get_modem_data_usage()
 
@@ -140,7 +142,6 @@ def hw_state_thread(end_event, hw_queue):
           network_strength=HARDWARE.get_network_strength(network_type),
           network_stats={'wwanTx': tx, 'wwanRx': rx},
           network_metered=HARDWARE.get_network_metered(network_type),
-          nvme_temps=HARDWARE.get_nvme_temperatures(),
           modem_temps=modem_temps,
         )
 
@@ -161,21 +162,6 @@ def hw_state_thread(end_event, hw_queue):
     count += 1
     time.sleep(DT_HW)
 
-from openpilot.system.manager.manager import set_default_params
-def update_restart_condition(current_time, restart_triggered_ts, params, onroad_conditions):
-  if current_time - restart_triggered_ts < 5.:
-    onroad_conditions["not_restart_triggered"] = False
-  else:
-    onroad_conditions["not_restart_triggered"] = True
-    softRestartTriggered = params.get_int("SoftRestartTriggered")
-    if softRestartTriggered > 0:
-      if softRestartTriggered == 2:
-        print("Parameter set to default")
-        set_default_params()
-
-      params.put_int("SoftRestartTriggered", 0)
-      restart_triggered_ts = current_time
-  return restart_triggered_ts
 
 def hardware_thread(end_event, hw_queue) -> None:
   pm = messaging.PubMaster(['deviceState'])
@@ -185,6 +171,8 @@ def hardware_thread(end_event, hw_queue) -> None:
 
   onroad_conditions: dict[str, bool] = {
     "ignition": False,
+    "not_onroad_cycle": True,
+    "device_temp_good": True,
   }
   startup_conditions: dict[str, bool] = {}
   startup_conditions_prev: dict[str, bool] = {}
@@ -201,7 +189,6 @@ def hardware_thread(end_event, hw_queue) -> None:
     network_metered=False,
     network_strength=NetworkStrength.unknown,
     network_stats={'wwanTx': -1, 'wwanRx': -1},
-    nvme_temps=[],
     modem_temps=[],
   )
 
@@ -210,26 +197,32 @@ def hardware_thread(end_event, hw_queue) -> None:
   should_start_prev = False
   in_car = False
   engaged_prev = False
+  pwrsave = False
+  offroad_cycle_count = 0
 
   params = Params()
   power_monitor = PowerMonitoring()
 
+  uptime_offroad: float = params.get("UptimeOffroad", return_default=True)
+  uptime_onroad: float = params.get("UptimeOnroad", return_default=True)
+  last_uptime_ts: float = time.monotonic()
+
   HARDWARE.initialize_hardware()
   thermal_config = HARDWARE.get_thermal_config()
 
-  fan_controller = None
-
-  restart_triggered_ts = 0.
+  fan_controller = FanController(int(1./DT_HW))
 
   while not end_event.is_set():
     sm.update(PANDA_STATES_TIMEOUT)
 
     pandaStates = sm['pandaStates']
     peripheralState = sm['peripheralState']
-    peripheral_panda_present = peripheralState.pandaType != log.PandaState.PandaType.unknown
 
-    current_time = time.monotonic()
-    restart_triggered_ts = update_restart_condition(current_time, restart_triggered_ts, params, onroad_conditions)
+    # handle requests to cycle system started state
+    if params.get_bool("OnroadCycleRequested"):
+      params.put_bool("OnroadCycleRequested", False)
+      offroad_cycle_count = sm.frame
+    onroad_conditions["not_onroad_cycle"] = (sm.frame - offroad_cycle_count) >= ONROAD_CYCLE_TIME * SERVICE_LIST['pandaStates'].frequency
 
     if sm.updated['pandaStates'] and len(pandaStates) > 0:
 
@@ -240,18 +233,13 @@ def hardware_thread(end_event, hw_queue) -> None:
 
       in_car = pandaState.harnessStatus != log.PandaState.HarnessStatus.notConnected
 
-      # Setup fan handler on first connect to panda
-      if fan_controller is None and peripheral_panda_present:
-        if TICI:
-          fan_controller = TiciFanController()
-
     elif (time.monotonic() - sm.recv_time['pandaStates']) > DISCONNECT_TIMEOUT:
       if onroad_conditions["ignition"]:
         onroad_conditions["ignition"] = False
         cloudlog.error("panda timed out onroad")
 
     # Run at 2Hz, plus either edge of ignition
-    ign_edge = (started_ts is not None) != onroad_conditions["ignition"]
+    ign_edge = (started_ts is not None) != all(onroad_conditions.values())
     if (sm.frame % round(SERVICE_LIST['pandaStates'].frequency * DT_HW) != 0) and not ign_edge:
       continue
 
@@ -278,7 +266,6 @@ def hardware_thread(end_event, hw_queue) -> None:
     if last_hw_state.network_info is not None:
       msg.deviceState.networkInfo = last_hw_state.network_info
 
-    msg.deviceState.nvmeTempC = last_hw_state.nvme_temps
     msg.deviceState.modemTempC = last_hw_state.modem_temps
 
     msg.deviceState.screenBrightnessPercent = HARDWARE.get_screen_brightness()
@@ -296,8 +283,7 @@ def hardware_thread(end_event, hw_queue) -> None:
     all_comp_temp = all_temp_filter.update(max(temp_sources))
     msg.deviceState.maxTempC = all_comp_temp
 
-    if fan_controller is not None:
-      msg.deviceState.fanSpeedPercentDesired = fan_controller.update(all_comp_temp, onroad_conditions["ignition"])
+    msg.deviceState.fanSpeedPercentDesired = fan_controller.update(all_comp_temp, onroad_conditions["ignition"])
 
     is_offroad_for_5_min = (started_ts is None) and ((not started_seen) or (off_ts is None) or (time.monotonic() - off_ts > 60 * 5))
     if is_offroad_for_5_min and offroad_comp_temp > OFFROAD_DANGER_TEMP:
@@ -337,11 +323,11 @@ def hardware_thread(end_event, hw_queue) -> None:
     show_alert = (not onroad_conditions["device_temp_good"] or not startup_conditions["device_temp_engageable"]) and onroad_conditions["ignition"]
     set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", show_alert, extra_text=extra_text)
 
-    # TODO: this should move to TICI.initialize_hardware, but we currently can't import params there
-    if False: #TICI and HARDWARE.get_device_type() == "tici":
-      if not os.path.isfile("/persist/comma/living-in-the-moment"):
-        if not Path("/data/media").is_mount():
-          set_offroad_alert_if_changed("Offroad_StorageMissing", True)
+    # *** registration check ***
+    if not PC:
+      # we enforce this for our software, but you are welcome
+      # to make a different decision in your software
+      startup_conditions["registered_device"] = True #PC or (params.get("DongleId") != UNREGISTERED_DONGLE_ID)
 
     # Handle offroad/onroad transition
     should_start = all(onroad_conditions.values())
@@ -351,7 +337,6 @@ def hardware_thread(end_event, hw_queue) -> None:
     if should_start != should_start_prev or (count == 0):
       params.put_bool("IsEngaged", False)
       engaged_prev = False
-      HARDWARE.set_power_save(not should_start)
 
     if sm.updated['selfdriveState']:
       engaged = sm['selfdriveState'].enabled
@@ -364,6 +349,11 @@ def hardware_thread(end_event, hw_queue) -> None:
           kmsg.write(f"<3>[hardware] engaged: {engaged}\n")
       except Exception:
         pass
+
+    should_pwrsave = not onroad_conditions["ignition"] and msg.deviceState.screenBrightnessPercent < 1e-3
+    if should_pwrsave != pwrsave or (count == 0):
+      HARDWARE.set_power_save(should_pwrsave)
+    pwrsave = should_pwrsave
 
     if should_start:
       off_ts = None
@@ -408,7 +398,7 @@ def hardware_thread(end_event, hw_queue) -> None:
 
     last_ping = params.get("LastAthenaPingTime")
     if last_ping is not None:
-      msg.deviceState.lastAthenaPingTime = int(last_ping)
+      msg.deviceState.lastAthenaPingTime = last_ping
 
     msg.deviceState.thermalStatus = thermal_status
     pm.send("deviceState", msg)
@@ -426,8 +416,6 @@ def hardware_thread(end_event, hw_queue) -> None:
     statlog.gauge("memory_temperature", msg.deviceState.memoryTempC)
     for i, temp in enumerate(msg.deviceState.pmicTempC):
       statlog.gauge(f"pmic{i}_temperature", temp)
-    for i, temp in enumerate(last_hw_state.nvme_temps):
-      statlog.gauge(f"nvme_temperature{i}", temp)
     for i, temp in enumerate(last_hw_state.modem_temps):
       statlog.gauge(f"modem_temperature{i}", temp)
     statlog.gauge("fan_speed_percent_desired", msg.deviceState.fanSpeedPercentDesired)
@@ -453,6 +441,17 @@ def hardware_thread(end_event, hw_queue) -> None:
           cloudlog.exception("failed to save offroad status")
 
     params.put_bool_nonblocking("NetworkMetered", msg.deviceState.networkMetered)
+
+    now_ts = time.monotonic()
+    if off_ts:
+      uptime_offroad += now_ts - max(last_uptime_ts, off_ts)
+    elif started_ts:
+      uptime_onroad += now_ts - max(last_uptime_ts, started_ts)
+    last_uptime_ts = now_ts
+
+    if (count % int(60. / DT_HW)) == 0:
+      params.put("UptimeOffroad", uptime_offroad)
+      params.put("UptimeOnroad", uptime_onroad)
 
     count += 1
     should_start_prev = should_start

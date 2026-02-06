@@ -22,6 +22,7 @@ from typing import cast
 from collections.abc import Callable
 
 import requests
+from requests.adapters import HTTPAdapter, DEFAULT_POOLBLOCK
 from jsonrpc import JSONRPCResponseManager, dispatcher
 from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutException,
                        create_connection)
@@ -29,8 +30,8 @@ from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutExce
 import cereal.messaging as messaging
 from cereal import log
 from cereal.services import SERVICE_LIST
-from openpilot.common.api import Api
-from openpilot.common.file_helpers import CallbackReader, get_upload_stream
+from openpilot.common.api import Api, get_key_pair
+from openpilot.common.utils import CallbackReader, get_upload_stream
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
 from openpilot.system.hardware import HARDWARE, PC
@@ -55,12 +56,28 @@ WS_FRAME_SIZE = 4096
 DEVICE_STATE_UPDATE_INTERVAL = 1.0  # in seconds
 DEFAULT_UPLOAD_PRIORITY = 99  # higher number = lower priority
 
+# https://bytesolutions.com/dscp-tos-cos-precedence-conversion-chart,
+# https://en.wikipedia.org/wiki/Differentiated_services
+UPLOAD_TOS = 0x20  # CS1, low priority background traffic
+SSH_TOS = 0x90  # AF42, DSCP of 36/HDD_LINUX_AC_VI with the minimum delay flag
+
 NetworkType = log.DeviceState.NetworkType
 
 UploadFileDict = dict[str, str | int | float | bool]
 UploadItemDict = dict[str, str | bool | int | float | dict[str, str]]
 
 UploadFilesToUrlResponse = dict[str, int | list[UploadItemDict] | list[str]]
+
+
+class UploadTOSAdapter(HTTPAdapter):
+  def init_poolmanager(self, connections, maxsize, block=DEFAULT_POOLBLOCK, **pool_kwargs):
+    pool_kwargs["socket_options"] = [(socket.IPPROTO_IP, socket.IP_TOS, UPLOAD_TOS)]
+    super().init_poolmanager(connections, maxsize, block, **pool_kwargs)
+
+
+UPLOAD_SESS = requests.Session()
+UPLOAD_SESS.mount("http://", UploadTOSAdapter())
+UPLOAD_SESS.mount("https://", UploadTOSAdapter())
 
 
 @dataclass
@@ -297,7 +314,7 @@ def upload_handler(end_event: threading.Event) -> None:
       cloudlog.exception("athena.upload_handler.exception")
 
 
-def _do_upload(upload_item: UploadItem, callback: Callable = None) -> requests.Response:
+def _do_upload(upload_item: UploadItem, callback: Callable | None = None) -> requests.Response:
   path = upload_item.path
   compress = False
 
@@ -309,10 +326,10 @@ def _do_upload(upload_item: UploadItem, callback: Callable = None) -> requests.R
   stream = None
   try:
     stream, content_length = get_upload_stream(path, compress)
-    response = requests.put(upload_item.url,
-                            data=CallbackReader(stream, callback, content_length) if callback else stream,
-                            headers={**upload_item.headers, 'Content-Length': str(content_length)},
-                            timeout=30)
+    response = UPLOAD_SESS.put(upload_item.url,
+                               data=CallbackReader(stream, callback, content_length) if callback else stream,
+                               headers={**upload_item.headers, 'Content-Length': str(content_length)},
+                               timeout=30)
     return response
   finally:
     if stream:
@@ -409,7 +426,7 @@ def uploadFilesToUrls(files_data: list[UploadFileDict]) -> UploadFilesToUrlRespo
       path=path,
       url=file.url,
       headers=file.headers,
-      created_at=int(time.time() * 1000),
+      created_at=int(time.time() * 1000),  # noqa: TID251
       id=None,
       allow_cellular=file.allow_cellular,
       priority=file.priority,
@@ -482,8 +499,7 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
                            enable_multithread=True)
 
     # Set TOS to keep connection responsive while under load.
-    # DSCP of 36/HDD_LINUX_AC_VI with the minimum delay flag
-    ws.sock.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, 0x90)
+    ws.sock.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, SSH_TOS)
 
     ssock, csock = socket.socketpair()
     local_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -507,21 +523,18 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
 
 @dispatcher.add_method
 def getPublicKey() -> str | None:
-  if not os.path.isfile(Paths.persist_root() + '/comma/id_rsa.pub'):
-    return None
-
-  with open(Paths.persist_root() + '/comma/id_rsa.pub') as f:
-    return f.read()
+  _, _, public_key = get_key_pair()
+  return public_key
 
 
 @dispatcher.add_method
 def getSshAuthorizedKeys() -> str:
-  return Params().get("GithubSshKeys") or ''
+  return cast(str, Params().get("GithubSshKeys") or "")
 
 
 @dispatcher.add_method
 def getGithubUsername() -> str:
-  return Params().get("GithubUsername") or ''
+  return cast(str, Params().get("GithubUsername") or "")
 
 @dispatcher.add_method
 def getSimInfo():
@@ -546,7 +559,7 @@ def getNetworks():
 
 @dispatcher.add_method
 def takeSnapshot() -> str | dict[str, str] | None:
-  from openpilot.system.camerad.snapshot.snapshot import jpeg_write, snapshot
+  from openpilot.system.camerad.snapshot import jpeg_write, snapshot
   ret = snapshot()
   if ret is not None:
     def b64jpeg(x):
@@ -564,7 +577,7 @@ def takeSnapshot() -> str | dict[str, str] | None:
 
 def get_logs_to_send_sorted() -> list[str]:
   # TODO: scan once then use inotify to detect file creation/deletion
-  curr_time = int(time.time())
+  curr_time = int(time.time())  # noqa: TID251
   logs = []
   for log_entry in os.listdir(Paths.swaglog_root()):
     log_path = os.path.join(Paths.swaglog_root(), log_entry)
@@ -601,7 +614,7 @@ def log_handler(end_event: threading.Event) -> None:
         log_entry = log_files.pop() # newest log file
         cloudlog.debug(f"athena.log_handler.forward_request {log_entry}")
         try:
-          curr_time = int(time.time())
+          curr_time = int(time.time())  # noqa: TID251
           log_path = os.path.join(Paths.swaglog_root(), log_entry)
           setxattr(log_path, LOG_ATTR_NAME, int.to_bytes(curr_time, 4, sys.byteorder))
           with open(log_path) as f:
@@ -776,8 +789,11 @@ def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
         # While not sending data, onroad, we can expect to time out in 7 + (7 * 2) = 21s
         #                         offroad, we can expect to time out in 30 + (10 * 3) = 60s
         # FIXME: TCP_USER_TIMEOUT is effectively 2x for some reason (32s), so it's mostly unused
-        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_USER_TIMEOUT, 16000 if onroad else 0)
-        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 7 if onroad else 30)
+        if sys.platform == 'linux':
+          sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_USER_TIMEOUT, 16000 if onroad else 0)
+          sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 7 if onroad else 30)
+        elif sys.platform == 'darwin':
+          sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPALIVE, 7 if onroad else 30)
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 7 if onroad else 10)
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 2 if onroad else 3)
 
@@ -789,7 +805,7 @@ def backoff(retries: int) -> int:
   return random.randrange(0, min(128, int(2 ** retries)))
 
 
-def main(exit_event: threading.Event = None):
+def main(exit_event: threading.Event | None = None):
   try:
     set_core_affinity([0, 1, 2, 3])
   except Exception:
