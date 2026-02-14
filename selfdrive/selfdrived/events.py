@@ -393,6 +393,17 @@ def personality_changed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging
   personality = str(personality).title()
   return NormalPermanentAlert(f"Driving Personality: {personality}", duration=1.5)
 
+
+def invalid_lkas_setting_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
+  text = "Toggle stock LKAS on or off to engage"
+  if CP.brand == "tesla":
+    text = "Switch to Traffic-Aware Cruise Control to engage"
+  elif CP.brand == "mazda":
+    text = "Enable your car's LKAS to engage"
+  elif CP.brand == "nissan":
+    text = "Disable your car's stock LKAS to engage"
+  return NormalPermanentAlert("Invalid LKAS setting", text)
+
 def car_parser_result(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   results = Params().get("CanParserResult")
   if results is None:
@@ -490,6 +501,10 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       AlertStatus.critical, AlertSize.full,
       Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.stopStop, 2.),
     ET.NO_ENTRY: NoEntryAlert("Stock AEB: Risk of Collision"),
+  },
+
+  EventName.stockLkas: {
+    ET.NO_ENTRY: NoEntryAlert("Stock LKAS: Lane Departure Detected"),
   },
 
   EventName.fcw: {
@@ -714,6 +729,11 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
                               visual_alert=VisualAlert.brakePressed),
   },
 
+  EventName.steerDisengage: {
+    ET.USER_DISABLE: EngagementAlert(AudibleAlert.disengage),
+    ET.NO_ENTRY: NoEntryAlert("Steering Pressed"),
+  },
+
   EventName.preEnableStandstill: {
     ET.PRE_ENABLE: Alert(
       "Release Brake to Engage",
@@ -791,6 +811,11 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.tooDistracted: {
     ET.NO_ENTRY: NoEntryAlert("Distraction Level Too High"),
+  },
+
+  EventName.excessiveActuation: {
+    ET.SOFT_DISABLE: soft_disable_alert("Excessive Actuation"),
+    ET.NO_ENTRY: NoEntryAlert("Excessive Actuation"),
   },
 
   EventName.overheat: {

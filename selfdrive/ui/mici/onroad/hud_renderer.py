@@ -19,6 +19,63 @@ CRUISE_DISABLED_CHAR = '–'
 
 SET_SPEED_PERSISTENCE = 2.5  # seconds
 
+@dataclass(frozen=True)
+class SetSpeedOverrideState:
+  active: bool
+  speed_kph: float
+  label: str
+  speed_color_mode: int # 0: white, 1: green, 2: orange
+  force_persist: bool
+
+
+class SetSpeedOverride:
+
+  def compute(self, sm, set_speed_kph: float) -> SetSpeedOverrideState:
+    # 1) eco (highest)
+    cruise_target = None
+    try:
+      cruise_target = float(sm['longitudinalPlan'].cruiseTarget)
+    except Exception:
+      cruise_target = None
+
+    if cruise_target is not None and cruise_target > (set_speed_kph + 0.5):
+      return SetSpeedOverrideState(
+        active=True,
+        speed_kph=cruise_target,
+        label="eco",
+        speed_color_mode=1,
+        force_persist=True,   # eco 조건 유지되는 동안 계속 표시
+      )
+
+    # 2) apply_speed (desiredSpeed/source)
+    desired_speed = None
+    desired_source = ""
+    try:
+      desired_speed = float(sm['carrotMan'].desiredSpeed)
+      desired_source = str(sm['carrotMan'].desiredSource or "")
+    except Exception:
+      desired_speed = None
+      desired_source = ""
+
+    if desired_speed is not None and desired_speed > 0.0 and desired_speed < set_speed_kph:
+      label = desired_source.strip() or "apply"
+      label = label[:8]  # 너무 길면 UI 깨짐 방지 (원하면 길이 조절)
+      return SetSpeedOverrideState(
+        active=True,
+        speed_kph=desired_speed,
+        label=label,
+        speed_color_mode=2,
+        force_persist=True,   # 조건 유지되는 동안 계속 표시
+      )
+
+    # 3) default
+    return SetSpeedOverrideState(
+      active=False,
+      speed_kph=set_speed_kph,
+      label=tr("MAX"),
+      speed_color_mode=0,
+      force_persist=False,
+    )
 
 @dataclass(frozen=True)
 class FontSizes:
@@ -126,6 +183,8 @@ class HudRenderer(Widget):
     self._wheel_y_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
 
     self._set_speed_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    
+    self._set_speed_override = SetSpeedOverride()
 
   def set_wheel_critical_icon(self, critical: bool):
     """Set the wheel icon to critical or normal state."""
@@ -175,31 +234,27 @@ class HudRenderer(Widget):
     if ui_state.sm['controlsState'].lateralControlState.which() != 'angleState':
       self._torque_bar.render(rect)
 
-    if self.is_cruise_set:
-      self._draw_set_speed(rect)
+    #if self.is_cruise_set:
+    self._draw_set_speed(rect)
 
     self._draw_steering_wheel(rect)
-
+    self._draw_driving_mode_text(rect)
+    
   def _draw_steering_wheel(self, rect: rl.Rectangle) -> None:
     wheel_txt = self._txt_wheel_critical if self._show_wheel_critical else self._txt_wheel
 
-    if self._show_wheel_critical:
-      self._wheel_alpha_filter.update(255)
-      self._wheel_y_filter.update(0)
-    else:
-      #if ui_state.status == UIStatus.DISENGAGED:
-      if not ui_state.lat_active:  
-        self._wheel_alpha_filter.update(0)
-        self._wheel_y_filter.update(wheel_txt.height / 2)
-      else:
-        self._wheel_alpha_filter.update(255 * 0.9)
-        self._wheel_y_filter.update(0)
+    # Always visible (no hide). We keep filters but drive them to stable values.
+    self._wheel_alpha_filter.update(255 * 0.95)
+    self._wheel_y_filter.update(0)
 
-    # pos
+    # pos (bottom-left)
     pos_x = int(rect.x + 21 + wheel_txt.width / 2)
     pos_y = int(rect.y + rect.height - 14 - wheel_txt.height / 2 + self._wheel_y_filter.x)
+
+    # rotation
     rotation = -ui_state.sm['carState'].steeringAngleDeg
 
+    # Turn intent still OK
     turn_intent_margin = 25
     self._turn_intent.render(rl.Rectangle(
       pos_x - wheel_txt.width / 2 - turn_intent_margin,
@@ -212,58 +267,222 @@ class HudRenderer(Widget):
     dest_rect = rl.Rectangle(pos_x, pos_y, wheel_txt.width, wheel_txt.height)
     origin = (wheel_txt.width / 2, wheel_txt.height / 2)
 
-    # color and draw
-    color = rl.Color(255, 255, 255, int(self._wheel_alpha_filter.x))
-    rl.draw_texture_pro(wheel_txt, src_rect, dest_rect, origin, rotation, color)
+    # Color: green if lat_active else gray
+    if ui_state.lat_active:
+      wheel_color = rl.Color(0, 255, 0, int(self._wheel_alpha_filter.x))     # green
+    else:
+      wheel_color = rl.Color(160, 160, 160, int(self._wheel_alpha_filter.x)) # gray
+
+    rl.draw_texture_pro(wheel_txt, src_rect, dest_rect, origin, rotation, wheel_color)
 
     if self._show_wheel_critical:
-      # Draw exclamation point icon
       EXCLAMATION_POINT_SPACING = 10
       exclamation_pos_x = pos_x - self._txt_exclamation_point.width / 2 + wheel_txt.width / 2 + EXCLAMATION_POINT_SPACING
       exclamation_pos_y = pos_y - self._txt_exclamation_point.height / 2
       rl.draw_texture(self._txt_exclamation_point, int(exclamation_pos_x), int(exclamation_pos_y), rl.WHITE)
 
   def _draw_set_speed(self, rect: rl.Rectangle) -> None:
-    """Draw the MAX speed indicator box."""
-    alpha = self._set_speed_alpha_filter.update(0 < rl.get_time() - self._set_speed_changed_time < SET_SPEED_PERSISTENCE and
-                                                self._can_draw_top_icons and self._engaged)
-    if alpha < 1e-2:
-      return
+    ov = self._set_speed_override.compute(ui_state.sm, float(self.set_speed))
 
     x = rect.x
     y = rect.y
 
-    # draw drop shadow
-    circle_radius = 162 // 2
-    rl.draw_circle_gradient(int(x + circle_radius), int(y + circle_radius), circle_radius,
-                            rl.Color(0, 0, 0, int(255 / 2 * alpha)), rl.BLANK)
+    circle_d = 162
+    circle_radius = circle_d // 2
 
-    set_speed_color = rl.Color(255, 255, 255, int(255 * 0.9 * alpha))
-    max_color = rl.Color(255, 255, 255, int(255 * 0.9 * alpha))
-
-    set_speed = self.set_speed
-    if self.is_cruise_set and not ui_state.is_metric:
-      set_speed *= KM_TO_MILE
-
-    set_speed_text = CRUISE_DISABLED_CHAR if not self.is_cruise_set else str(round(set_speed))
-    rl.draw_text_ex(
-      self._font_display,
-      set_speed_text,
-      rl.Vector2(x + 13 + 4, y + 3 - 8 - 3 + 4),
-      FONT_SIZES.set_speed,
-      0,
-      set_speed_color,
+    # 배경(원형)은 기존대로
+    rl.draw_circle_gradient(
+      int(x + circle_radius), int(y + circle_radius), circle_radius,
+      rl.Color(0, 0, 0, 120), rl.BLANK
     )
 
-    max_text = tr("MAX")
+    # ============================================================
+    # 1) 현재 주행속도: 항상 표시 (3자리 슬롯, 오른쪽 정렬)
+    # ============================================================
+    big_font = FONT_SIZES.set_speed
+    top_y = int(y + 3 - 8 - 3 + 4)
+
+    left_margin = 10
+    gap = 10
+
+    # 실제 화면(컨텐츠 영역) 오른쪽 끝을 사용
+    screen_right = int(rect.x + rect.width - 12)   # 오른쪽 여백 12
+
+    inner_left = int(x + left_margin)
+
+    # 3자리 슬롯 폭
+    slot_w = int(measure_text_cached(self._font_display, "888", big_font).x)
+
+    # 슬롯은 왼쪽에 고정
+    slot_left = inner_left
+    slot_right = slot_left + slot_w
+
+    # 숫자는 슬롯 안에서 오른쪽 정렬
+    cur_speed_int = int(round(self.speed))
+    cur_digits = str(cur_speed_int)
+    cur_digits_w = measure_text_cached(self._font_display, cur_digits, big_font).x
+    cur_x = int(slot_right - cur_digits_w)
+
+    rl.draw_text_ex(
+      self._font_display,
+      cur_digits,
+      rl.Vector2(cur_x, top_y),
+      big_font,
+      0,
+      rl.WHITE,
+    )
+
+    # ============================================================
+    # 2) set_speed 블록: engaged일 때만 표시
+    #    -> "3" 오른쪽(= slot_right + gap)에서 시작
+    # ============================================================
+    show_set_block = self._engaged and self.is_cruise_set and self._can_draw_top_icons
+    if not show_set_block:
+      return
+
+    # set_speed 값
+    set_speed = ov.speed_kph if ov.active else self.set_speed
+    if not ui_state.is_metric:
+      set_speed *= KM_TO_MILE
+    set_speed_text = str(int(round(set_speed)))
+
+    # label
+    #max_text = (ov.label if ov.active else tr("MAX")) or "MAX"
+    max_text = ov.label if ov.active else "cruise"
+    max_text = max_text[:6]
+
+    # 색상(기존 로직)
+    if ov.speed_color_mode == 1:      # eco
+      set_speed_color = rl.Color(0, 255, 0, 230)
+    elif ov.speed_color_mode == 2:    # apply
+      set_speed_color = rl.Color(255, 165, 0, 230)
+    else:                             # default
+      set_speed_color = rl.Color(255, 255, 255, 230)
+
+    max_color = rl.Color(255, 255, 255, 230)
+
+    # 폰트
+    label_font = max(22, int(FONT_SIZES.max_speed * 0.85))
+    speed_font = max(48, int(FONT_SIZES.set_speed * 0.62))
+
+    label_size = measure_text_cached(self._font_semi_bold, max_text, label_font)
+    spd_size = measure_text_cached(self._font_display, set_speed_text, speed_font)
+
+    block_w = int(max(label_size.x, spd_size.x))
+    block_h = label_size.y + 2 + spd_size.y
+
+    # 블록은 무조건 속도 오른쪽부터 시작
+    block_left = int(slot_right + gap)
+
+    # 화면 오른쪽을 넘어가면, 블록을 오른쪽 끝에 붙임(그래도 속도쪽으로 침범 X)
+    max_left = int(screen_right - block_w)
+    if block_left > max_left:
+      block_left = max_left
+
+    # 그래도 속도쪽 침범하면(아주 극단) -> 그냥 그리지 않음
+    if block_left <= slot_right:
+      return
+
+    # 세로 정렬: big_font 높이 안에 맞춤
+    big_size = measure_text_cached(self._font_display, "888", big_font)
+    block_top = top_y + (big_size.y - block_h) / 2.0
+
+    # draw
     rl.draw_text_ex(
       self._font_semi_bold,
       max_text,
-      rl.Vector2(x + 25, y + FONT_SIZES.set_speed - 7 + 4),
-      FONT_SIZES.max_speed,
+      rl.Vector2(block_left + (block_w - label_size.x), block_top),
+      label_font,
       0,
       max_color,
     )
+    rl.draw_text_ex(
+      self._font_display,
+      set_speed_text,
+      rl.Vector2(block_left + (block_w - spd_size.x), block_top + label_size.y + 2),
+      speed_font,
+      0,
+      set_speed_color,
+    )
+    
+
+  def _draw_driving_mode_text(self, rect: rl.Rectangle) -> None:
+    if not self._engaged:
+      return
+
+    mode_text, mode_color = self._get_driving_mode_text_and_color()
+    if not mode_text:
+      return
+
+    wheel_txt = self._txt_wheel_critical if self._show_wheel_critical else self._txt_wheel
+    pos_x = int(rect.x + 21 + wheel_txt.width / 2)
+    pos_y = int(rect.y + rect.height - 14 - wheel_txt.height / 2 + self._wheel_y_filter.x)
+
+    mode_font = FONT_SIZES.max_speed
+    mode_size = measure_text_cached(self._font_semi_bold, mode_text, mode_font)
+
+    mode_x = int(pos_x + wheel_txt.width / 2 + 10)
+    mode_y = int(pos_y - mode_size.y / 2)
+
+    # 기존 driving_mode
+    rl.draw_text_ex(
+      self._font_semi_bold,
+      mode_text,
+      rl.Vector2(mode_x, mode_y),
+      mode_font,
+      0,
+      mode_color,
+    )
+
+    active_lane_line = bool(ui_state.sm['controlsState'].activeLaneLine)
+    if active_lane_line:
+      lm_text = "lanemode"
+      lm_color = self._color_mode(1, 200)   # green
+    else:
+      lm_text = "laneless"
+      lm_color = self._color_mode(2, 200)   # orange
+      
+    lm_gap = 10
+
+    lm_x = int(mode_x + mode_size.x + lm_gap)
+    lm_y = mode_y  # 같은 높이/크기
+
+    rl.draw_text_ex(
+      self._font_semi_bold,
+      lm_text,
+      rl.Vector2(lm_x, lm_y),
+      mode_font,
+      0,
+      lm_color,
+    )
+
+  def _color_mode(self, mode: int, alpha: int = 200) -> rl.Color:
+    # mode: 0 white, 1 green, 2 orange, 3 red
+    if mode == 1:
+      return rl.Color(0, 255, 0, alpha)
+    if mode == 2:
+      return rl.Color(255, 165, 0, alpha)
+    if mode == 3:
+      return rl.Color(255, 0, 0, alpha)
+    return rl.Color(255, 255, 255, alpha)
+
+  def _get_driving_mode_text_and_color(self) -> tuple[str, rl.Color]:
+    try:
+      mode_val = int(ui_state.sm["longitudinalPlan"].myDrivingMode)
+    except Exception:
+      return "", self._color_mode(0, 200)
+
+    if mode_val == 1:   # eco
+      return "eco", self._color_mode(1, 200)
+    if mode_val == 2:   # safe
+      return "safe", self._color_mode(2, 200)
+    if mode_val == 3:   # normal
+      return "norm", self._color_mode(0, 200)
+    if mode_val == 4:   # high
+      return "high", self._color_mode(3, 200)
+
+    return "", self._color_mode(0, 200)
+
 
   def _draw_current_speed(self, rect: rl.Rectangle) -> None:
     """Draw the current vehicle speed and unit."""

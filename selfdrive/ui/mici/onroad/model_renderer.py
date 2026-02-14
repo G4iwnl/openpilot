@@ -11,6 +11,7 @@ from openpilot.selfdrive.ui.mici.onroad import blend_colors
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.shader_polygon import draw_polygon, Gradient
 from openpilot.system.ui.widgets import Widget
+from typing import Optional, Any
 
 CLIP_MARGIN = 500
 MIN_DRAW_DISTANCE = 10.0
@@ -46,7 +47,8 @@ class LeadVehicle:
   glow: list[float] = field(default_factory=list)
   chevron: list[float] = field(default_factory=list)
   fill_alpha: int = 0
-
+  rect: list[tuple[float, float]] = field(default_factory=list)   # 4 corners (screen space)
+  color: Optional[Any] = None
 
 class ModelRenderer(Widget):
   def __init__(self):
@@ -76,6 +78,8 @@ class ModelRenderer(Widget):
     self._car_space_transform = np.zeros((3, 3), dtype=np.float32)
     self._transform_dirty = True
     self._clip_region = None
+    
+    self._lead_pt_filt = [None, None]
 
     self._exp_gradient = Gradient(
       start=(0.0, 1.0),  # Bottom of path
@@ -134,7 +138,7 @@ class ModelRenderer(Widget):
 
       self._update_model(lead_one, path_x_array)
       if render_lead_indicator:
-        self._update_leads(radar_state, path_x_array)
+        self._update_leads_carrot(radar_state, path_x_array)
       self._transform_dirty = False
 
     # Draw elements (hide when disengaged)
@@ -175,6 +179,58 @@ class ModelRenderer(Widget):
         point = self._map_to_screen(d_rel, -y_rel, z + self._path_offset_z)
         if point:
           self._lead_vehicles[i] = self._update_lead_vehicle(d_rel, v_rel, point, self._rect)
+          
+  def _update_leads_carrot(self, radar_state, path_x_array):
+    """Carrot: draw leadOne/leadTwo as outline rectangles (no fill)."""
+    # Reset
+    self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
+
+    lead_one = radar_state.leadOne
+    #lead_two = radar_state.leadTwo
+
+    def _filter_pt(slot: int, pt: tuple[float, float], alpha: float = 0.2):
+      prev = self._lead_pt_filt[slot]
+      if prev is None:
+        self._lead_pt_filt[slot] = (float(pt[0]), float(pt[1]))
+        return float(pt[0]), float(pt[1])
+
+      x = prev[0] + (float(pt[0]) - prev[0]) * alpha
+      y = prev[1] + (float(pt[1]) - prev[1]) * alpha
+      self._lead_pt_filt[slot] = (x, y)
+      return self._lead_pt_filt[slot][0], self._lead_pt_filt[slot][1]
+
+    # -------- leadOne --------
+    if lead_one and lead_one.status:
+      d_rel, y_rel = float(lead_one.dRel), float(lead_one.yRel)
+      idx = self._get_path_length_idx(path_x_array, d_rel)
+      z = float(self._path.raw_points[idx, 2]) if idx < len(self._path.raw_points) else 0.0
+      pt_left = self._map_to_screen(d_rel, -y_rel - 1.2, z + self._path_offset_z)
+      pt_right = self._map_to_screen(d_rel, -y_rel + 1.2, z + self._path_offset_z)
+      if pt_left and pt_right:
+        path_width = min(max(pt_right[0] - pt_left[0], 60), 400);
+        path_x = pt_left[0] + path_width / 2
+        path_y = pt_left[1]
+        pt_x, pt_y = _filter_pt(0, (path_x, path_y), alpha=0.2)
+        left = float(np.clip(pt_x - path_width / 2, 0.0, self._rect.width))
+        right = float(np.clip(pt_x + path_width / 2, 0.0, self._rect.width))
+        bottom_y = float(np.clip(pt_y, 0.0, self._rect.height))
+        top = float(np.clip(pt_y - 0.8 * path_width, 0.0, self._rect.height))
+        
+        # Color rule:
+        # - leadOne.radar == False => BLUE
+        # - leadOne.radar == True and radarTrackId in (0,1) => RED
+        # - else => ORANGE
+        if not bool(lead_one.radar):
+          c = rl.Color(0, 120, 255, 255)         # BLUE
+        else:
+          track_id = int(getattr(lead_one, "radarTrackId", 0))
+          if track_id in (0, 1):
+            c = rl.Color(201, 34, 49, 255)       # RED
+          else:
+            c = rl.Color(255, 115, 0, 255)       # ORANGE
+        self._lead_vehicles[0] = LeadVehicle(rect = [(left, top), (right, top), (right, bottom_y), (left, bottom_y)], color = c)
+      else:
+        self._lead_pt_filt[0] = None
 
   def _update_model(self, lead, path_x_array):
     """Update model visualization data based on model message"""
@@ -355,7 +411,7 @@ class ModelRenderer(Widget):
       else:
         draw_polygon(self._rect, self._path.projected_points, gradient=gradient)
 
-  def _draw_lead_indicator(self):
+  def _draw_lead_indicator_old(self):
     # Draw lead vehicles if available
     for lead in self._lead_vehicles:
       if not lead.glow or not lead.chevron:
@@ -364,6 +420,22 @@ class ModelRenderer(Widget):
       rl.draw_triangle_fan(lead.glow, len(lead.glow), rl.Color(218, 202, 37, 255))
       rl.draw_triangle_fan(lead.chevron, len(lead.chevron), rl.Color(201, 34, 49, lead.fill_alpha))
 
+  def _draw_lead_indicator(self):
+    # Carrot: draw outline rectangles only (no fill)
+    thickness = 4.0  # 원하는 두께 (float)
+
+    for lead in self._lead_vehicles:
+      if not lead.rect or lead.color is None:
+        continue
+
+      pts = lead.rect
+      c = lead.color
+
+      rl.draw_line_ex(pts[0], pts[1], thickness, c)
+      rl.draw_line_ex(pts[1], pts[2], thickness, c)
+      rl.draw_line_ex(pts[2], pts[3], thickness, c)
+      rl.draw_line_ex(pts[3], pts[0], thickness, c)
+    
   @staticmethod
   def _get_path_length_idx(pos_x_array: np.ndarray, path_height: float) -> int:
     """Get the index corresponding to the given path height"""

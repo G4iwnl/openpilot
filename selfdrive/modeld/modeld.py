@@ -28,6 +28,7 @@ from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, 
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
+from openpilot.selfdrive.modeld.external_pickle import load_external_pickle
 
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
@@ -180,11 +181,8 @@ class ModelState:
     self.parser = Parser()
     self.frame_buf_params : dict[str, tuple[int, int, int, int]] = {}
     self.update_imgs = None
-    with open(VISION_PKL_PATH, "rb") as f:
-      self.vision_run = pickle.load(f)
-
-    with open(POLICY_PKL_PATH, "rb") as f:
-      self.policy_run = pickle.load(f)
+    self.vision_run = load_external_pickle(VISION_PKL_PATH)
+    self.policy_run = load_external_pickle(POLICY_PKL_PATH)
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
@@ -208,9 +206,10 @@ class ModelState:
       ptr = bufs[key].data.ctypes.data
       yuv_size = self.frame_buf_params[key][3]
       # There is a ringbuffer of imgs, just cache tensors pointing to all of them
-      if ptr not in self._blob_cache:
-        self._blob_cache[ptr] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8')
-      self.full_frames[key] = self._blob_cache[ptr]
+      cache_key = (key, ptr)
+      if cache_key not in self._blob_cache:
+        self._blob_cache[cache_key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8')
+      self.full_frames[key] = self._blob_cache[cache_key]
     for key in bufs.keys():
       self.transforms_np[key][:,:] = transforms[key][:,:]
 
@@ -426,13 +425,15 @@ def main(demo=False):
       drivingdata_send.drivingModelData.meta.laneChangeState = DH.lane_change_state
       drivingdata_send.drivingModelData.meta.laneChangeDirection = DH.lane_change_direction
 
-      modelv2_send.modelV2.meta.laneWidthLeft = float(DH.lane_width_left)
-      modelv2_send.modelV2.meta.laneWidthRight = float(DH.lane_width_right)
-      modelv2_send.modelV2.meta.distanceToRoadEdgeLeft = float(DH.distance_to_road_edge_left)
-      modelv2_send.modelV2.meta.distanceToRoadEdgeRight = float(DH.distance_to_road_edge_right)
+      modelv2_send.modelV2.meta.laneWidthLeft = float(DH.left.lane_width)
+      modelv2_send.modelV2.meta.laneWidthRight = float(DH.right.lane_width)
+      modelv2_send.modelV2.meta.distanceToRoadEdgeLeft = float(DH.left.dist_to_edge)
+      modelv2_send.modelV2.meta.distanceToRoadEdgeRight = float(DH.right.dist_to_edge)
       modelv2_send.modelV2.meta.desire = DH.desire
       modelv2_send.modelV2.meta.laneChangeProb = DH.lane_change_ll_prob
       modelv2_send.modelV2.meta.modelTurnSpeed = float(DH.model_turn_speed)
+      modelv2_send.modelV2.meta.laneChangeAvailableLeft = DH.lane_change_available_left
+      modelv2_send.modelV2.meta.laneChangeAvailableRight = DH.lane_change_available_right
 
       fill_pose_msg(posenet_send, model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, live_calib_seen)
       pm.send('modelV2', modelv2_send)

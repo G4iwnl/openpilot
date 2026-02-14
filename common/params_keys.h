@@ -146,24 +146,9 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"GMapKey", {PERSISTENT, STRING}},
     {"SearchInput", {PERSISTENT, INT}},
 
-    {"CarSelected3", {PERSISTENT, STRING}},
+    {"CarSelected3", {PERSISTENT, STRING, "MOCK"}},
     {"SupportedCars", {PERSISTENT, STRING}},
     {"SupportedCars_gm", {PERSISTENT, STRING}},
-    {"ShowDebugUI", {PERSISTENT, INT, "0"}},
-    {"ShowTpms", {PERSISTENT, INT, "1"}},
-    {"ShowDateTime", {PERSISTENT, INT, "1"}},
-    {"ShowPathEnd", {PERSISTENT, INT, "1"}},
-    {"ShowCustomBrightness", {PERSISTENT, INT, "100"}},
-    {"ShowLaneInfo", {PERSISTENT, INT, "1"}},
-    {"ShowRadarInfo", {PERSISTENT, INT, "1"}},
-    {"ShowDeviceState", {PERSISTENT, INT, "1"}},
-    {"ShowRouteInfo", {PERSISTENT, INT, "1"}},
-    {"ShowPathMode", {PERSISTENT, INT, "9"}},
-    {"ShowPathColor", {PERSISTENT, INT, "13"}},
-    {"ShowPathColorCruiseOff", {PERSISTENT, INT, "19"}},
-    {"ShowPathModeLane", {PERSISTENT, INT, "14"}},
-    {"ShowPathColorLane", {PERSISTENT, INT, "13"}},
-    {"ShowPlotMode", {PERSISTENT, INT, "0"}},
     {"RecordRoadCam", {PERSISTENT, INT, "0"}},
     {"HDPuse", {PERSISTENT, INT, "0"}},
 
@@ -227,6 +212,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
 
     {"SteerActuatorDelay", {PERSISTENT, INT, "0"}},
     {"LatSmoothSec", {PERSISTENT, INT, "13"}},
+    {"LatSuspendAngleDeg", {PERSISTENT, INT, "300"}},
     {"CruiseOnDist", {PERSISTENT, INT, "400"}},
 
     {"CruiseMaxVals0", {PERSISTENT, INT, "160"}},

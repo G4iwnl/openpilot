@@ -109,7 +109,7 @@ class MiciHomeLayout(Widget):
     self._cell_high_txt = gui_app.texture("icons_mici/settings/network/cell_strength_high.png", 54, 36)
     self._cell_full_txt = gui_app.texture("icons_mici/settings/network/cell_strength_full.png", 54, 36)
 
-    self._openpilot_label = MiciLabel("openpilot", font_size=96, color=rl.Color(255, 255, 255, int(255 * 0.9)), font_weight=FontWeight.DISPLAY)
+    self._openpilot_label = MiciLabel("CarrotPilot", font_size=85, color=rl.Color(255, 255, 255, int(255 * 0.9)), font_weight=FontWeight.DISPLAY)
     self._version_label = MiciLabel("", font_size=36, font_weight=FontWeight.ROMAN)
     self._large_version_label = MiciLabel("", font_size=64, color=rl.GRAY, font_weight=FontWeight.ROMAN)
     self._date_label = MiciLabel("", font_size=36, color=rl.GRAY, font_weight=FontWeight.ROMAN)
@@ -249,7 +249,7 @@ class MiciHomeLayout(Widget):
       # Offset by difference in height between slashless and slash icons to make center align match
       rl.draw_texture(self._wifi_slash_txt, int(last_x), int(self._rect.y + self.rect.height - self._wifi_slash_txt.height / 2 -
                                                              (self._wifi_slash_txt.height - self._wifi_none_txt.height) / 2 - Y_CENTER),
-                      rl.Color(255, 255, 255, 255))
+                      rl.Color(255, 255, 255, int(255 * 0.9)))
       last_x += self._wifi_slash_txt.width + ITEM_SPACING
 
     # draw experimental icon

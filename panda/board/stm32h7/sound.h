@@ -14,8 +14,22 @@ void sound_tick(void) {
   if (sound_idle_count > 0U) {
     sound_idle_count--;
     if (sound_idle_count == 0U) {
-      current_board->set_amp_enabled(false);
+      // 1) stop DMA cleanly
       register_clear_bits(&DMA1_Stream1->CR, DMA_SxCR_EN);
+      while ((DMA1_Stream1->CR & DMA_SxCR_EN) != 0U) {}
+    
+      // 2) clear DMA flags (2번이 하던 것)
+      DMA1->LIFCR = (0x3FU << 6);
+    
+      // 3) force DAC to silence
+      DAC1->DHR12R1 = (1UL << 11);
+      DAC1->DHR12R2 = (1UL << 11);
+    
+      // 4) (선택) disable DAC까지 해버리면 더 조용해질 수 있음
+      // register_clear_bits(&DAC1->CR, DAC_CR_EN1 | DAC_CR_EN2);
+    
+      // 5) amp off last
+      current_board->set_amp_enabled(false);
     }
   }
 
@@ -105,9 +119,11 @@ void sound_init(void) {
   REGISTER_INTERRUPT(DMA1_Stream0_IRQn, DMA1_Stream0_IRQ_Handler, 128U, FAULT_INTERRUPT_RATE_SOUND_DMA)
 
   // Init DAC
+  DAC1->DHR12R1 = (1UL << 11);
+  DAC1->DHR12R2 = (1UL << 11);
   register_set(&DAC1->MCR, 0U, 0xFFFFFFFFU);
   register_set(&DAC1->CR, DAC_CR_TEN1 | (4U << DAC_CR_TSEL1_Pos) | DAC_CR_DMAEN1, 0xFFFFFFFFU);
-  register_set_bits(&DAC1->CR, DAC_CR_EN1);
+  register_set_bits(&DAC1->CR, DAC_CR_EN1 | DAC_CR_EN2);
 
   // Setup DMAMUX (DAC_CH1_DMA as input)
   register_set(&DMAMUX1_Channel1->CCR, 67U, DMAMUX_CxCR_DMAREQ_ID_Msk);

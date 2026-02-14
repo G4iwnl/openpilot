@@ -174,7 +174,13 @@ class AlertRenderer(Widget):
       icon_margin_y = 5
 
     elif event_name == 'laneChange':
-      icon_side = self._last_icon_side
+      CS = ui_state.sm['carState']
+      if CS.leftBlinker:
+        icon_side = IconSide.left
+      elif CS.rightBlinker:
+        icon_side = IconSide.right
+      else:
+        icon_side = self._last_icon_side
       txt_icon = self._txt_turn_signal_left if self._last_icon_side == 'left' else self._txt_turn_signal_right
       icon_margin_x = 2
       icon_margin_y = 5

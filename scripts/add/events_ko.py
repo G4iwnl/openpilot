@@ -8,10 +8,13 @@ from collections.abc import Callable
 from cereal import log, car
 import cereal.messaging as messaging
 from openpilot.common.constants import CV
-from openpilot.common.params import Params
 from openpilot.common.git import get_short_branch
+from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.locationd.calibrationd import MIN_SPEED_FILTER
+from openpilot.system.micd import SAMPLE_RATE, SAMPLE_BUFFER
+from openpilot.selfdrive.ui.feedback.feedbackd import FEEDBACK_MAX_DURATION
+from openpilot.system.hardware import HARDWARE
 
 AlertSize = log.SelfdriveState.AlertSize
 AlertStatus = log.SelfdriveState.AlertStatus
@@ -194,9 +197,15 @@ class NormalPermanentAlert(Alert):
 
 class StartupAlert(Alert):
   def __init__(self, alert_text_1: str, alert_text_2: str = "항상 핸들을 잡고 도로를 주시하세요", alert_status=AlertStatus.normal):
+    alert_size = AlertSize.mid
+    if HARDWARE.get_device_type() == 'mici':
+      if alert_text_2 == "Always keep hands on wheel and eyes on road":
+        alert_text_2 = ""
+      alert_size = AlertSize.small
     super().__init__(alert_text_1, alert_text_2,
-                     alert_status, AlertSize.mid,
+                     alert_status, alert_size,
                      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 5.),
+
 
 
 # ********** helper functions **********
@@ -252,6 +261,15 @@ def calibration_incomplete_alert(CP: car.CarParams, CS: car.CarState, sm: messag
     AlertStatus.normal, AlertSize.mid,
     Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .2)
 
+
+def audio_feedback_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
+  duration = FEEDBACK_MAX_DURATION - ((sm['audioFeedback'].blockNum + 1) * SAMPLE_BUFFER / SAMPLE_RATE)
+  return NormalPermanentAlert(
+    "Recording Audio Feedback",
+    f"{round(duration)} second{'s' if round(duration) != 1 else ''} remaining. Press again to save early.",
+    priority=Priority.LOW)
+
+
 def torque_nn_load_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   model_name = Params().get("NNFFModelName")
   if model_name == "":
@@ -305,6 +323,21 @@ def calibration_invalid_alert(CP: car.CarParams, CS: car.CarState, sm: messaging
   pitch = math.degrees(rpy[1] if len(rpy) == 3 else math.nan)
   angles = f"장치 재장착 (Pitch: {pitch:.1f}°, Yaw: {yaw:.1f}°)"
   return NormalPermanentAlert("캘리브레이션 오류", angles)
+def paramsd_invalid_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
+  if not sm['liveParameters'].angleOffsetValid:
+    angle_offset_deg = sm['liveParameters'].angleOffsetDeg
+    title = "Steering misalignment detected"
+    text = f"Angle offset too high (Offset: {angle_offset_deg:.1f}°)"
+  elif not sm['liveParameters'].steerRatioValid:
+    steer_ratio = sm['liveParameters'].steerRatio
+    title = "Steer ratio mismatch"
+    text = f"Steering rack geometry may be off (Ratio: {steer_ratio:.1f})"
+  elif not sm['liveParameters'].stiffnessFactorValid:
+    stiffness_factor = sm['liveParameters'].stiffnessFactor
+    title = "Abnormal tire stiffness"
+    text = f"Check tires, pressure, or alignment (Factor: {stiffness_factor:.1f})"
+  else:
+    return NoEntryAlert("paramsd Temporary Error")
 
 
 def overheat_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
@@ -354,6 +387,17 @@ def longitudinal_maneuver_alert(CP: car.CarParams, CS: car.CarState, sm: messagi
 def personality_changed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   personality = str(personality).title()
   return NormalPermanentAlert(f"Driving Personality: {personality}", duration=1.5)
+
+
+def invalid_lkas_setting_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
+  text = "Toggle stock LKAS on or off to engage"
+  if CP.brand == "tesla":
+    text = "Switch to Traffic-Aware Cruise Control to engage"
+  elif CP.brand == "mazda":
+    text = "Enable your car's LKAS to engage"
+  elif CP.brand == "nissan":
+    text = "Disable your car's stock LKAS to engage"
+  return NormalPermanentAlert("Invalid LKAS setting", text)
 
 def car_parser_result(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   results = Params().get("CanParserResult")
@@ -674,6 +718,11 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
                               visual_alert=VisualAlert.brakePressed),
   },
 
+  EventName.steerDisengage: {
+    ET.USER_DISABLE: EngagementAlert(AudibleAlert.disengage),
+    ET.NO_ENTRY: NoEntryAlert("Steering Pressed"),
+  },
+
   EventName.preEnableStandstill: {
     ET.PRE_ENABLE: Alert(
       "브레이크 해제 후 활성화하세요",
@@ -751,6 +800,11 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.tooDistracted: {
     ET.NO_ENTRY: NoEntryAlert("방해 수준이 너무높습니다"),
+  },
+
+  EventName.excessiveActuation: {
+    ET.SOFT_DISABLE: soft_disable_alert("Excessive Actuation"),
+    ET.NO_ENTRY: NoEntryAlert("Excessive Actuation"),
   },
 
   EventName.overheat: {
@@ -978,6 +1032,14 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.WARNING: personality_changed_alert,
   },
 
+  EventName.userBookmark: {
+    ET.PERMANENT: NormalPermanentAlert("Bookmark Saved", duration=1.5),
+  },
+
+  EventName.audioFeedback: {
+    ET.PERMANENT: audio_feedback_alert,
+  },
+
   EventName.softHold: {
     ET.WARNING: Alert(
       "SoftHold",
@@ -1076,6 +1138,72 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
 }
+if HARDWARE.get_device_type() == 'mici':
+  EVENTS.update({
+    EventName.preDriverDistracted: {
+      ET.PERMANENT: Alert(
+        "Pay Attention",
+        "",
+        AlertStatus.normal, AlertSize.small,
+        Priority.LOW, VisualAlert.none, AudibleAlert.none, 2),
+    },
+    EventName.promptDriverDistracted: {
+      ET.PERMANENT: Alert(
+        "Pay Attention",
+        "Driver Distracted",
+        AlertStatus.userPrompt, AlertSize.mid,
+        Priority.MID, VisualAlert.steerRequired, AudibleAlert.promptDistracted, 1),
+    },
+    EventName.resumeRequired: {
+      ET.WARNING: Alert(
+        "Press Resume",
+        "",
+        AlertStatus.userPrompt, AlertSize.small,
+        Priority.LOW, VisualAlert.none, AudibleAlert.none, .2),
+    },
+    EventName.preLaneChangeLeft: {
+      ET.WARNING: Alert(
+        "Steer Left",
+        "Confirm Lane Change",
+        AlertStatus.normal, AlertSize.mid,
+        Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
+    },
+    EventName.preLaneChangeRight: {
+      ET.WARNING: Alert(
+        "Steer Right",
+        "Confirm Lane Change",
+        AlertStatus.normal, AlertSize.mid,
+        Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
+    },
+    EventName.laneChangeBlocked: {
+      ET.WARNING: Alert(
+        "Car in Blindspot",
+        "",
+        AlertStatus.userPrompt, AlertSize.small,
+        Priority.LOW, VisualAlert.none, AudibleAlert.prompt, .1),
+    },
+    EventName.steerSaturated: {
+      ET.WARNING: Alert(
+        "take control",
+        "turn exceeds limit",
+        AlertStatus.userPrompt, AlertSize.mid,
+        Priority.LOW, VisualAlert.steerRequired, AudibleAlert.promptRepeat, 2.),
+    },
+    EventName.calibrationIncomplete: {
+      ET.PERMANENT: calibration_incomplete_alert,
+      ET.SOFT_DISABLE: soft_disable_alert("Calibration Incomplete"),
+      ET.NO_ENTRY: NoEntryAlert("Calibrating"),
+    },
+    EventName.reverseGear: {
+      ET.PERMANENT: Alert(
+        "Reverse",
+        "",
+        AlertStatus.normal, AlertSize.full,
+        Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .2, creation_delay=0.5),
+      ET.USER_DISABLE: ImmediateDisableAlert("Reverse"),
+      ET.NO_ENTRY: NoEntryAlert("Reverse"),
+    },
+  })
 
 
 if __name__ == '__main__':

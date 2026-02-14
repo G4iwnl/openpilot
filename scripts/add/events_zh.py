@@ -12,6 +12,9 @@ from openpilot.common.git import get_short_branch
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.locationd.calibrationd import MIN_SPEED_FILTER
+from openpilot.system.micd import SAMPLE_RATE, SAMPLE_BUFFER
+from openpilot.selfdrive.ui.feedback.feedbackd import FEEDBACK_MAX_DURATION
+from openpilot.system.hardware import HARDWARE
 
 AlertSize = log.SelfdriveState.AlertSize
 AlertStatus = log.SelfdriveState.AlertStatus
@@ -147,7 +150,7 @@ EmptyAlert = Alert("" , "", AlertStatus.normal, AlertSize.none, Priority.LOWEST,
 
 class NoEntryAlert(Alert):
   def __init__(self, alert_text_2: str,
-               alert_text_1: str = "openpilot不可用",
+               alert_text_1: str = "openpilot Unavailable",
                visual_alert: car.CarControl.HUDControl.VisualAlert=VisualAlert.none):
     super().__init__(alert_text_1, alert_text_2, AlertStatus.normal,
                      AlertSize.mid, Priority.LOW, visual_alert,
@@ -194,9 +197,15 @@ class NormalPermanentAlert(Alert):
 
 class StartupAlert(Alert):
   def __init__(self, alert_text_1: str, alert_text_2: str = "小鸽温馨提醒：请始终握住方向盘并注视前方道路", alert_status=AlertStatus.normal):
+    alert_size = AlertSize.mid
+    if HARDWARE.get_device_type() == 'mici':
+      if alert_text_2 == "Always keep hands on wheel and eyes on road":
+        alert_text_2 = ""
+      alert_size = AlertSize.small
     super().__init__(alert_text_1, alert_text_2,
-                     alert_status, AlertSize.mid,
+                     alert_status, alert_size,
                      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 5.),
+
 
 
 # ********** helper functions **********
@@ -251,6 +260,15 @@ def calibration_incomplete_alert(CP: car.CarParams, CS: car.CarState, sm: messag
     f"请将车速提升至{get_display_speed(MIN_SPEED_FILTER, metric)}以上",
     AlertStatus.normal, AlertSize.mid,
     Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .2)
+
+
+def audio_feedback_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
+  duration = FEEDBACK_MAX_DURATION - ((sm['audioFeedback'].blockNum + 1) * SAMPLE_BUFFER / SAMPLE_RATE)
+  return NormalPermanentAlert(
+    "Recording Audio Feedback",
+    f"{round(duration)} second{'s' if round(duration) != 1 else ''} remaining. Press again to save early.",
+    priority=Priority.LOW)
+
 
 def torque_nn_load_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   model_name = Params().get("NNFFModelName")
@@ -373,6 +391,16 @@ def personality_changed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging
   personality = str(personality).title()
   return NormalPermanentAlert(f"驾驶风格：{personality}", duration=1.5)
 
+def invalid_lkas_setting_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
+  text = "Toggle stock LKAS on or off to engage"
+  if CP.brand == "tesla":
+    text = "Switch to Traffic-Aware Cruise Control to engage"
+  elif CP.brand == "mazda":
+    text = "Enable your car's LKAS to engage"
+  elif CP.brand == "nissan":
+    text = "Disable your car's stock LKAS to engage"
+  return NormalPermanentAlert("Invalid LKAS setting", text)
+
 def car_parser_result(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   results = Params().get("CanParserResult")
   if results is None:
@@ -470,6 +498,9 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       AlertStatus.critical, AlertSize.full,
       Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.stopStop, 2.),
     ET.NO_ENTRY: NoEntryAlert("原厂AEB：存在碰撞风险"),
+
+  EventName.stockLkas: {
+    ET.NO_ENTRY: NoEntryAlert("Stock LKAS: Lane Departure Detected"),
   },
 
   EventName.fcw: {
@@ -694,6 +725,11 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
                               visual_alert=VisualAlert.brakePressed),
   },
 
+  EventName.steerDisengage: {
+    ET.USER_DISABLE: EngagementAlert(AudibleAlert.disengage),
+    ET.NO_ENTRY: NoEntryAlert("Steering Pressed"),
+  },
+
   EventName.preEnableStandstill: {
     ET.PRE_ENABLE: Alert(
       "松开刹车以接入",
@@ -771,6 +807,10 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.tooDistracted: {
     ET.NO_ENTRY: NoEntryAlert("分心程度过高"),
+  },
+  EventName.excessiveActuation: {
+    ET.SOFT_DISABLE: soft_disable_alert("Excessive Actuation"),
+    ET.NO_ENTRY: NoEntryAlert("Excessive Actuation"),
   },
 
   EventName.overheat: {
@@ -1004,6 +1044,14 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.WARNING: personality_changed_alert,
   },
 
+  EventName.userBookmark: {
+    ET.PERMANENT: NormalPermanentAlert("Bookmark Saved", duration=1.5),
+  },
+
+  EventName.audioFeedback: {
+    ET.PERMANENT: audio_feedback_alert,
+  },
+
   EventName.softHold: {
     ET.WARNING: Alert(
       "软保持",
@@ -1102,6 +1150,72 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
 }
+if HARDWARE.get_device_type() == 'mici':
+  EVENTS.update({
+    EventName.preDriverDistracted: {
+      ET.PERMANENT: Alert(
+        "Pay Attention",
+        "",
+        AlertStatus.normal, AlertSize.small,
+        Priority.LOW, VisualAlert.none, AudibleAlert.none, 2),
+    },
+    EventName.promptDriverDistracted: {
+      ET.PERMANENT: Alert(
+        "Pay Attention",
+        "Driver Distracted",
+        AlertStatus.userPrompt, AlertSize.mid,
+        Priority.MID, VisualAlert.steerRequired, AudibleAlert.promptDistracted, 1),
+    },
+    EventName.resumeRequired: {
+      ET.WARNING: Alert(
+        "Press Resume",
+        "",
+        AlertStatus.userPrompt, AlertSize.small,
+        Priority.LOW, VisualAlert.none, AudibleAlert.none, .2),
+    },
+    EventName.preLaneChangeLeft: {
+      ET.WARNING: Alert(
+        "Steer Left",
+        "Confirm Lane Change",
+        AlertStatus.normal, AlertSize.mid,
+        Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
+    },
+    EventName.preLaneChangeRight: {
+      ET.WARNING: Alert(
+        "Steer Right",
+        "Confirm Lane Change",
+        AlertStatus.normal, AlertSize.mid,
+        Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
+    },
+    EventName.laneChangeBlocked: {
+      ET.WARNING: Alert(
+        "Car in Blindspot",
+        "",
+        AlertStatus.userPrompt, AlertSize.small,
+        Priority.LOW, VisualAlert.none, AudibleAlert.prompt, .1),
+    },
+    EventName.steerSaturated: {
+      ET.WARNING: Alert(
+        "take control",
+        "turn exceeds limit",
+        AlertStatus.userPrompt, AlertSize.mid,
+        Priority.LOW, VisualAlert.steerRequired, AudibleAlert.promptRepeat, 2.),
+    },
+    EventName.calibrationIncomplete: {
+      ET.PERMANENT: calibration_incomplete_alert,
+      ET.SOFT_DISABLE: soft_disable_alert("Calibration Incomplete"),
+      ET.NO_ENTRY: NoEntryAlert("Calibrating"),
+    },
+    EventName.reverseGear: {
+      ET.PERMANENT: Alert(
+        "Reverse",
+        "",
+        AlertStatus.normal, AlertSize.full,
+        Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .2, creation_delay=0.5),
+      ET.USER_DISABLE: ImmediateDisableAlert("Reverse"),
+      ET.NO_ENTRY: NoEntryAlert("Reverse"),
+    },
+  })
 
 
 if __name__ == '__main__':

@@ -19,6 +19,8 @@ from openpilot.common.transformations.camera import DEVICE_CAMERAS, DeviceCamera
 from openpilot.common.transformations.orientation import rot_from_euler
 from enum import IntEnum
 
+from openpilot.selfdrive.ui.mici.onroad.traffic_light import TrafficLight
+
 OpState = log.SelfdriveState.OpenpilotState
 CALIBRATED = log.LiveCalibrationData.Status.calibrated
 ROAD_CAM = VisionStreamType.VISION_STREAM_ROAD
@@ -159,6 +161,7 @@ class AugmentedRoadView(CameraView):
     self._alert_renderer = AlertRenderer()
     self._driver_state_renderer = DriverStateRenderer()
     self._confidence_ball = ConfidenceBall()
+    self._traffic_light = TrafficLight()
     self._offroad_label = UnifiedLabel("start the car to\nuse openpilot", 54, FontWeight.DISPLAY,
                                        text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
                                        alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
@@ -237,9 +240,9 @@ class AugmentedRoadView(CameraView):
     self._hud_renderer.set_wheel_critical_icon(alert_to_render is not None and not not_animating_out and
                                                alert_to_render.visual_alert == car.CarControl.HUDControl.VisualAlert.steerRequired)
     # TODO: have alert renderer draw offroad mici label below
+    self._hud_renderer.render(self._content_rect)
     if ui_state.started:
       self._alert_renderer.render(self._content_rect)
-    self._hud_renderer.render(self._content_rect)
 
     # Draw fake rounded border
     rl.draw_rectangle_rounded_lines_ex(self._content_rect, 0.2 * 1.02, 10, 50, rl.BLACK)
@@ -249,7 +252,9 @@ class AugmentedRoadView(CameraView):
 
     # Custom UI extension point - add custom overlays here
     # Use self._content_rect for positioning within camera bounds
-    self._confidence_ball.render(self.rect)
+    self._traffic_light.render(self.rect)
+    if not self._traffic_light.is_visible():
+      self._confidence_ball.render(self.rect)
 
     self._bookmark_icon.render(self.rect)
 
@@ -363,7 +368,7 @@ class AugmentedRoadView(CameraView):
 
 if __name__ == "__main__":
   gui_app.init_window("OnRoad Camera View")
-  road_camera_view = AugmentedRoadView(ROAD_CAM)
+  road_camera_view = AugmentedRoadView(lambda: None, stream_type=ROAD_CAM)
   print("***press space to switch camera view***")
   try:
     for _ in gui_app.render():
