@@ -359,8 +359,6 @@ class HudRenderer(Widget):
     else:                             # default
       set_speed_color = rl.Color(255, 255, 255, 230)
 
-    max_color = rl.Color(255, 255, 255, 230)
-
     # 폰트
     label_font = max(22, int(FONT_SIZES.max_speed * 0.85))
     speed_font = max(48, int(FONT_SIZES.set_speed * 0.62))
@@ -394,7 +392,7 @@ class HudRenderer(Widget):
       rl.Vector2(block_left + (block_w - label_size.x), block_top),
       label_font,
       0,
-      max_color,
+      set_speed_color,
     )
     rl.draw_text_ex(
       self._font_display,
