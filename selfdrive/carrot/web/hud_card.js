@@ -134,11 +134,11 @@
     if (diskPct == null || !isFinite(diskPct)) {
       setText("hudDiskVal", "--V");
     } else {
-      const volt = Number(diskPct) / 100.0;
+      const volt = Number(diskPct);
       setText("hudDiskVal", `${volt.toFixed(1)}V`);
     }
 
-    if (diskLabel) setText("hudDiskLabel", "VOLT");
+    if (diskLabel) setText("hudDiskLabel", diskLabel);
   }
 
   const DrivingHud = {
