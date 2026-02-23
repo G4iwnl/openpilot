@@ -434,6 +434,8 @@ def main(demo=False):
       modelv2_send.modelV2.meta.modelTurnSpeed = float(DH.model_turn_speed)
       modelv2_send.modelV2.meta.laneChangeAvailableLeft = DH.lane_change_available_left
       modelv2_send.modelV2.meta.laneChangeAvailableRight = DH.lane_change_available_right
+      mt3 = time.perf_counter()
+      drivingdata_send.modelExecutionTime = mt3 - mt1
 
       fill_pose_msg(posenet_send, model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, live_calib_seen)
       pm.send('modelV2', modelv2_send)
