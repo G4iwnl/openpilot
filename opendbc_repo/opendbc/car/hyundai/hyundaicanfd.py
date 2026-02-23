@@ -670,8 +670,6 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control,
           else:
             if CS.ACCMode in [0, 4]:
               values["CRUISE_BUTTONS"] = 2
-        else:
-          values["ADAPTIVE_CRUISE_MAIN_BTN"] = 0
 
         ret.append(packer.make_can_msg(CS.cruise_btns_msg_canfd, CAN.CAM, values))
 
