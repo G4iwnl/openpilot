@@ -4,7 +4,7 @@ from cereal import log
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigParamControl, BigMultiParamToggle
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.widgets import NavWidget
+from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
 from openpilot.selfdrive.ui.ui_state import ui_state
 
@@ -16,7 +16,7 @@ class TogglesLayoutMici(NavWidget):
     super().__init__()
     self.set_back_callback(gui_app.pop_widget)
 
-    self._personality_toggle = BigMultiParamToggle("driving personality", "LongitudinalPersonality", ["aggressive", "standard", "relaxed", "moreRelaxed"])
+    self._personality_toggle = BigMultiParamToggle("driving personality", "LongitudinalPersonality", ["aggressive", "standard", "relaxed"])
     self._experimental_btn = BigParamControl("experimental mode", "ExperimentalMode")
     is_metric_toggle = BigParamControl("use metric units", "IsMetric")
     ldw_toggle = BigParamControl("lane departure warnings", "IsLdwEnabled")
@@ -34,7 +34,7 @@ class TogglesLayoutMici(NavWidget):
       record_front,
       record_mic,
       enable_openpilot,
-    ], snap_items=False)
+    ])
 
     # Toggle lists
     self._refresh_toggles = (
@@ -70,6 +70,10 @@ class TogglesLayoutMici(NavWidget):
     super().show_event()
     self._scroller.show_event()
     self._update_toggles()
+
+  def hide_event(self):
+    super().hide_event()
+    self._scroller.hide_event()
 
   def _update_toggles(self):
     ui_state.update_params()

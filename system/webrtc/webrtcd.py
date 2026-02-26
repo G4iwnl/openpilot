@@ -132,31 +132,17 @@ class StreamSession:
   shared_pub_master = DynamicPubMaster([])
 
   def __init__(self, sdp: str, cameras: list[str], incoming_services: list[str], outgoing_services: list[str], debug_mode: bool = False):
-    from aiortc.mediastreams import VideoStreamTrack, AudioStreamTrack
-    from aiortc.contrib.media import MediaBlackhole
+    from aiortc.mediastreams import VideoStreamTrack
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
-    from openpilot.system.webrtc.device.audio import AudioInputStreamTrack, AudioOutputSpeaker
     from teleoprtc import WebRTCAnswerBuilder
     from teleoprtc.info import parse_info_from_offer
 
-    self.logger = logging.getLogger("webrtcd")
     config = parse_info_from_offer(sdp)
     builder = WebRTCAnswerBuilder(sdp)
 
     assert len(cameras) == config.n_expected_camera_tracks, "Incoming stream has misconfigured number of video tracks"
     for cam in cameras:
-      try:
-        track = LiveStreamVideoStreamTrack(cam) if not debug_mode else VideoStreamTrack()
-        builder.add_video_stream(cam, track)
-        self.logger.info("added camera track: %s", cam)
-      except Exception:
-        self.logger.exception("failed to create camera track: %s", cam)
-        raise
-    if config.expected_audio_track:
-      builder.add_audio_stream(AudioInputStreamTrack() if not debug_mode else AudioStreamTrack())
-    if config.incoming_audio_track:
-      self.audio_output_cls = AudioOutputSpeaker if not debug_mode else MediaBlackhole
-      builder.offer_to_receive_audio_stream()
+      builder.add_video_stream(cam, LiveStreamVideoStreamTrack(cam) if not debug_mode else VideoStreamTrack())
 
     self.stream = builder.stream()
     self.identifier = str(uuid.uuid4())
@@ -171,15 +157,10 @@ class StreamSession:
       self.outgoing_bridge = CerealOutgoingMessageProxy(messaging.SubMaster(outgoing_services))
       self.outgoing_bridge_runner = CerealProxyRunner(self.outgoing_bridge)
 
-    self.audio_output: AudioOutputSpeaker | MediaBlackhole | None = None
     self.run_task: asyncio.Task | None = None
-    self.logger.info("New stream session (%s), cameras %s, audio in %s out %s, incoming services %s, outgoing services %s",
-                      self.identifier, cameras, config.incoming_audio_track, config.expected_audio_track, incoming_services, outgoing_services)
-    config = parse_info_from_offer(sdp)
-    self.logger.info("offer expects video tracks=%d, audio_expected=%s, audio_incoming=%s",
-                     config.n_expected_camera_tracks, config.expected_audio_track, config.incoming_audio_track)
-    self.logger.info("request cameras=%s", cameras)
-
+    self.logger = logging.getLogger("webrtcd")
+    self.logger.info("New stream session (%s), cameras %s, incoming services %s, outgoing services %s",
+                      self.identifier, cameras, incoming_services, outgoing_services)
 
   def start(self):
     self.run_task = asyncio.create_task(self.run())
@@ -226,11 +207,6 @@ class StreamSession:
           channel = self.stream.get_messaging_channel()
           self.outgoing_bridge_runner.proxy.add_channel(channel)
           self.outgoing_bridge_runner.start()
-      if self.stream.has_incoming_audio_track():
-        track = self.stream.get_incoming_audio_track(buffered=False)
-        self.audio_output = self.audio_output_cls()
-        self.audio_output.addTrack(track)
-        self.audio_output.start()
       self.logger.info("Stream session (%s) connected", self.identifier)
 
       await self.stream.wait_for_disconnection()
@@ -251,8 +227,6 @@ class StreamSession:
     await self.stream.stop()
     if self.outgoing_bridge is not None:
       self.outgoing_bridge_runner.stop()
-    if self.audio_output:
-      self.audio_output.stop()
 
 
 @dataclass
