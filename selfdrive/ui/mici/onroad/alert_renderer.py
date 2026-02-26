@@ -305,12 +305,12 @@ class AlertRenderer(Widget):
     # TODO: there should be a common way to determine font size based on text length to maximize rect
     if len(alert_text1) <= 12:
       can_draw_second_line = True
-      font_size = 92 - 10
+      font_size = 70 # 92 - 10
     elif len(alert_text1) <= 16:
       can_draw_second_line = True
-      font_size = 70
+      font_size = 60 #70
     else:
-      font_size = 64 - 10
+      font_size = 40 #64 - 10
 
     if icon_side is not None:
       font_size -= 10
