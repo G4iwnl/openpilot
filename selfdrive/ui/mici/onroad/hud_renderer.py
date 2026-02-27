@@ -1,5 +1,6 @@
 import pyray as rl
 from dataclasses import dataclass
+from typing import Optional
 from openpilot.common.constants import CV
 from openpilot.selfdrive.ui.mici.onroad.torque_bar import TorqueBar
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
@@ -9,6 +10,8 @@ from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 from openpilot.common.filter_simple import FirstOrderFilter
 from cereal import log
+from openpilot.common.params import Params
+from datetime import datetime
 
 EventName = log.OnroadEvent.EventName
 
@@ -57,7 +60,7 @@ class SetSpeedOverride:
       desired_speed = None
       desired_source = ""
 
-    if desired_speed is not None and desired_speed > 0.0 and desired_speed < set_speed_kph:
+    if desired_speed is not None and 0 < desired_speed < 200 and desired_speed < set_speed_kph:
       label = desired_source.strip() or "apply"
       label = label[:8]  # 너무 길면 UI 깨짐 방지 (원하면 길이 조절)
       return SetSpeedOverrideState(
@@ -156,6 +159,7 @@ class HudRenderer(Widget):
   def __init__(self):
     super().__init__()
     """Initialize the HUD renderer."""
+    self._debug_speed_panel = False
     self.is_cruise_set: bool = False
     self.is_cruise_available: bool = True
     self.set_speed: float = SET_SPEED_NA
@@ -178,6 +182,9 @@ class HudRenderer(Widget):
     self._txt_wheel: rl.Texture = gui_app.texture('icons_mici/wheel.png', 50, 50)
     self._txt_wheel_critical: rl.Texture = gui_app.texture('icons_mici/wheel_critical.png', 50, 50)
     self._txt_exclamation_point: rl.Texture = gui_app.texture('icons_mici/exclamation_point.png', 44, 44)
+
+    # Bottom-left speed panel background
+    self._txt_speed_bg: rl.Texture = gui_app.texture('images/speed_bg.png', 307, 115)
 
     self._wheel_alpha_filter = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
     self._wheel_y_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
@@ -234,11 +241,11 @@ class HudRenderer(Widget):
     if ui_state.sm['controlsState'].lateralControlState.which() != 'angleState':
       self._torque_bar.render(rect)
 
-    #if self.is_cruise_set:
+    # bottom-left panel (speed_bg)
     self._draw_set_speed(rect)
 
+    # wheel moved to top-left
     self._draw_steering_wheel(rect)
-    self._draw_driving_mode_text(rect)
     
   def _draw_steering_wheel(self, rect: rl.Rectangle) -> None:
     wheel_txt = self._txt_wheel_critical if self._show_wheel_critical else self._txt_wheel
@@ -247,14 +254,16 @@ class HudRenderer(Widget):
     self._wheel_alpha_filter.update(255 * 0.95)
     self._wheel_y_filter.update(0)
 
-    # pos (bottom-left)
-    pos_x = int(rect.x + 21 + wheel_txt.width / 2)
-    pos_y = int(rect.y + rect.height - 14 - wheel_txt.height / 2 + self._wheel_y_filter.x)
+    # pos (TOP-left)
+    margin_x = 18
+    margin_y = 18
+    pos_x = int(rect.x + margin_x + wheel_txt.width / 2)
+    pos_y = int(rect.y + margin_y + wheel_txt.height / 2 + self._wheel_y_filter.x)
 
     # rotation
     rotation = -ui_state.sm['carState'].steeringAngleDeg
 
-    # Turn intent still OK
+    # Turn intent (around wheel)
     turn_intent_margin = 25
     self._turn_intent.render(rl.Rectangle(
       pos_x - wheel_txt.width / 2 - turn_intent_margin,
@@ -281,130 +290,299 @@ class HudRenderer(Widget):
       exclamation_pos_y = pos_y - self._txt_exclamation_point.height / 2
       rl.draw_texture(self._txt_exclamation_point, int(exclamation_pos_x), int(exclamation_pos_y), rl.WHITE)
 
-  def _draw_set_speed(self, rect: rl.Rectangle) -> None:
-    ov = self._set_speed_override.compute(ui_state.sm, float(self.set_speed))
 
-    x = rect.x
-    y = rect.y
+    # ----- current time (right of wheel) -----
+    now_text = datetime.now().strftime("%H:%M")
 
-    circle_d = 162
-    circle_radius = circle_d // 2
+    # 휠 높이 기준으로 폰트 크기 설정
+    time_font = int(wheel_txt.height * 1.1)  # 90% 정도 (너무 꽉 차지 않게)
 
-    # 배경(원형)은 기존대로
-    rl.draw_circle_gradient(
-      int(x + circle_radius), int(y + circle_radius), circle_radius,
-      rl.Color(0, 0, 0, 120), rl.BLANK
+    time_size = measure_text_cached(self._font_semi_bold, now_text, time_font)
+
+    time_x = pos_x + wheel_txt.width / 2 + 15
+    time_y = pos_y - time_size.y / 2
+
+    rl.draw_text_ex(
+      self._font_semi_bold,
+      now_text,
+      rl.Vector2(time_x, time_y),
+      time_font,
+      0,
+      rl.Color(255, 255, 255, 230),
     )
 
-    # ============================================================
-    # 1) 현재 주행속도: 항상 표시 (3자리 슬롯, 오른쪽 정렬)
-    # ============================================================
-    big_font = FONT_SIZES.set_speed
-    top_y = int(y + 3 - 8 - 3 + 4)
+  def _get_gear_text(self) -> str:
+    sm = ui_state.sm
 
-    left_margin = 10
-    gap = 10
+    try:
+      car_state = sm["carState"]
+      gear = car_state.gearShifter
+    except Exception:
+      return "R"
 
-    # 실제 화면(컨텐츠 영역) 오른쪽 끝을 사용
-    screen_right = int(rect.x + rect.width - 12)   # 오른쪽 여백 12
+    # cereal enum → 문자열 변환
+    try:
+      gear_name = str(gear).split('.')[-1]
+    except Exception:
+      gear_name = str(gear)
 
-    inner_left = int(x + left_margin)
+    # DRIVE 처리
+    if "DRIVE" in gear_name.upper():
+      try:
+        step = int(car_state.gearStep)
+        if step > 0:
+          return str(step)
+        else:
+          return "D"
+      except Exception:
+        return "D"
 
-    # 3자리 슬롯 폭
-    slot_w = int(measure_text_cached(self._font_display, "888", big_font).x)
+    if "PARK" in gear_name.upper():
+      return "P"
 
-    # 슬롯은 왼쪽에 고정
-    slot_left = inner_left
-    slot_right = slot_left + slot_w
+    if "REVERSE" in gear_name.upper():
+      return "R"
 
-    # 숫자는 슬롯 안에서 오른쪽 정렬
-    cur_speed_int = int(round(self.speed))
-    cur_digits = str(cur_speed_int)
-    cur_digits_w = measure_text_cached(self._font_display, cur_digits, big_font).x
-    cur_x = int(slot_right - cur_digits_w)
+    if "NEUTRAL" in gear_name.upper():
+      return "N"
+
+    if "SPORT" in gear_name.upper():
+      return "S"
+
+    if "LOW" in gear_name.upper():
+      return "L"
+
+    if "BRAKE" in gear_name.upper():
+      return "B"
+
+    if "ECO" in gear_name.upper():
+      return "E"
+
+    if "UNKNOWN" in gear_name.upper():
+      return "U"
+
+    return "M"
+
+  def _get_cruise_gap(self) -> int:
+    try:
+      personality = Params().get_int("LongitudinalPersonality")
+      gap = int(personality) + 1
+    except Exception:
+      gap = 8
+
+    return gap
+
+  def _draw_set_speed(self, rect: rl.Rectangle) -> None:
+    """
+    Bottom-left speed panel (like your 3rd image)
+    - Background: images/speed_bg.png
+    - Overlays: current speed, set speed, traffic light, cruise gap (1~4), gear (D/P/R/N)
+    """
+    ov = self._set_speed_override.compute(ui_state.sm, float(self.set_speed))
+
+    # ----- panel placement (bottom-left) -----
+    bg = self._txt_speed_bg
+    panel_w = bg.width
+    panel_h = bg.height
+
+    margin_x = 10
+    margin_y = 10
+    panel_x = int(rect.x + margin_x)
+    panel_y = int(rect.y + rect.height - panel_h - margin_y)
+
+    # draw background
+    rl.draw_texture(bg, panel_x, panel_y, rl.WHITE)
+
+    # ----- current speed (big, left) -----
+    if self._debug_speed_panel:
+      cur_speed_int = 123
+    else:
+      cur_speed_int = int(round(self.speed))
+
+    cur_text = str(cur_speed_int)
+
+    cur_font = 80
+    cur_size = measure_text_cached(self._font_display, cur_text, cur_font)
+    cur_x = panel_x + 18
+
+    cur_y = int(panel_y + panel_h * 0.48 - cur_size.y * 0.5) - 2
 
     rl.draw_text_ex(
       self._font_display,
-      cur_digits,
-      rl.Vector2(cur_x, top_y),
-      big_font,
+      cur_text,
+      rl.Vector2(cur_x, cur_y),
+      cur_font,
+      0,
+      rl.WHITE,
+    )
+    
+    mode_text, mode_color = self._get_driving_mode_text_and_color()
+    if self._debug_speed_panel:
+      mode_text = "safe"
+      mode_color = rl.Color(0, 255, 0, 230)
+
+    if mode_text:
+      mode_font = 35
+      mode_size = measure_text_cached(self._font_semi_bold, mode_text, mode_font)
+
+      mode_x = panel_x + 35
+      mode_y = int(panel_y + panel_h * 0.05 - mode_size.y * 0.5 - 15)
+
+      rl.draw_text_ex(
+        self._font_semi_bold,
+        mode_text,
+        rl.Vector2(mode_x, mode_y),
+        mode_font,
+        0,
+        mode_color,
+      )
+  
+    # ----- set speed (center, smaller) -----
+    show_set = self._engaged and self.is_cruise_set
+    if True: #show_set or self._debug_speed_panel:
+      if show_set:
+        set_speed = self.set_speed
+        if not ui_state.is_metric:
+          set_speed *= KM_TO_MILE
+        set_text = str(int(round(set_speed)))
+      else:
+        set_text = "--"
+
+      set_color = rl.Color(0, 255, 0, 230)
+
+      if self._debug_speed_panel:
+        set_text = str(123)
+
+      set_font = 40
+      set_size = measure_text_cached(self._font_display, set_text, set_font)
+      set_x = int(panel_x + panel_w * 0.76 - set_size.x * 0.5)
+      set_y = int(panel_y + panel_h * 0.33 - set_size.y * 0.5)
+      rl.draw_text_ex(
+        self._font_display,
+        set_text,
+        rl.Vector2(set_x, set_y),
+        set_font,
+        0,
+        set_color,
+      )
+      if ov.active:
+        set_speed = ov.speed_kph
+        if not ui_state.is_metric:
+          set_speed *= KM_TO_MILE
+        set_text = str(int(round(set_speed)))
+        set_label_text = ov.label
+
+        if ov.speed_color_mode == 1:      # eco
+          set_color = rl.Color(0, 255, 0, 230)
+        elif ov.speed_color_mode == 2:    # apply
+          set_color = rl.Color(255, 165, 0, 230)
+        else:
+          set_color = rl.Color(0, 255, 0, 230)   # your sample is green
+
+        if self._debug_speed_panel:
+          set_text = str(111)
+          set_color = rl.Color(255, 165, 0, 230)
+          set_label_text = "vturn"
+
+        set_font = 40
+        set_size = measure_text_cached(self._font_display, set_text, set_font)
+        set_x = int(panel_x + panel_w * 0.90 - set_size.x * 0.5 + 50)
+        set_y = int(panel_y + panel_h * 0.25 - set_size.y * 0.5)
+        rl.draw_text_ex(
+          self._font_display,
+          set_text,
+          rl.Vector2(set_x, set_y),
+          set_font,
+          0,
+          set_color,
+        )
+        set_font = 30
+        set_size = measure_text_cached(self._font_display, set_label_text, set_font)
+        set_x = int(panel_x + panel_w * 0.90 - set_size.x * 0.5 + 50)
+        set_y = int(panel_y + panel_h * 0.10 - set_size.y * 0.5 - 20)
+        rl.draw_text_ex(
+          self._font_display,
+          set_label_text,
+          rl.Vector2(set_x, set_y),
+          set_font,
+          0,
+          set_color,
+        )
+
+    # ----- cruise gap (small circle + number, bottom-mid-right) -----
+    gap = self._get_cruise_gap()
+    gap_center_x = int(panel_x + panel_w * 0.90)
+    gap_center_y = int(panel_y + panel_h * 0.82)
+    #rl.draw_circle_lines(gap_center_x, gap_center_y, 16, rl.WHITE)
+
+    gap_text = str(gap)
+    gap_font = 28
+    gap_size = measure_text_cached(self._font_semi_bold, gap_text, gap_font)
+    rl.draw_text_ex(
+      self._font_semi_bold,
+      gap_text,
+      rl.Vector2(gap_center_x - gap_size.x * 0.5, gap_center_y - gap_size.y * 0.5),
+      gap_font,
       0,
       rl.WHITE,
     )
 
-    # ============================================================
-    # 2) set_speed 블록: engaged일 때만 표시
-    #    -> "3" 오른쪽(= slot_right + gap)에서 시작
-    # ============================================================
-    show_set_block = self._engaged and self.is_cruise_set and self._can_draw_top_icons
-    if not show_set_block:
-      return
+    # ----- gear (right side box with letter) -----
+    gear = self._get_gear_text()
+    box_w = 44
+    box_h = 54
+    box_x = int(panel_x + panel_w - box_w - 14 + 70)
+    box_y = int(panel_y + panel_h * 0.50)
 
-    # set_speed 값
-    set_speed = ov.speed_kph if ov.active else self.set_speed
-    if not ui_state.is_metric:
-      set_speed *= KM_TO_MILE
-    set_speed_text = str(int(round(set_speed)))
+    # Fill (dark) + border (green)
+    rl.draw_rectangle_rounded(rl.Rectangle(box_x, box_y, box_w, box_h), 0.2, 8, rl.Color(0, 0, 0, 120))
+    rl.draw_rectangle_rounded_lines_ex(rl.Rectangle(box_x, box_y, box_w, box_h), 0.2, 8, 3, rl.Color(0, 255, 0, 230))
 
-    # label
-    #max_text = (ov.label if ov.active else tr("MAX")) or "MAX"
-    max_text = ov.label if ov.active else "cruise"
-    max_text = max_text[:6]
-
-    # 색상(기존 로직)
-    if ov.speed_color_mode == 1:      # eco
-      set_speed_color = rl.Color(0, 255, 0, 230)
-    elif ov.speed_color_mode == 2:    # apply
-      set_speed_color = rl.Color(255, 165, 0, 230)
-    else:                             # default
-      set_speed_color = rl.Color(255, 255, 255, 230)
-
-    # 폰트
-    label_font = max(22, int(FONT_SIZES.max_speed * 0.85))
-    speed_font = max(48, int(FONT_SIZES.set_speed * 0.62))
-
-    label_size = measure_text_cached(self._font_semi_bold, max_text, label_font)
-    spd_size = measure_text_cached(self._font_display, set_speed_text, speed_font)
-
-    block_w = int(max(label_size.x, spd_size.x))
-    block_h = label_size.y + 2 + spd_size.y
-
-    # 블록은 무조건 속도 오른쪽부터 시작
-    block_left = int(slot_right + gap)
-
-    # 화면 오른쪽을 넘어가면, 블록을 오른쪽 끝에 붙임(그래도 속도쪽으로 침범 X)
-    max_left = int(screen_right - block_w)
-    if block_left > max_left:
-      block_left = max_left
-
-    # 그래도 속도쪽 침범하면(아주 극단) -> 그냥 그리지 않음
-    if block_left <= slot_right:
-      return
-
-    # 세로 정렬: big_font 높이 안에 맞춤
-    big_size = measure_text_cached(self._font_display, "888", big_font)
-    block_top = top_y + (big_size.y - block_h) / 2.0
-
-    # draw
-    rl.draw_text_ex(
-      self._font_semi_bold,
-      max_text,
-      rl.Vector2(block_left + (block_w - label_size.x), block_top),
-      label_font,
-      0,
-      set_speed_color,
-    )
+    gear_font = 44
+    gear_size = measure_text_cached(self._font_display, gear, gear_font)
     rl.draw_text_ex(
       self._font_display,
-      set_speed_text,
-      rl.Vector2(block_left + (block_w - spd_size.x), block_top + label_size.y + 2),
-      speed_font,
+      gear,
+      rl.Vector2(box_x + (box_w - gear_size.x) * 0.5, box_y + (box_h - gear_size.y) * 0.5),
+      gear_font,
       0,
-      set_speed_color,
+      rl.WHITE,
     )
-    
+
+    if self._debug_speed_panel:
+      active_lane_line = True
+    else:
+      active_lane_line = bool(ui_state.sm['controlsState'].activeLaneLine)      
+
+    line1 = "lane"
+    line2 = "mode" if active_lane_line else "less"
+
+    lane_font = 26  # 원하면 22~30 사이로 조절
+    lane_color = rl.Color(255, 255, 255, 220)  # 흰색
+
+    lane_x = box_x + box_w + 80
+    lane_y1 = box_y + 6
+    lane_y2 = box_y + 6 + lane_font + 2
+
+    # 오른쪽 정렬(gear box 옆에 딱 붙게)
+    s1 = measure_text_cached(self._font_semi_bold, line1, lane_font)
+    s2 = measure_text_cached(self._font_semi_bold, line2, lane_font)
+
+    rl.draw_text_ex(
+      self._font_semi_bold,
+      line1,
+      rl.Vector2(lane_x - s1.x, lane_y1),
+      lane_font, 0, lane_color
+    )
+    rl.draw_text_ex(
+      self._font_semi_bold,
+      line2,
+      rl.Vector2(lane_x - s2.x, lane_y2),
+      lane_font, 0, lane_color
+    )
 
   def _draw_driving_mode_text(self, rect: rl.Rectangle) -> None:
+    # (기존 기능 유지용) 지금은 _render에서 호출하지 않음
     if not self._engaged:
       return
 
