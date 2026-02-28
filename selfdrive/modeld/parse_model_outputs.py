@@ -24,7 +24,6 @@ class Parser:
   def check_missing(self, outs, name):
     missing = name not in outs
     if missing and not self.ignore_missing:
-      print(outs)
       raise ValueError(f"Missing output {name}")
     return missing
 
