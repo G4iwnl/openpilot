@@ -104,7 +104,8 @@ class FontWeight(StrEnum):
   # Small UI fonts
   DISPLAY_REGULAR = "Inter-Regular.fnt"
   ROMAN = "Inter-Regular.fnt"
-  DISPLAY = "Inter-Bold.fnt"
+  #DISPLAY = "Inter-Bold.fnt"
+  DISPLAY = "Inter-Black.fnt"
 
 
 def font_fallback(font: rl.Font) -> rl.Font:

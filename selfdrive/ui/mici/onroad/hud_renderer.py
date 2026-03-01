@@ -174,8 +174,7 @@ class HudRenderer(Widget):
     self._font_bold: rl.Font = gui_app.font(FontWeight.BOLD)
     self._font_medium: rl.Font = gui_app.font(FontWeight.MEDIUM)
     self._font_semi_bold: rl.Font = gui_app.font(FontWeight.SEMI_BOLD)
-    #self._font_display: rl.Font = gui_app.font(FontWeight.DISPLAY)
-    self._font_display: rl.Font = gui_app.font(FontWeight.BOLD)
+    self._font_display: rl.Font = gui_app.font(FontWeight.DISPLAY)
 
     self._turn_intent = TurnIntent()
     self._torque_bar = TorqueBar()
