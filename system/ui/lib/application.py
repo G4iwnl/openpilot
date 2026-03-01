@@ -107,11 +107,9 @@ class FontWeight(StrEnum):
   DISPLAY = "Inter-Bold.fnt"
 
 
-def needs_unifont_for_text(s: str) -> bool:
-  return any(ord(ch) > 0x7F for ch in s)
-
-def font_fallback(font: rl.Font, text: str) -> rl.Font:
-  if multilang.requires_unifont() and needs_unifont_for_text(text):
+def font_fallback(font: rl.Font) -> rl.Font:
+  """Fall back to unifont for languages that require it."""
+  if False: #multilang.requires_unifont():
     return gui_app.font(FontWeight.UNIFONT)
   return font
 
