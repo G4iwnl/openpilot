@@ -110,8 +110,8 @@ class FontWeight(StrEnum):
 
 def font_fallback(font: rl.Font) -> rl.Font:
   """Fall back to unifont for languages that require it."""
-  if False: #multilang.requires_unifont():
-    return gui_app.font(FontWeight.UNIFONT)
+  if multilang.requires_unifont():
+    return gui_app.font(FontWeight.DISPLAY)
   return font
 
 
