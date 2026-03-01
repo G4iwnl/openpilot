@@ -193,6 +193,34 @@ class HudRenderer(Widget):
     
     self._set_speed_override = SetSpeedOverride()
 
+  def _draw_text_with_outline(self, text, pos, font_size,
+                              text_color,
+                              outline_color=rl.BLACK,
+                              thickness=2):
+    x, y = pos.x, pos.y
+    for dx in range(-thickness, thickness + 1):
+      for dy in range(-thickness, thickness + 1):
+        if dx == 0 and dy == 0:
+          continue
+        rl.draw_text_ex(
+          self._font_display,
+          text,
+          rl.Vector2(x + dx, y + dy),
+          font_size,
+          0,
+          outline_color
+        )
+
+    # main text
+    rl.draw_text_ex(
+      self._font_display,
+      text,
+      rl.Vector2(x, y),
+      font_size,
+      0,
+      text_color
+    )
+
   def set_wheel_critical_icon(self, critical: bool):
     """Set the wheel icon to critical or normal state."""
     self._show_wheel_critical = critical
@@ -407,14 +435,7 @@ class HudRenderer(Widget):
 
     cur_y = int(panel_y + panel_h * 0.48 - cur_size.y * 0.5) - 2
 
-    rl.draw_text_ex(
-      self._font_display,
-      cur_text,
-      rl.Vector2(cur_x, cur_y),
-      cur_font,
-      0,
-      rl.WHITE,
-    )
+    self._draw_text_with_outline(cur_text, rl.Vector2(cur_x, cur_y), cur_font, rl.WHITE, rl.BLACK, thickness=3)
     
     mode_text, mode_color = self._get_driving_mode_text_and_color()
     if self._debug_speed_panel:
@@ -428,14 +449,7 @@ class HudRenderer(Widget):
       mode_x = panel_x + 35
       mode_y = int(panel_y + panel_h * 0.05 - mode_size.y * 0.5 - 15)
 
-      rl.draw_text_ex(
-        self._font_semi_bold,
-        mode_text,
-        rl.Vector2(mode_x, mode_y),
-        mode_font,
-        0,
-        mode_color,
-      )
+      self._draw_text_with_outline(mode_text, rl.Vector2(mode_x, mode_y), mode_font, mode_color, rl.BLACK, thickness=2)
   
     # ----- set speed (center, smaller) -----
     show_set = self._engaged and self.is_cruise_set
@@ -457,14 +471,7 @@ class HudRenderer(Widget):
       set_size = measure_text_cached(self._font_display, set_text, set_font)
       set_x = int(panel_x + panel_w * 0.76 - set_size.x * 0.5)
       set_y = int(panel_y + panel_h * 0.33 - set_size.y * 0.5)
-      rl.draw_text_ex(
-        self._font_display,
-        set_text,
-        rl.Vector2(set_x, set_y),
-        set_font,
-        0,
-        set_color,
-      )
+      self._draw_text_with_outline(set_text, rl.Vector2(set_x, set_y), set_font, set_color, rl.BLACK, thickness=2)
       if ov.active:
         set_speed = ov.speed_kph
         if not ui_state.is_metric:
@@ -488,26 +495,12 @@ class HudRenderer(Widget):
         set_size = measure_text_cached(self._font_display, set_text, set_font)
         set_x = int(panel_x + panel_w * 0.90 - set_size.x * 0.5 + 50)
         set_y = int(panel_y + panel_h * 0.25 - set_size.y * 0.5)
-        rl.draw_text_ex(
-          self._font_display,
-          set_text,
-          rl.Vector2(set_x, set_y),
-          set_font,
-          0,
-          set_color,
-        )
+        self._draw_text_with_outline(set_text, rl.Vector2(set_x, set_y), set_font, set_color, rl.BLACK, thickness=2)
         set_font = 30
         set_size = measure_text_cached(self._font_display, set_label_text, set_font)
         set_x = int(panel_x + panel_w * 0.90 - set_size.x * 0.5 + 50)
         set_y = int(panel_y + panel_h * 0.10 - set_size.y * 0.5 - 20)
-        rl.draw_text_ex(
-          self._font_display,
-          set_label_text,
-          rl.Vector2(set_x, set_y),
-          set_font,
-          0,
-          set_color,
-        )
+        self._draw_text_with_outline(set_label_text, rl.Vector2(set_x, set_y), set_font, set_color, rl.BLACK, thickness=2)
 
     # ----- cruise gap (small circle + number, bottom-mid-right) -----
     gap = self._get_cruise_gap()
@@ -568,69 +561,8 @@ class HudRenderer(Widget):
     s1 = measure_text_cached(self._font_semi_bold, line1, lane_font)
     s2 = measure_text_cached(self._font_semi_bold, line2, lane_font)
 
-    rl.draw_text_ex(
-      self._font_semi_bold,
-      line1,
-      rl.Vector2(lane_x - s1.x, lane_y1),
-      lane_font, 0, lane_color
-    )
-    rl.draw_text_ex(
-      self._font_semi_bold,
-      line2,
-      rl.Vector2(lane_x - s2.x, lane_y2),
-      lane_font, 0, lane_color
-    )
-
-  def _draw_driving_mode_text(self, rect: rl.Rectangle) -> None:
-    # (기존 기능 유지용) 지금은 _render에서 호출하지 않음
-    if not self._engaged:
-      return
-
-    mode_text, mode_color = self._get_driving_mode_text_and_color()
-    if not mode_text:
-      return
-
-    wheel_txt = self._txt_wheel_critical if self._show_wheel_critical else self._txt_wheel
-    pos_x = int(rect.x + 21 + wheel_txt.width / 2)
-    pos_y = int(rect.y + rect.height - 14 - wheel_txt.height / 2 + self._wheel_y_filter.x)
-
-    mode_font = FONT_SIZES.max_speed
-    mode_size = measure_text_cached(self._font_semi_bold, mode_text, mode_font)
-
-    mode_x = int(pos_x + wheel_txt.width / 2 + 10)
-    mode_y = int(pos_y - mode_size.y / 2)
-
-    # 기존 driving_mode
-    rl.draw_text_ex(
-      self._font_semi_bold,
-      mode_text,
-      rl.Vector2(mode_x, mode_y),
-      mode_font,
-      0,
-      mode_color,
-    )
-
-    active_lane_line = bool(ui_state.sm['controlsState'].activeLaneLine)
-    if active_lane_line:
-      lm_text = "lanemode"
-      lm_color = self._color_mode(1, 200)   # green
-    else:
-      lm_text = "laneless"
-      lm_color = self._color_mode(2, 200)   # orange
-      
-    lm_gap = 10
-
-    lm_x = int(mode_x + mode_size.x + lm_gap)
-    lm_y = mode_y  # 같은 높이/크기
-
-    rl.draw_text_ex(
-      self._font_semi_bold,
-      lm_text,
-      rl.Vector2(lm_x, lm_y),
-      mode_font,
-      0,
-      lm_color,
-    )
+    self._draw_text_with_outline(line1, rl.Vector2(lane_x - s1.x, lane_y1), lane_font, lane_color, rl.BLACK, thickness=2)
+    self._draw_text_with_outline(line2, rl.Vector2(lane_x - s2.x, lane_y2), lane_font, lane_color, rl.BLACK, thickness=2)
 
   def _color_mode(self, mode: int, alpha: int = 200) -> rl.Color:
     # mode: 0 white, 1 green, 2 orange, 3 red
