@@ -624,31 +624,13 @@ class GuiApplication:
     return self._height
 
   def _load_fonts(self):
-    with as_file(FONT_DIR) as fspath:
-      print(f"[FONTDBG] FONT_DIR resolved to: {fspath}")
-
-      for fw in FontWeight:
-        fnt_path = fspath / fw
-        exists = fnt_path.exists()
-        size = fnt_path.stat().st_size if exists else -1
-        print(f"[FONTDBG] load {fw} -> {fnt_path} exists={exists} size={size}")
-
+    for font_weight_file in FontWeight:
+      with as_file(FONT_DIR) as fspath:
+        fnt_path = fspath / font_weight_file
         font = rl.load_font(fnt_path.as_posix())
-
-        # 실패/의심 탐지: texture id / width/height
-        try:
-          tex_id = int(font.texture.id)
-          tw = int(font.texture.width)
-          th = int(font.texture.height)
-        except Exception:
-          tex_id, tw, th = -1, -1, -1
-        print(f"[FONTDBG] loaded {fw}: tex_id={tex_id} tex={tw}x{th}")
-
-        if fw != FontWeight.UNIFONT and tex_id > 0:
+        if font_weight_file != FontWeight.UNIFONT:
           rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-
-        self._fonts[fw] = font
-
+        self._fonts[font_weight_file] = font
     rl.gui_set_font(self._fonts[FontWeight.NORMAL])
 
   def _set_styles(self):
