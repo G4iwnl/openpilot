@@ -633,6 +633,8 @@ class GuiApplication:
         self._fonts[font_weight_file] = font
     rl.gui_set_font(self._fonts[FontWeight.NORMAL])
 
+    print(f"[FONTDBG] DISPLAY filename = {FontWeight.DISPLAY}")
+
   def _set_styles(self):
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.BORDER_WIDTH, 0)
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_SIZE, DEFAULT_TEXT_SIZE)
