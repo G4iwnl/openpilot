@@ -105,6 +105,7 @@ class FontWeight(StrEnum):
   DISPLAY_REGULAR = "Inter-Regular.fnt"
   ROMAN = "Inter-Regular.fnt"
   DISPLAY = "Inter-Bold.fnt"
+  DISPLAY = "KaiGenGothicKR-Bold.fnt"
 
 
 def font_fallback(font: rl.Font) -> rl.Font:
