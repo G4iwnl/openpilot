@@ -247,8 +247,6 @@ class HudRenderer(Widget):
     # wheel moved to top-left
     self._draw_steering_wheel(rect)
     
-    print(f"[FONTDBG] speed uses font DISPLAY? {self._font_display.texture.id}")
-
   def _draw_steering_wheel(self, rect: rl.Rectangle) -> None:
     wheel_txt = self._txt_wheel_critical if self._show_wheel_critical else self._txt_wheel
 
