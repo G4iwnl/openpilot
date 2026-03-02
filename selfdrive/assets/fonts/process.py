@@ -25,7 +25,7 @@ def _char_sets():
   base = set(map(chr, range(32, 127))) | set(EXTRA_CHARS)
   unifont = set(base)
 
-  unifont.update(map(chr, range(0xAC00, 0xD7A4)))
+  #unifont.update(map(chr, range(0xAC00, 0xD7A4)))
   for language, code in _languages().items():
     unifont.update(language)
     po_path = TRANSLATIONS_DIR / f"app_{code}.po"

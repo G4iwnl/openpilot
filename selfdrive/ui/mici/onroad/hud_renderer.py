@@ -436,10 +436,10 @@ class HudRenderer(Widget):
       mode_color = rl.Color(0, 255, 0, 230)
 
     if mode_text:
-      mode_font = 35
+      mode_font = 25
       mode_size = measure_text_cached(self._font_semi_bold, mode_text, mode_font)
 
-      mode_x = panel_x + 35
+      mode_x = panel_x + 5
       mode_y = int(panel_y + panel_h * 0.05 - mode_size.y * 0.5 - 15)
 
       self._draw_text_with_outline(mode_text, rl.Vector2(mode_x, mode_y), mode_font, mode_color, rl.BLACK, thickness=2)
