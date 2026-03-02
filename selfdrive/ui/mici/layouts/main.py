@@ -9,7 +9,7 @@ from openpilot.selfdrive.ui.mici.layouts.onboarding import OnboardingWindow
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.lib.application import gui_app
-
+from openpilot.selfdrive.ui.mici.onroad.debug_plot import DebugPlot
 
 ONROAD_DELAY = 2.5  # seconds
 
@@ -30,9 +30,12 @@ class MiciMainLayout(Widget):
     self._alerts_layout = MiciOffroadAlerts()
     self._settings_layout = SettingsLayout()
     self._onroad_layout = AugmentedRoadView(bookmark_callback=self._on_bookmark_clicked)
+    self._debug_layout = DebugPlot()
+    self._show_plot_mode = 0
+    self._in_plot_mode = False
 
     # Initialize widget rects
-    for widget in (self._home_layout, self._settings_layout, self._alerts_layout, self._onroad_layout):
+    for widget in (self._home_layout, self._settings_layout, self._alerts_layout, self._onroad_layout, self._debug_layout):
       # TODO: set parent rect and use it if never passed rect from render (like in Scroller)
       widget.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
@@ -40,6 +43,7 @@ class MiciMainLayout(Widget):
       self._alerts_layout,
       self._home_layout,
       self._onroad_layout,
+      self._debug_layout,
     ], snap_items=True, spacing=0, pad=0, scroll_indicator=False, edge_shadows=False)
     self._scroller.set_reset_scroll_at_show(False)
     self._scroller.set_enabled(lambda: self.enabled)  # for nav stack
@@ -57,6 +61,43 @@ class MiciMainLayout(Widget):
     if not self._onboarding_window.completed:
       gui_app.push_widget(self._onboarding_window)
 
+    # carrot_man    
+    self._last_carrot_cmd_idx = -1
+
+  def _handle_carrot_record_cmd(self, sm) -> bool:
+    try:
+      cm = sm['carrotMan']
+      cmd_idx = int(cm.carrotCmdIndex)
+      cmd = str(cm.carrotCmd)
+      arg = str(cm.carrotArg)
+    except Exception as e:
+      print(f"Error reading carrotMan message: {e}")
+      return gui_app.is_recording()
+
+    if cmd_idx == self._last_carrot_cmd_idx or self._last_carrot_cmd_idx == -1:
+      self._last_carrot_cmd_idx = cmd_idx
+      return gui_app.is_recording()
+    print(f"CarrotMan command received: {cmd} {arg} (index {cmd_idx})")
+    self._last_carrot_cmd_idx = cmd_idx
+    
+    if not ui_state.started:
+      gui_app.stop_recording()
+      return gui_app.is_recording()
+
+
+    if cmd != "RECORD":
+      return gui_app.is_recording()
+
+    arg = arg.upper()
+    if arg == "START":
+      gui_app.start_recording()
+    elif arg == "STOP":
+      gui_app.stop_recording()
+    elif arg == "TOGGLE":
+      gui_app.toggle_recording()
+
+    return gui_app.is_recording()
+
   def _setup_callbacks(self):
     self._home_layout.set_callbacks(on_settings=lambda: gui_app.push_widget(self._settings_layout))
     self._onroad_layout.set_click_callback(lambda: self._scroll_to(self._home_layout))
@@ -71,6 +112,10 @@ class MiciMainLayout(Widget):
     self._scroller.hide_event()
 
   def _scroll_to(self, layout: Widget):
+    target_is_plot  = (layout is self._debug_layout)
+    if not target_is_plot  and self._in_plot_mode:
+      return
+    self._in_plot_mode = target_is_plot
     layout_x = int(layout.rect.x)
     self._scroller.scroll_to(layout_x, smooth=True)
 
@@ -86,6 +131,7 @@ class MiciMainLayout(Widget):
     self._scroller.render(self._rect)
 
     self._handle_transitions()
+    self._handle_carrot_record_cmd(ui_state.sm)
 
   def _handle_transitions(self):
     # Don't pop if onboarding
@@ -106,6 +152,15 @@ class MiciMainLayout(Widget):
       gui_app.pop_widgets_to(self)
       self._scroll_to(self._onroad_layout)
       self._onroad_time_delay = None
+      
+    if ui_state.started:
+      show_plot_mode = ui_state.params.get_int("ShowPlotMode")
+      if show_plot_mode != self._show_plot_mode:
+        self._show_plot_mode = show_plot_mode
+        if self._show_plot_mode > 0:
+          self._scroll_to(self._debug_layout)
+        else:
+          self._in_plot_mode = False
 
     # When car leaves standstill, pop nav stack and scroll to onroad
     CS = ui_state.sm["carState"]

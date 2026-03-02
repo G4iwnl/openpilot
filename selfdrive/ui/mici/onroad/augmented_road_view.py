@@ -91,6 +91,7 @@ class BookmarkIcon(Widget):
         self._active_icon = self._icon
 
   def _handle_mouse_event(self, mouse_event: MouseEvent):
+    return
     if not ui_state.started:
       return
 
@@ -173,37 +174,6 @@ class AugmentedRoadView(CameraView):
     # debug
     self._pm = messaging.PubMaster(['uiDebug'])
 
-    # carrot_man    
-    self._last_carrot_cmd_idx = -1
-
-  def _handle_carrot_record_cmd(self, sm) -> bool:
-    try:
-      cm = sm['carrotMan']
-      cmd_idx = int(cm.carrotCmdIndex)
-      cmd = str(cm.carrotCmd)
-      arg = str(cm.carrotArg)
-    except Exception as e:
-      print(f"Error reading carrotMan message: {e}")
-      return gui_app.is_recording()
-
-    if cmd_idx == self._last_carrot_cmd_idx or self._last_carrot_cmd_idx == -1:
-      self._last_carrot_cmd_idx = cmd_idx
-      return gui_app.is_recording()
-    print(f"CarrotMan command received: {cmd} {arg} (index {cmd_idx})")
-    self._last_carrot_cmd_idx = cmd_idx
-
-    if cmd != "RECORD":
-      return gui_app.is_recording()
-
-    arg = arg.upper()
-    if arg == "START":
-      gui_app.start_recording()
-    elif arg == "STOP":
-      gui_app.stop_recording()
-    elif arg == "TOGGLE":
-      gui_app.toggle_recording()
-
-    return gui_app.is_recording()
 
   def is_swiping_left(self) -> bool:
     """Check if currently swiping left (for scroller to disable)."""
@@ -294,10 +264,8 @@ class AugmentedRoadView(CameraView):
     if not ui_state.started:
       rl.draw_rectangle(int(self.rect.x), int(self.rect.y), int(self.rect.width), int(self.rect.height), rl.Color(0, 0, 0, 175))
       self._offroad_label.render(self._content_rect)
-      gui_app.stop_recording()
 
-    is_rec = self._handle_carrot_record_cmd(ui_state.sm)
-    if is_rec:
+    if gui_app.is_recording():
       x = int(self._content_rect.x + 16)
       y = int(self._content_rect.y + self._content_rect.height - 16)
       rl.draw_circle(x, y, 6, rl.Color(255, 0, 0, 220))
