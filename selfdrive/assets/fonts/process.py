@@ -25,7 +25,7 @@ def _char_sets():
   base = set(map(chr, range(32, 127))) | set(EXTRA_CHARS)
   unifont = set(base)
 
-  #unifont.update(map(chr, range(0xAC00, 0xD7A4)))
+  unifont.update(map(chr, range(0xAC00, 0xD7A4)))
   for language, code in _languages().items():
     unifont.update(language)
     po_path = TRANSLATIONS_DIR / f"app_{code}.po"
@@ -90,10 +90,20 @@ def _write_bmfont(path: Path, font_size: int, face: str, atlas_name: str, line_h
 def _process_font(font_path: Path, codepoints: tuple[int, ...]):
   print(f"Processing {font_path.name}...")
 
-  font_size = {
-    "unifont.otf": 16,  # unifont is only 16x8 or 16x16 pixels per glyph
-  }.get(font_path.name, 200)
+  #font_size = {
+  #  "unifont.otf": 16,  # unifont is only 16x8 or 16x16 pixels per glyph
+  #}.get(font_path.name, 200)
+  font_size = 200
+  padding = GLYPH_PADDING
 
+  if font_path.name == "unifont.otf":
+    font_size = 16
+    padding = GLYPH_PADDING
+
+  if font_path.stem in KR_FONTS:
+    font_size = 48
+    padding = 2
+    
   data = font_path.read_bytes()
   file_buf = rl.ffi.new("unsigned char[]", data)
   cp_buffer = rl.ffi.new("int[]", codepoints)
@@ -103,7 +113,7 @@ def _process_font(font_path: Path, codepoints: tuple[int, ...]):
     raise RuntimeError("raylib failed to load font data")
 
   rects_ptr = rl.ffi.new("Rectangle **")
-  image = rl.gen_image_font_atlas(glyphs, rects_ptr, len(codepoints), font_size, GLYPH_PADDING, 0)
+  image = rl.gen_image_font_atlas(glyphs, rects_ptr, len(codepoints), font_size, padding, 0)
   if image.width == 0 or image.height == 0:
     raise RuntimeError("raylib returned an empty atlas")
 
