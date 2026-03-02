@@ -330,7 +330,7 @@ class HudRenderer(Widget):
     time_x = pos_x + wheel_txt.width / 2 + 15
     time_y = pos_y - time_size.y / 2
 
-    self._draw_text_with_outline(now_text, rl.Vector2(time_x, time_y), time_font, rl.Color(255, 255, 255, 230), rl.BLACK, thickness=2)
+    self._draw_text_with_outline(now_text, rl.Vector2(time_x, time_y), time_font, rl.Color(255, 255, 255, 230), rl.BLACK, thickness=1)
 
   def _get_gear_text(self) -> str:
     sm = ui_state.sm
@@ -428,7 +428,7 @@ class HudRenderer(Widget):
 
     cur_y = int(panel_y + panel_h * 0.48 - cur_size.y * 0.5) - 2
 
-    self._draw_text_with_outline(cur_text, rl.Vector2(cur_x, cur_y), cur_font, rl.WHITE, rl.BLACK, thickness=3)
+    self._draw_text_with_outline(cur_text, rl.Vector2(cur_x, cur_y), cur_font, rl.WHITE, rl.BLACK, thickness=2)
     
     mode_text, mode_color = self._get_driving_mode_text_and_color()
     if self._debug_speed_panel:
@@ -442,7 +442,7 @@ class HudRenderer(Widget):
       mode_x = panel_x + 5
       mode_y = int(panel_y + panel_h * 0.05 - mode_size.y * 0.5 - 15)
 
-      self._draw_text_with_outline(mode_text, rl.Vector2(mode_x, mode_y), mode_font, mode_color, rl.BLACK, thickness=2)
+      self._draw_text_with_outline(mode_text, rl.Vector2(mode_x, mode_y), mode_font, mode_color, rl.BLACK, thickness=1)
   
     # ----- set speed (center, smaller) -----
     show_set = self._engaged and self.is_cruise_set
@@ -464,7 +464,7 @@ class HudRenderer(Widget):
       set_size = measure_text_cached(self._font_display, set_text, set_font)
       set_x = int(panel_x + panel_w * 0.76 - set_size.x * 0.5)
       set_y = int(panel_y + panel_h * 0.33 - set_size.y * 0.5)
-      self._draw_text_with_outline(set_text, rl.Vector2(set_x, set_y), set_font, set_color, rl.WHITE, thickness=2)
+      self._draw_text_with_outline(set_text, rl.Vector2(set_x, set_y), set_font, set_color, rl.WHITE, thickness=1)
       if ov.active:
         set_speed = ov.speed_kph
         if not ui_state.is_metric:
@@ -488,12 +488,12 @@ class HudRenderer(Widget):
         set_size = measure_text_cached(self._font_display, set_text, set_font)
         set_x = int(panel_x + panel_w * 0.90 - set_size.x * 0.5 + 50)
         set_y = int(panel_y + panel_h * 0.25 - set_size.y * 0.5)
-        self._draw_text_with_outline(set_text, rl.Vector2(set_x, set_y), set_font, set_color, rl.WHITE, thickness=2)
+        self._draw_text_with_outline(set_text, rl.Vector2(set_x, set_y), set_font, set_color, rl.WHITE, thickness=1)
         set_font = 30
         set_size = measure_text_cached(self._font_display, set_label_text, set_font)
         set_x = int(panel_x + panel_w * 0.90 - set_size.x * 0.5 + 50)
         set_y = int(panel_y + panel_h * 0.10 - set_size.y * 0.5 - 20)
-        self._draw_text_with_outline(set_label_text, rl.Vector2(set_x, set_y), set_font, set_color, rl.BLACK, thickness=2)
+        self._draw_text_with_outline(set_label_text, rl.Vector2(set_x, set_y), set_font, set_color, rl.BLACK, thickness=1)
 
     # ----- cruise gap (small circle + number, bottom-mid-right) -----
     gap = self._get_cruise_gap()
@@ -554,8 +554,8 @@ class HudRenderer(Widget):
     s1 = measure_text_cached(self._font_semi_bold, line1, lane_font)
     s2 = measure_text_cached(self._font_semi_bold, line2, lane_font)
 
-    self._draw_text_with_outline(line1, rl.Vector2(lane_x - s1.x, lane_y1), lane_font, lane_color, rl.BLACK, thickness=2)
-    self._draw_text_with_outline(line2, rl.Vector2(lane_x - s2.x, lane_y2), lane_font, lane_color, rl.BLACK, thickness=2)
+    self._draw_text_with_outline(line1, rl.Vector2(lane_x - s1.x, lane_y1), lane_font, lane_color, rl.BLACK, thickness=1)
+    self._draw_text_with_outline(line2, rl.Vector2(lane_x - s2.x, lane_y2), lane_font, lane_color, rl.BLACK, thickness=1)
 
   def _color_mode(self, mode: int, alpha: int = 200) -> rl.Color:
     # mode: 0 white, 1 green, 2 orange, 3 red
