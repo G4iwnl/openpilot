@@ -1021,6 +1021,18 @@ msgstr "\"{}\"용"
 msgid "km/h"
 msgstr "km/h"
 
+msgid "eco"
+msgstr "연비"
+
+msgid "safe"
+msgstr "안전"
+
+msgid "high"
+msgstr "고속"
+
+msgid "norm"
+msgstr "일반"
+
 #: system/ui/widgets/network.py:204
 #, python-format
 msgid "leave blank for automatic configuration"

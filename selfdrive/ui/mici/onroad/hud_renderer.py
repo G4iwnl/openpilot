@@ -574,13 +574,13 @@ class HudRenderer(Widget):
       return "", self._color_mode(0, 200)
 
     if mode_val == 1:   # eco
-      return "eco", self._color_mode(1, 200)
+      return tr("eco"), self._color_mode(1, 200)
     if mode_val == 2:   # safe
-      return "safe", self._color_mode(2, 200)
+      return tr("safe"), self._color_mode(2, 200)
     if mode_val == 3:   # normal
-      return "norm", self._color_mode(0, 200)
+      return tr("norm"), self._color_mode(0, 200)
     if mode_val == 4:   # high
-      return "high", self._color_mode(3, 200)
+      return tr("high"), self._color_mode(3, 200)
 
     return "", self._color_mode(0, 200)
 
