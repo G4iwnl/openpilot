@@ -20,6 +20,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.ui.lib.multilang import multilang
 from openpilot.common.realtime import Ratekeeper
+import datetime
 
 _DEFAULT_FPS = int(os.getenv("FPS", {'tizi': 20}.get(HARDWARE.get_device_type(), 60)))
 FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
@@ -238,6 +239,128 @@ class GuiApplication:
     self._profile_render_frames = PROFILE_RENDER
     self._render_profiler = None
     self._render_profile_start_time = None
+
+    self._record_enabled = False
+    self._record_dir = Path("/data/media/0/videos")
+    self._record_max_sec = 60
+    self._record_t0 = 0.0
+
+  def _new_record_path(self) -> Path:
+    self._record_dir.mkdir(parents=True, exist_ok=True)
+    name = datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + ".mp4"
+    return self._record_dir / name
+  
+  def start_recording(self):
+    if self._record_enabled:
+      return
+
+    self._ensure_render_texture_for_recording()
+    if not self._render_texture:
+      return
+
+    out_path = self._new_record_path()
+    self._init_ffmpeg(out_path)
+
+    self._record_enabled = True
+    self._record_t0 = time.monotonic()
+    print(f"[REC] start -> {out_path}")
+
+  def stop_recording(self):
+    if not self._record_enabled:
+      return
+    self._record_enabled = False
+    self.close_ffmpeg()  # application.py에 이미 있는 close_ffmpeg 그대로 사용
+    print("[REC] stop")
+
+  def toggle_recording(self):
+    if self._record_enabled:
+      self.stop_recording()
+    else:
+      self.start_recording()
+
+  def is_recording(self) -> bool:
+    return self._record_enabled
+
+  def _ensure_render_texture_for_recording(self):
+    if self._render_texture is None:
+      self._render_texture = rl.load_render_texture(self._width, self._height)
+      rl.set_texture_filter(self._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+
+  def _init_ffmpeg(self, out_path: Path):
+    self.close_ffmpeg()
+
+    # 내부 튜닝(원하면 여기만 조절)
+    record_quality = 23          # CRF
+    record_bitrate = ""          # e.g. "2000k" (원하면 사용)
+    record_speed = 1             # 배속(출력 fps = 입력 fps * speed)
+    preset = "ultrafast"
+
+    fps = self._target_fps if self._target_fps > 0 else _DEFAULT_FPS
+    output_fps = fps * record_speed
+
+    ffmpeg_args = [
+      "ffmpeg",
+      "-v", "warning",
+      "-nostats",
+      "-f", "rawvideo",
+      "-pix_fmt", "rgba",
+      "-s", f"{self._width}x{self._height}",
+      "-r", str(fps),
+      "-i", "pipe:0",
+      "-vf", "vflip,format=yuv420p",
+      "-r", str(output_fps),
+      "-c:v", "libx264",
+      "-preset", preset,
+      "-crf", str(record_quality),
+    ]
+
+    if record_bitrate:
+      ffmpeg_args += ["-b:v", record_bitrate, "-maxrate", record_bitrate, "-bufsize", record_bitrate]
+
+    ffmpeg_args += [
+      "-y",
+      "-f", "mp4",
+      str(out_path),
+    ]
+
+    self._ffmpeg_proc = subprocess.Popen(ffmpeg_args, stdin=subprocess.PIPE)
+    self._ffmpeg_queue = queue.Queue(maxsize=60)
+    self._ffmpeg_stop_event = threading.Event()
+    self._ffmpeg_thread = threading.Thread(target=self._ffmpeg_writer_thread, daemon=True)
+    self._ffmpeg_thread.start()
+
+  def close_ffmpeg(self):
+    if self._ffmpeg_thread is not None:
+      self._ffmpeg_stop_event.set()
+      try:
+        self._ffmpeg_queue.put(None, timeout=1.0)
+      except Exception:
+        pass
+      self._ffmpeg_thread.join(timeout=30)
+
+    if self._ffmpeg_proc is not None:
+      try:
+        if self._ffmpeg_proc.stdin:
+          try:
+            self._ffmpeg_proc.stdin.flush()
+          except Exception:
+            pass
+          self._ffmpeg_proc.stdin.close()
+        try:
+          self._ffmpeg_proc.wait(timeout=30)
+        except subprocess.TimeoutExpired:
+          self._ffmpeg_proc.terminate()
+          self._ffmpeg_proc.wait()
+      except Exception:
+        try:
+          self._ffmpeg_proc.kill()
+        except Exception:
+          pass
+
+    self._ffmpeg_proc = None
+    self._ffmpeg_queue = None
+    self._ffmpeg_thread = None
+    self._ffmpeg_stop_event = None  
 
   @property
   def frame(self):
@@ -478,20 +601,65 @@ class GuiApplication:
     return texture
 
   def close_ffmpeg(self):
-    if self._ffmpeg_thread is not None:
-      # Signal thread to stop, send sentinel, then wait for it to drain
-      self._ffmpeg_stop_event.set()
-      self._ffmpeg_queue.put(None)
-      self._ffmpeg_thread.join(timeout=30)
+    th = self._ffmpeg_thread
+    q = self._ffmpeg_queue
+    ev = self._ffmpeg_stop_event
+    proc = self._ffmpeg_proc
 
-    if self._ffmpeg_proc is not None:
-      self._ffmpeg_proc.stdin.flush()
-      self._ffmpeg_proc.stdin.close()
+    # 먼저 참조 끊기(재진입/중복 호출 방지)
+    self._ffmpeg_thread = None
+    self._ffmpeg_queue = None
+    self._ffmpeg_stop_event = None
+    self._ffmpeg_proc = None
+
+    # thread stop
+    try:
+      if th is not None and ev is not None:
+        ev.set()
+      if th is not None and q is not None:
+        try:
+          q.put_nowait(None)
+        except Exception:
+          pass
+        th.join(timeout=30)
+    except Exception:
+      pass
+
+    # proc stop
+    if proc is not None:
       try:
-        self._ffmpeg_proc.wait(timeout=30)
-      except subprocess.TimeoutExpired:
-        self._ffmpeg_proc.terminate()
-        self._ffmpeg_proc.wait()
+        stdin = proc.stdin
+        if stdin is not None:
+          try:
+            # 이미 닫혔으면 flush 금지
+            if not getattr(stdin, "closed", False):
+              try:
+                stdin.flush()
+              except Exception:
+                pass
+              try:
+                stdin.close()
+              except Exception:
+                pass
+          except Exception:
+            pass
+
+        try:
+          proc.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+          try:
+            proc.terminate()
+          except Exception:
+            pass
+          try:
+            proc.wait(timeout=5)
+          except Exception:
+            pass
+      except Exception:
+        try:
+          proc.kill()
+        except Exception:
+          pass
 
   def close(self):
     if not rl.is_window_ready():
@@ -518,6 +686,8 @@ class GuiApplication:
 
     self.close_ffmpeg()
 
+    self.stop_recording()
+    self.close_ffmpeg()
     rl.close_window()
 
   @property
@@ -597,12 +767,20 @@ class GuiApplication:
 
         rl.end_drawing()
 
-        if RECORD:
+        if RECORD or self._record_enabled:
           image = rl.load_image_from_texture(self._render_texture.texture)
           data_size = image.width * image.height * 4
           data = bytes(rl.ffi.buffer(image.data, data_size))
-          self._ffmpeg_queue.put(data)  # Async write via background thread
+          try:
+            self._ffmpeg_queue.put_nowait(data)  # Async write via background thread
+          except queue.Full:
+            pass
+          
           rl.unload_image(image)
+          if self._record_enabled:
+            if (time.monotonic() - self._record_t0) >= self._record_max_sec:
+              self.stop_recording()
+              self.start_recording()
 
         self._monitor_fps()
         self._frame += 1

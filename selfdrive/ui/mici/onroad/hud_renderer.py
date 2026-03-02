@@ -330,14 +330,7 @@ class HudRenderer(Widget):
     time_x = pos_x + wheel_txt.width / 2 + 15
     time_y = pos_y - time_size.y / 2
 
-    rl.draw_text_ex(
-      self._font_semi_bold,
-      now_text,
-      rl.Vector2(time_x, time_y),
-      time_font,
-      0,
-      rl.Color(255, 255, 255, 230),
-    )
+    self._draw_text_with_outline(now_text, rl.Vector2(time_x, time_y), time_font, rl.Color(255, 255, 255, 230), rl.BLACK, thickness=2)
 
   def _get_gear_text(self) -> str:
     sm = ui_state.sm
@@ -471,7 +464,7 @@ class HudRenderer(Widget):
       set_size = measure_text_cached(self._font_display, set_text, set_font)
       set_x = int(panel_x + panel_w * 0.76 - set_size.x * 0.5)
       set_y = int(panel_y + panel_h * 0.33 - set_size.y * 0.5)
-      self._draw_text_with_outline(set_text, rl.Vector2(set_x, set_y), set_font, set_color, rl.BLACK, thickness=2)
+      self._draw_text_with_outline(set_text, rl.Vector2(set_x, set_y), set_font, set_color, rl.WHITE, thickness=2)
       if ov.active:
         set_speed = ov.speed_kph
         if not ui_state.is_metric:
@@ -495,7 +488,7 @@ class HudRenderer(Widget):
         set_size = measure_text_cached(self._font_display, set_text, set_font)
         set_x = int(panel_x + panel_w * 0.90 - set_size.x * 0.5 + 50)
         set_y = int(panel_y + panel_h * 0.25 - set_size.y * 0.5)
-        self._draw_text_with_outline(set_text, rl.Vector2(set_x, set_y), set_font, set_color, rl.BLACK, thickness=2)
+        self._draw_text_with_outline(set_text, rl.Vector2(set_x, set_y), set_font, set_color, rl.WHITE, thickness=2)
         set_font = 30
         set_size = measure_text_cached(self._font_display, set_label_text, set_font)
         set_x = int(panel_x + panel_w * 0.90 - set_size.x * 0.5 + 50)
