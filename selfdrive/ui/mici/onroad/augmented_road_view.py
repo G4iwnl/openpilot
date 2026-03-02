@@ -184,10 +184,8 @@ class AugmentedRoadView(CameraView):
       arg = str(cm.carrotArg)
     except Exception as e:
       print(f"Error reading carrotMan message: {e}")
-      # 메시지가 없거나 필드가 없으면 현재 상태 그대로
       return gui_app.is_recording()
 
-    # 중복 처리 방지(일련번호 증가)
     if cmd_idx == self._last_carrot_cmd_idx or self._last_carrot_cmd_idx == -1:
       self._last_carrot_cmd_idx = cmd_idx
       return gui_app.is_recording()
