@@ -298,16 +298,13 @@ class DebugPlot(Widget):
     W = int(rect.width)
     H = int(rect.height)
 
-    
     title_h = 46 
 
-    
     plot_w = max(1, W)
     self.plot_x = rx + 0.0
     self.plot_y = ry + float(title_h)
-    self.plot_height = float(max(60, H - title_h)) 
+    self.plot_height = float(max(60, H - title_h))  
 
-    
     self.plot_dx = float(max(1.0, plot_w / max(1, (PLOT_MAX - 1))))
 
     # background (transparent)
