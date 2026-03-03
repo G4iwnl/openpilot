@@ -160,7 +160,7 @@ class CANParser:
     self.last_nonempty_nanos: int = 0
     self._last_update_nanos: int = 0
 
-  def _add_message(self, name_or_addr: str | int, freq: int | None = None) -> None:
+  def _add_message(self, name_or_addr: str | int, freq: int | None = None, ignore_counter: bool = False) -> None:
     if isinstance(name_or_addr, numbers.Number):
       msg = self.dbc.addr_to_msg.get(int(name_or_addr))
     else:
@@ -184,6 +184,7 @@ class CANParser:
       size=msg.size,
       signals=list(msg.sigs.values()),
       ignore_alive=freq is not None and math.isnan(freq),
+      ignore_counter=ignore_counter,
     )
     state.first_seen_nanos = time.monotonic_ns()  # 등록시 즉시 타임스탬프 설정
     if freq is not None and freq > 0:
