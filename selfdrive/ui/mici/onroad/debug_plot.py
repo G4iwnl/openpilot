@@ -6,11 +6,11 @@ import pyray as rl
 
 from openpilot.common.params import Params
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.selfdrive.ui.ui_state import ui_state
 
 
-PLOT_MAX = 200
+PLOT_MAX = 300
 
 
 def _safe_get(obj, path: str, default=0.0):
@@ -67,6 +67,8 @@ class DebugPlot(Widget):
     self.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
     self.params = Params()
+
+    self._font_display: rl.Font = gui_app.font(FontWeight.DISPLAY)
 
     # plot state
     self.plot_size = 0
@@ -352,7 +354,15 @@ class DebugPlot(Widget):
 
     rl.draw_rectangle(x0, y0, x1 - x0, y1 - y0, rl.Color(0, 0, 0, 70))
 
-    rl.draw_text(title, x0 + 10, y0 + 8, 26, rl.WHITE)
+    rl.draw_text_ex(
+      self._font_display,
+      title,
+      rl.Vector2(x0 + 10, y0 + 8),
+      26,
+      0,
+      rl.WHITE
+    )
+
     rl.draw_text(
       f"min={self.plot_min:.2f}  max={self.plot_max:.2f}",
       x0 + 10,
