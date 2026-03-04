@@ -512,6 +512,15 @@ class HudRenderer(Widget):
       0,
       rl.WHITE,
     )
+    
+    # active carrot
+    sm = ui_state.sm
+    active_carrot = sm['carrotMan'].activeCarrot
+    if active_carrot >= 2:
+      x = int(panel_x + panel_w * 0.70)
+      y = int(panel_y + panel_h * 0.90)
+      self._draw_text_with_outline(cur_text, rl.Vector2(x, y), self._font_display, rl.WHITE, rl.GREEN, thickness=1)
+
 
     # ----- gear (right side box with letter) -----
     gear = self._get_gear_text()
