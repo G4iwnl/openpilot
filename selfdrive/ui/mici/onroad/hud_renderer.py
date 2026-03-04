@@ -556,8 +556,8 @@ class HudRenderer(Widget):
     lane_color = rl.Color(255, 255, 255, 220)  # 흰색
 
     lane_x = box_x + box_w + 80
-    lane_y1 = box_y + 6
-    lane_y2 = box_y + 6 + lane_font + 2
+    lane_y1 = box_y + 2
+    lane_y2 = box_y + 2 + lane_font + 2
 
     # 오른쪽 정렬(gear box 옆에 딱 붙게)
     s1 = measure_text_cached(self._font_semi_bold, line1, lane_font)
