@@ -517,9 +517,9 @@ class HudRenderer(Widget):
     sm = ui_state.sm
     active_carrot = sm['carrotMan'].activeCarrot
     if active_carrot >= 2:
-      x = int(panel_x + panel_w * 0.70)
-      y = int(panel_y + panel_h * 0.90)
-      self._draw_text_with_outline("NAV", rl.Vector2(x, y), 32, rl.WHITE, rl.GREEN, thickness=1)
+      x = int(panel_x + panel_w * 0.60)
+      y = int(panel_y + panel_h * 0.85)
+      self._draw_text_with_outline("NAV", rl.Vector2(x, y), 28, rl.GREEN, rl.BLACK, thickness=1)
 
 
     # ----- gear (right side box with letter) -----
