@@ -504,14 +504,7 @@ class HudRenderer(Widget):
     gap_text = str(gap)
     gap_font = 28
     gap_size = measure_text_cached(self._font_semi_bold, gap_text, gap_font)
-    rl.draw_text_ex(
-      self._font_semi_bold,
-      gap_text,
-      rl.Vector2(gap_center_x - gap_size.x * 0.5, gap_center_y - gap_size.y * 0.5),
-      gap_font,
-      0,
-      rl.WHITE,
-    )
+    self._draw_text_with_outline(gap_text, rl.Vector2(gap_center_x - gap_size.x * 0.5, gap_center_y - gap_size.y * 0.5), gap_font, rl.WHITE, rl.BLACK, thickness=1)
     
     # active carrot
     sm = ui_state.sm
