@@ -111,8 +111,7 @@ void BinaryView::highlight(const cabana::Signal *sig) {
   if (sig != hovered_sig) {
     for (int i = 0; i < model->items.size(); ++i) {
       auto &item_sigs = model->items[i].sigs;
-      auto has = [](const auto &v, auto p) { return std::find(v.begin(), v.end(), p) != v.end(); };
-      if ((sig && has(item_sigs, sig)) || (hovered_sig && has(item_sigs, hovered_sig))) {
+      if ((sig && item_sigs.contains(sig)) || (hovered_sig && item_sigs.contains(hovered_sig))) {
         auto index = model->index(i / model->columnCount(), i % model->columnCount());
         emit model->dataChanged(index, index, {Qt::DisplayRole});
       }
@@ -158,7 +157,7 @@ void BinaryView::mousePressEvent(QMouseEvent *event) {
 void BinaryView::highlightPosition(const QPoint &pos) {
   if (auto index = indexAt(viewport()->mapFromGlobal(pos)); index.isValid()) {
     auto item = (BinaryViewModel::Item *)index.internalPointer();
-    const cabana::Signal *sig = item->sigs.empty() ? nullptr : item->sigs.back();
+    const cabana::Signal *sig = item->sigs.isEmpty() ? nullptr : item->sigs.back();
     highlight(sig);
   }
 }
@@ -209,12 +208,12 @@ void BinaryView::refresh() {
   highlightPosition(QCursor::pos());
 }
 
-std::set<const cabana::Signal *> BinaryView::getOverlappingSignals() const {
-  std::set<const cabana::Signal *> overlapping;
+QSet<const cabana::Signal *> BinaryView::getOverlappingSignals() const {
+  QSet<const cabana::Signal *> overlapping;
   for (const auto &item : model->items) {
     if (item.sigs.size() > 1) {
       for (auto s : item.sigs) {
-        if (s->type == cabana::Signal::Type::Normal) overlapping.insert(s);
+        if (s->type == cabana::Signal::Type::Normal) overlapping += s;
       }
     }
   }
@@ -259,7 +258,7 @@ void BinaryViewModel::refresh() {
         int pos = sig->is_little_endian ? flipBitPos(sig->start_bit + j) : flipBitPos(sig->start_bit) + j;
         int idx = column_count * (pos / 8) + pos % 8;
         if (idx >= items.size()) {
-          qWarning() << "signal " << sig->name.c_str() << "out of bounds.start_bit:" << sig->start_bit << "size:" << sig->size;
+          qWarning() << "signal " << sig->name << "out of bounds.start_bit:" << sig->start_bit << "size:" << sig->size;
           break;
         }
         if (j == 0) sig->is_little_endian ? items[idx].is_lsb = true : items[idx].is_msb = true;
@@ -405,9 +404,7 @@ bool BinaryItemDelegate::hasSignal(const QModelIndex &index, int dx, int dy, con
   if (!index.isValid()) return false;
   auto model = (const BinaryViewModel*)(index.model());
   int idx = (index.row() + dy) * model->columnCount() + index.column() + dx;
-  if (idx < 0 || idx >= (int)model->items.size()) return false;
-  auto &s = model->items[idx].sigs;
-  return std::find(s.begin(), s.end(), sig) != s.end();
+  return (idx >=0 && idx < model->items.size()) ? model->items[idx].sigs.contains(sig) : false;
 }
 
 void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
@@ -424,7 +421,7 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     auto color = bin_view->resize_sig ? bin_view->resize_sig->color : option.palette.color(QPalette::Active, QPalette::Highlight);
     painter->fillRect(option.rect, color);
     painter->setPen(option.palette.color(QPalette::BrightText));
-  } else if (!bin_view->selectionModel()->hasSelection() || std::find(item->sigs.begin(), item->sigs.end(), bin_view->resize_sig) == item->sigs.end()) {  // not resizing
+  } else if (!bin_view->selectionModel()->hasSelection() || !item->sigs.contains(bin_view->resize_sig)) {  // not resizing
     if (item->sigs.size() > 0) {
       for (auto &s : item->sigs) {
         if (s == bin_view->hovered_sig) {
@@ -436,7 +433,7 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     } else if (item->valid && item->bg_color.alpha() > 0) {
       painter->fillRect(option.rect, item->bg_color);
     }
-    auto color_role = (std::find(item->sigs.begin(), item->sigs.end(), bin_view->hovered_sig) != item->sigs.end()) ? QPalette::BrightText : QPalette::Text;
+    auto color_role = item->sigs.contains(bin_view->hovered_sig) ? QPalette::BrightText : QPalette::Text;
     painter->setPen(option.palette.color(bin_view->is_message_active ? QPalette::Normal : QPalette::Disabled, color_role));
   }
 

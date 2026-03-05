@@ -14,9 +14,9 @@ from openpilot.selfdrive.ui.mici.onroad.debug_plot import DebugPlot
 ONROAD_DELAY = 2.5  # seconds
 
 
-class MiciMainLayout(Scroller):
+class MiciMainLayout(Widget):
   def __init__(self):
-    super().__init__(snap_items=True, spacing=0, pad=0, scroll_indicator=False, edge_shadows=False)
+    super().__init__()
 
     self._pm = messaging.PubMaster(['bookmarkButton'])
 
@@ -39,13 +39,14 @@ class MiciMainLayout(Scroller):
       # TODO: set parent rect and use it if never passed rect from render (like in Scroller)
       widget.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
-    self._scroller.add_widgets([
+    self._scroller = Scroller([
       self._alerts_layout,
       self._home_layout,
       self._onroad_layout,
       self._debug_layout,
-    ])
+    ], snap_items=True, spacing=0, pad=0, scroll_indicator=False, edge_shadows=False)
     self._scroller.set_reset_scroll_at_show(False)
+    self._scroller.set_enabled(lambda: self.enabled)  # for nav stack
 
     # Disable scrolling when onroad is interacting with bookmark
     self._scroller.set_scrolling_enabled(lambda: not self._onroad_layout.is_swiping_left())
@@ -53,11 +54,10 @@ class MiciMainLayout(Scroller):
     # Set callbacks
     self._setup_callbacks()
 
-    gui_app.add_nav_stack_tick(self._handle_transitions)
     gui_app.push_widget(self)
 
     # Start onboarding if terms or training not completed, make sure to push after self
-    self._onboarding_window = OnboardingWindow(lambda: gui_app.pop_widgets_to(self))
+    self._onboarding_window = OnboardingWindow()
     if not self._onboarding_window.completed:
       gui_app.push_widget(self._onboarding_window)
 
@@ -103,6 +103,14 @@ class MiciMainLayout(Scroller):
     self._onroad_layout.set_click_callback(lambda: self._scroll_to(self._home_layout))
     device.add_interactive_timeout_callback(self._on_interactive_timeout)
 
+  def show_event(self):
+    super().show_event()
+    self._scroller.show_event()
+
+  def hide_event(self):
+    super().hide_event()
+    self._scroller.hide_event()
+
   def _scroll_to(self, layout: Widget):
     target_is_plot  = (layout is self._debug_layout)
     if not target_is_plot  and self._in_plot_mode:
@@ -120,13 +128,14 @@ class MiciMainLayout(Scroller):
       self._setup = True
 
     # Render
-    super()._render(self._rect)
+    self._scroller.render(self._rect)
 
+    self._handle_transitions()
     self._handle_carrot_record_cmd(ui_state.sm)
 
   def _handle_transitions(self):
     # Don't pop if onboarding
-    if gui_app.widget_in_stack(self._onboarding_window):
+    if gui_app.get_active_widget() == self._onboarding_window:
       return
 
     if ui_state.started != self._prev_onroad:
@@ -139,9 +148,9 @@ class MiciMainLayout(Scroller):
       else:
         self._scroll_to(self._home_layout)
 
-    # FIXME: these two pops can interrupt user interacting in the settings
     if self._onroad_time_delay is not None and rl.get_time() - self._onroad_time_delay >= ONROAD_DELAY:
-      gui_app.pop_widgets_to(self, lambda: self._scroll_to(self._onroad_layout))
+      gui_app.pop_widgets_to(self)
+      self._scroll_to(self._onroad_layout)
       self._onroad_time_delay = None
       
     if ui_state.started:
@@ -156,21 +165,22 @@ class MiciMainLayout(Scroller):
     # When car leaves standstill, pop nav stack and scroll to onroad
     CS = ui_state.sm["carState"]
     if not CS.standstill and self._prev_standstill:
-      gui_app.pop_widgets_to(self, lambda: self._scroll_to(self._onroad_layout))
+      gui_app.pop_widgets_to(self)
+      self._scroll_to(self._onroad_layout)
     self._prev_standstill = CS.standstill
 
   def _on_interactive_timeout(self):
     # Don't pop if onboarding
-    if gui_app.widget_in_stack(self._onboarding_window):
+    if gui_app.get_active_widget() == self._onboarding_window:
       return
 
     if ui_state.started:
       # Don't pop if at standstill
       if not ui_state.sm["carState"].standstill:
-        gui_app.pop_widgets_to(self, lambda: self._scroll_to(self._onroad_layout))
+        gui_app.pop_widgets_to(self)
+        self._scroll_to(self._onroad_layout)
     else:
-      # Screen turns off on timeout offroad, so pop immediately without animation
-      gui_app.pop_widgets_to(self, instant=True)
+      gui_app.pop_widgets_to(self)
       self._scroll_to(self._home_layout)
 
   def _on_bookmark_clicked(self):

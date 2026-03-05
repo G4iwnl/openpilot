@@ -9,7 +9,6 @@
 #include "common/ratekeeper.h"
 #include "common/util.h"
 #include "common/version.h"
-#include "tools/replay/py_downloader.h"
 
 namespace {
 

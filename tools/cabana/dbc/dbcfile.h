@@ -1,35 +1,34 @@
 #pragma once
 
 #include <map>
-#include <string>
 #include <QTextStream>
 
 #include "tools/cabana/dbc/dbc.h"
 
 class DBCFile {
 public:
-  DBCFile(const std::string &dbc_file_name);
-  DBCFile(const std::string &name, const std::string &content);
+  DBCFile(const QString &dbc_file_name);
+  DBCFile(const QString &name, const QString &content);
   ~DBCFile() {}
 
   bool save();
-  bool saveAs(const std::string &new_filename);
-  bool writeContents(const std::string &fn);
-  std::string generateDBC();
+  bool saveAs(const QString &new_filename);
+  bool writeContents(const QString &fn);
+  QString generateDBC();
 
-  void updateMsg(const MessageId &id, const std::string &name, uint32_t size, const std::string &node, const std::string &comment);
+  void updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &node, const QString &comment);
   inline void removeMsg(const MessageId &id) { msgs.erase(id.address); }
 
   inline const std::map<uint32_t, cabana::Msg> &getMessages() const { return msgs; }
   cabana::Msg *msg(uint32_t address);
-  cabana::Msg *msg(const std::string &name);
+  cabana::Msg *msg(const QString &name);
   inline cabana::Msg *msg(const MessageId &id) { return msg(id.address); }
-  cabana::Signal *signal(uint32_t address, const std::string &name);
+  cabana::Signal *signal(uint32_t address, const QString &name);
 
-  inline std::string name() const { return name_.empty() ? "untitled" : name_; }
-  inline bool isEmpty() const { return msgs.empty() && name_.empty(); }
+  inline QString name() const { return name_.isEmpty() ? "untitled" : name_; }
+  inline bool isEmpty() const { return msgs.empty() && name_.isEmpty(); }
 
-  std::string filename;
+  QString filename;
 
 private:
   void parse(const QString &content);
@@ -39,7 +38,7 @@ private:
   void parseCM_SG(const QString &line, const QString &content, const QString &raw_line, const QTextStream &stream);
   void parseVAL(const QString &line);
 
-  std::string header;
+  QString header;
   std::map<uint32_t, cabana::Msg> msgs;
-  std::string name_;
+  QString name_;
 };

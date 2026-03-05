@@ -186,16 +186,18 @@ class AlertItem(Widget):
     rl.draw_texture(icon_texture, int(icon_x), int(icon_y), rl.WHITE)
 
 
-class MiciOffroadAlerts(Scroller):
+class MiciOffroadAlerts(Widget):
   """Offroad alerts layout with vertical scrolling."""
 
   def __init__(self):
-    # Create vertical scroller
-    super().__init__(horizontal=False, spacing=12, pad=0)
+    super().__init__()
     self.params = Params()
     self.sorted_alerts: list[AlertData] = []
     self.alert_items: list[AlertItem] = []
     self._last_refresh = 0.0
+
+    # Create vertical scroller
+    self._scroller = Scroller([], horizontal=False, spacing=12, pad=0)
 
     # Create empty state label
     self._empty_label = UnifiedLabel(tr("no alerts"), 65, FontWeight.DISPLAY, rl.WHITE,
@@ -288,8 +290,13 @@ class MiciOffroadAlerts(Scroller):
   def show_event(self):
     """Reset scroll position when shown and refresh alerts."""
     super().show_event()
+    self._scroller.show_event()
     self._last_refresh = time.monotonic()
     self.refresh()
+
+  def hide_event(self):
+    super().hide_event()
+    self._scroller.hide_event()
 
   def _update_state(self):
     """Periodically refresh alerts."""

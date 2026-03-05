@@ -4,6 +4,10 @@
 
 #include "tools/cabana/utils/util.h"
 
+uint qHash(const MessageId &item) {
+  return qHash(item.source) ^ qHash(item.address);
+}
+
 // cabana::Msg
 
 cabana::Msg::~Msg() {
@@ -18,7 +22,7 @@ cabana::Signal *cabana::Msg::addSignal(const cabana::Signal &sig) {
   return s;
 }
 
-cabana::Signal *cabana::Msg::updateSignal(const std::string &sig_name, const cabana::Signal &new_sig) {
+cabana::Signal *cabana::Msg::updateSignal(const QString &sig_name, const cabana::Signal &new_sig) {
   auto s = sig(sig_name);
   if (s) {
     *s = new_sig;
@@ -27,7 +31,7 @@ cabana::Signal *cabana::Msg::updateSignal(const std::string &sig_name, const cab
   return s;
 }
 
-void cabana::Msg::removeSignal(const std::string &sig_name) {
+void cabana::Msg::removeSignal(const QString &sig_name) {
   auto it = std::find_if(sigs.begin(), sigs.end(), [&](auto &s) { return s->name == sig_name; });
   if (it != sigs.end()) {
     delete *it;
@@ -53,7 +57,7 @@ cabana::Msg &cabana::Msg::operator=(const cabana::Msg &other) {
   return *this;
 }
 
-cabana::Signal *cabana::Msg::sig(const std::string &sig_name) const {
+cabana::Signal *cabana::Msg::sig(const QString &sig_name) const {
   auto it = std::find_if(sigs.begin(), sigs.end(), [&](auto &s) { return s->name == sig_name; });
   return it != sigs.end() ? *it : nullptr;
 }
@@ -65,17 +69,17 @@ int cabana::Msg::indexOf(const cabana::Signal *sig) const {
   return -1;
 }
 
-std::string cabana::Msg::newSignalName() {
-  std::string new_name;
+QString cabana::Msg::newSignalName() {
+  QString new_name;
   for (int i = 1; /**/; ++i) {
-    new_name = "NEW_SIGNAL_" + std::to_string(i);
+    new_name = QString("NEW_SIGNAL_%1").arg(i);
     if (sig(new_name) == nullptr) break;
   }
   return new_name;
 }
 
 void cabana::Msg::update() {
-  if (transmitter.empty()) {
+  if (transmitter.isEmpty()) {
     transmitter = DEFAULT_NODE_NAME;
   }
   mask.assign(size, 0x00);
@@ -125,13 +129,13 @@ void cabana::Msg::update() {
 
 void cabana::Signal::update() {
   updateMsbLsb(*this);
-  if (receiver_name.empty()) {
+  if (receiver_name.isEmpty()) {
     receiver_name = DEFAULT_NODE_NAME;
   }
 
   float h = 19 * (float)lsb / 64.0;
   h = fmod(h, 1.0);
-  size_t hash = std::hash<std::string>{}(name);
+  size_t hash = qHash(name);
   float s = 0.25 + 0.25 * (float)(hash & 0xff) / 255.0;
   float v = 0.75 + 0.25 * (float)((hash >> 8) & 0xff) / 255.0;
 
@@ -139,7 +143,7 @@ void cabana::Signal::update() {
   precision = std::max(num_decimals(factor), num_decimals(offset));
 }
 
-std::string cabana::Signal::formatValue(double value, bool with_unit) const {
+QString cabana::Signal::formatValue(double value, bool with_unit) const {
   // Show enum string
   int64_t raw_value = round((value - offset) / factor);
   for (const auto &[val, desc] : val_desc) {
@@ -148,10 +152,8 @@ std::string cabana::Signal::formatValue(double value, bool with_unit) const {
     }
   }
 
-  char buf[64];
-  snprintf(buf, sizeof(buf), "%.*f", precision, value);
-  std::string val_str(buf);
-  if (with_unit && !unit.empty()) {
+  QString val_str = QString::number(value, 'f', precision);
+  if (with_unit && !unit.isEmpty()) {
     val_str += " " + unit;
   }
   return val_str;

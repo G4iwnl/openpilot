@@ -266,13 +266,15 @@ class HudRenderer(Widget):
   def _render(self, rect: rl.Rectangle) -> None:
     """Render HUD elements to the screen."""
 
-    self._torque_bar.render(rect)
+    if ui_state.sm['controlsState'].lateralControlState.which() != 'angleState':
+      self._torque_bar.render(rect)
 
     # bottom-left panel (speed_bg)
     self._draw_set_speed(rect)
 
+    # wheel moved to top-left
     self._draw_steering_wheel(rect)
-
+    
   def _draw_steering_wheel(self, rect: rl.Rectangle) -> None:
     wheel_txt = self._txt_wheel_critical if self._show_wheel_critical else self._txt_wheel
 

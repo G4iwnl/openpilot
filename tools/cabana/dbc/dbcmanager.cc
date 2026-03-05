@@ -1,9 +1,10 @@
 #include "tools/cabana/dbc/dbcmanager.h"
 
+#include <QSet>
 #include <algorithm>
-#include <set>
+#include <numeric>
 
-bool DBCManager::open(const SourceSet &sources, const std::string &dbc_file_name, QString *error) {
+bool DBCManager::open(const SourceSet &sources, const QString &dbc_file_name, QString *error) {
   try {
     auto it = std::find_if(dbc_files.begin(), dbc_files.end(),
                            [&](auto &f) { return f.second && f.second->filename == dbc_file_name; });
@@ -20,7 +21,7 @@ bool DBCManager::open(const SourceSet &sources, const std::string &dbc_file_name
   return true;
 }
 
-bool DBCManager::open(const SourceSet &sources, const std::string &name, const std::string &content, QString *error) {
+bool DBCManager::open(const SourceSet &sources, const QString &name, const QString &content, QString *error) {
   try {
     auto file = std::make_shared<DBCFile>(name, content);
     for (auto s : sources) {
@@ -63,7 +64,7 @@ void DBCManager::addSignal(const MessageId &id, const cabana::Signal &sig) {
   }
 }
 
-void DBCManager::updateSignal(const MessageId &id, const std::string &sig_name, const cabana::Signal &sig) {
+void DBCManager::updateSignal(const MessageId &id, const QString &sig_name, const cabana::Signal &sig) {
   if (auto m = msg(id)) {
     if (auto s = m->updateSignal(sig_name, sig)) {
       emit signalUpdated(s);
@@ -72,7 +73,7 @@ void DBCManager::updateSignal(const MessageId &id, const std::string &sig_name, 
   }
 }
 
-void DBCManager::removeSignal(const MessageId &id, const std::string &sig_name) {
+void DBCManager::removeSignal(const MessageId &id, const QString &sig_name) {
   if (auto m = msg(id)) {
     if (auto s = m->sig(sig_name)) {
       emit signalRemoved(s);
@@ -82,7 +83,7 @@ void DBCManager::removeSignal(const MessageId &id, const std::string &sig_name) 
   }
 }
 
-void DBCManager::updateMsg(const MessageId &id, const std::string &name, uint32_t size, const std::string &node, const std::string &comment) {
+void DBCManager::updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &node, const QString &comment) {
   auto dbc_file = findDBCFile(id);
   assert(dbc_file);  // This should be impossible
   dbc_file->updateMsg(id, name, size, node, comment);
@@ -97,13 +98,11 @@ void DBCManager::removeMsg(const MessageId &id) {
   emit maskUpdated();
 }
 
-std::string DBCManager::newMsgName(const MessageId &id) {
-  char buf[64];
-  snprintf(buf, sizeof(buf), "NEW_MSG_%X", id.address);
-  return buf;
+QString DBCManager::newMsgName(const MessageId &id) {
+  return QString("NEW_MSG_") + QString::number(id.address, 16).toUpper();
 }
 
-std::string DBCManager::newSignalName(const MessageId &id) {
+QString DBCManager::newSignalName(const MessageId &id) {
   auto m = msg(id);
   return m ? m->newSignalName() : "";
 }
@@ -119,14 +118,14 @@ cabana::Msg *DBCManager::msg(const MessageId &id) {
   return dbc_file ? dbc_file->msg(id) : nullptr;
 }
 
-cabana::Msg *DBCManager::msg(uint8_t source, const std::string &name) {
+cabana::Msg *DBCManager::msg(uint8_t source, const QString &name) {
   auto dbc_file = findDBCFile(source);
   return dbc_file ? dbc_file->msg(name) : nullptr;
 }
 
-std::vector<std::string> DBCManager::signalNames() {
+QStringList DBCManager::signalNames() {
   // Used for autocompletion
-  std::set<std::string> names;
+  QSet<QString> names;
   for (auto &f : allDBCFiles()) {
     for (auto &[_, m] : f->getMessages()) {
       for (auto sig : m.getSignals()) {
@@ -134,8 +133,8 @@ std::vector<std::string> DBCManager::signalNames() {
       }
     }
   }
-  std::vector<std::string> ret(names.begin(), names.end());
-  std::sort(ret.begin(), ret.end());
+  QStringList ret = names.values();
+  ret.sort();
   return ret;
 }
 
@@ -166,13 +165,11 @@ const SourceSet DBCManager::sources(const DBCFile *dbc_file) const {
   return sources;
 }
 
-std::string toString(const SourceSet &ss) {
-  std::string result;
-  for (int source : ss) {
-    if (!result.empty()) result += ", ";
-    result += (source == -1) ? "all" : std::to_string(source);
-  }
-  return result;
+QString toString(const SourceSet &ss) {
+  return std::accumulate(ss.cbegin(), ss.cend(), QString(), [](QString str, int source) {
+    if (!str.isEmpty()) str += ", ";
+    return str + (source == -1 ? QStringLiteral("all") : QString::number(source));
+  });
 }
 
 DBCManager *dbc() {

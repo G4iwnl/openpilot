@@ -20,15 +20,12 @@ class SignalModel : public QAbstractItemModel {
 public:
   struct Item {
     enum Type {Root, Sig, Name, Size, Node, Endian, Signed, Offset, Factor, SignalType, MultiplexValue, ExtraInfo, Unit, Comment, Min, Max, Desc };
-    ~Item() { for (auto c : children) delete c; }
-    inline int row() {
-      auto it = std::find(parent->children.begin(), parent->children.end(), this);
-      return it != parent->children.end() ? std::distance(parent->children.begin(), it) : -1;
-    }
+    ~Item() { qDeleteAll(children); }
+    inline int row() { return parent->children.indexOf(this); }
 
     Type type = Type::Root;
     Item *parent = nullptr;
-    std::vector<Item *> children;
+    QList<Item *> children;
 
     const cabana::Signal *sig = nullptr;
     QString title;

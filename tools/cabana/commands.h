@@ -1,8 +1,6 @@
 #pragma once
 
-#include <string>
 #include <utility>
-#include <vector>
 
 #include <QUndoCommand>
 #include <QUndoStack>
@@ -12,14 +10,14 @@
 
 class EditMsgCommand : public QUndoCommand {
 public:
-  EditMsgCommand(const MessageId &id, const std::string &name, int size, const std::string &node,
-                 const std::string &comment, QUndoCommand *parent = nullptr);
+  EditMsgCommand(const MessageId &id, const QString &name, int size, const QString &node,
+                 const QString &comment, QUndoCommand *parent = nullptr);
   void undo() override;
   void redo() override;
 
 private:
   const MessageId id;
-  std::string old_name, new_name, old_comment, new_comment, old_node, new_node;
+  QString old_name, new_name, old_comment, new_comment, old_node, new_node;
   int old_size = 0, new_size = 0;
 };
 
@@ -54,7 +52,7 @@ public:
 
 private:
   const MessageId id;
-  std::vector<cabana::Signal> sigs;
+  QList<cabana::Signal> sigs;
 };
 
 class EditSignalCommand : public QUndoCommand {
@@ -65,7 +63,7 @@ public:
 
 private:
   const MessageId id;
-  std::vector<std::pair<cabana::Signal, cabana::Signal>> sigs; // {old_sig, new_sig}
+  QList<std::pair<cabana::Signal, cabana::Signal>> sigs; // QList<{old_sig, new_sig}>
 };
 
 namespace UndoStack {

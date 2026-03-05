@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "msgq/visionipc/visionbuf.h"
+#include "tools/replay/filereader.h"
 #include "tools/replay/util.h"
 
 #ifndef __APPLE__
@@ -21,7 +22,8 @@ class FrameReader {
 public:
   FrameReader();
   ~FrameReader();
-  bool load(CameraType type, const std::string &url, bool no_hw_decoder = false, std::atomic<bool> *abort = nullptr, bool local_cache = false);
+  bool load(CameraType type, const std::string &url, bool no_hw_decoder = false, std::atomic<bool> *abort = nullptr, bool local_cache = false,
+            int chunk_size = -1, int retries = 0);
   bool loadFromFile(CameraType type, const std::string &file, bool no_hw_decoder = false, std::atomic<bool> *abort = nullptr);
   bool get(int idx, VisionBuf *buf);
   size_t getFrameCount() const { return packets_info.size(); }

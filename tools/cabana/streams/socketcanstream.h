@@ -1,22 +1,27 @@
 #pragma once
 
+#include <memory>
+
+#include <QtSerialBus/QCanBus>
+#include <QtSerialBus/QCanBusDevice>
+#include <QtSerialBus/QCanBusDeviceInfo>
 #include <QComboBox>
 
 #include "tools/cabana/streams/livestream.h"
 
 struct SocketCanStreamConfig {
-  std::string device = ""; // TODO: support multiple devices/buses at once
+  QString device = ""; // TODO: support multiple devices/buses at once
 };
 
 class SocketCanStream : public LiveStream {
   Q_OBJECT
 public:
   SocketCanStream(QObject *parent, SocketCanStreamConfig config_ = {});
-  ~SocketCanStream();
+  ~SocketCanStream() { stop(); }
   static bool available();
 
-  inline std::string routeName() const override {
-    return "Live Streaming From Socket CAN " + config.device;
+  inline QString routeName() const override {
+    return QString("Live Streaming From Socket CAN %1").arg(config.device);
   }
 
 protected:
@@ -24,7 +29,7 @@ protected:
   bool connect();
 
   SocketCanStreamConfig config = {};
-  int sock_fd = -1;
+  std::unique_ptr<QCanBusDevice> device;
 };
 
 class OpenSocketCanWidget : public AbstractOpenStreamWidget {
