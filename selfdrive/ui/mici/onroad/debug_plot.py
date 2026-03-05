@@ -133,7 +133,7 @@ class DebugPlot(Widget):
     v_ego = cs.vEgo
     accel = lp.accels[0]
     speed_0 = lp.speeds[0]
-    accel_out = cc.accel
+    accel_out = cc.actuators.accel
 
     torque_state = None
     if controls_state is not None:
