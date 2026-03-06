@@ -366,7 +366,7 @@ def main():
   DEBUG = bool(int(os.getenv("DEBUG", "0")))
 
   pm = messaging.PubMaster(['liveDelay'])
-  sm = messaging.SubMaster(['livePose', 'liveCalibration', 'carState', 'controlsState', 'carControl'], poll='livePose')
+  sm = messaging.SubMaster(['livePose', 'liveCalibration', 'carState', 'controlsState', 'carControl'])
 
   params = Params()
   CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
@@ -376,21 +376,32 @@ def main():
     lag, valid_blocks = initial_lag_params
     lag_learner.reset(lag, valid_blocks)
 
+  last_processed_time = {s: 0 for s in sm.updated.keys()}
+  live_pose_updated = 0
   while True:
     sm.update()
+
     if sm.all_checks():
-      for which in sorted(sm.updated.keys(), key=lambda x: sm.logMonoTime[x]):
-        if sm.updated[which]:
-          t = sm.logMonoTime[which] * 1e-9
-          lag_learner.handle_log(t, which, sm[which])
-      lag_learner.update_points()
+      items = []
+      for which in sm.updated.keys():
+        t_ns = sm.logMonoTime[which]
+        if t_ns > last_processed_time[which]:
+          items.append((t_ns, which))
 
-    # 4Hz driven by livePose
-    if sm.frame % 5 == 0:
-      lag_learner.update_estimate()
-      lag_msg = lag_learner.get_msg(sm.all_checks(), DEBUG)
-      lag_msg_dat = lag_msg.to_bytes()
-      pm.send('liveDelay', lag_msg_dat)
+      for t_ns, which in sorted(items, key=lambda x: x[0]):
+        last_processed_time[which] = t_ns
+        lag_learner.handle_log(t_ns * 1e-9, which, sm[which])
 
-      if sm.frame % 1200 == 0: # cache every 60 seconds
-        params.put_nonblocking("LiveDelay", lag_msg_dat)
+      if sm.updated['livePose']:
+        live_pose_updated += 1
+        lag_learner.update_points()
+
+        # 4Hz driven by livePose
+        if live_pose_updated % 5 == 0:
+          lag_learner.update_estimate()
+          lag_msg = lag_learner.get_msg(sm.all_checks(), DEBUG)
+          lag_msg_dat = lag_msg.to_bytes()
+          pm.send('liveDelay', lag_msg_dat)
+
+          if live_pose_updated % 1200 == 0:  # cache every 60 seconds
+            params.put_nonblocking("LiveDelay", lag_msg_dat)
