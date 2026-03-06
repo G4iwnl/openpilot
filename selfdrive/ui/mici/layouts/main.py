@@ -65,6 +65,12 @@ class MiciMainLayout(Scroller):
     self._last_carrot_cmd_idx = -1
 
   def _handle_carrot_record_cmd(self, sm) -> bool:
+    screen_record = ui_state.params.get_bool("ScreenRecord")
+    if screen_record:
+      gui_app.start_recording()
+    else:
+      gui_app.stop_recording()
+
     try:
       cm = sm['carrotMan']
       cmd_idx = int(cm.carrotCmdIndex)
@@ -95,6 +101,9 @@ class MiciMainLayout(Scroller):
       gui_app.stop_recording()
     elif arg == "TOGGLE":
       gui_app.toggle_recording()
+      
+    if screen_record != gui_app.is_recording():
+      ui_state.params.put_bool_nonblocking("ScreenRecord", gui_app.is_recording())
 
     return gui_app.is_recording()
 
