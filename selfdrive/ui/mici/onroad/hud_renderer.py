@@ -330,6 +330,27 @@ class HudRenderer(Widget):
 
     self._draw_text_with_outline(now_text, rl.Vector2(time_x, time_y), time_font, rl.Color(255, 255, 255, 230), rl.BLACK, thickness=1)
 
+    # ----- steer ratio (right of time) -----
+    try:
+      steer_ratio = float(ui_state.sm['liveParameters'].steerRatio)
+      sr_text = f"SR: {steer_ratio:.1f}"
+    except Exception:
+      sr_text = "SR: --.-"
+
+    sr_font = max(18, int(time_font * 0.33))
+    sr_size = measure_text_cached(self._font_medium, sr_text, sr_font)
+
+    sr_x = time_x + time_size.x + 12
+    sr_y = pos_y - sr_size.y / 2
+
+    self._draw_text_with_outline(
+      sr_text,
+      rl.Vector2(sr_x, sr_y),
+      sr_font,
+      rl.Color(255, 255, 255, 210),
+      rl.BLACK,
+      thickness=1
+    )
   def _get_gear_text(self) -> str:
     sm = ui_state.sm
 
