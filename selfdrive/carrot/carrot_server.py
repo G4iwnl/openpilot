@@ -43,6 +43,10 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_SETTINGS_PATH = "/data/openpilot/selfdrive/carrot_settings.json"
 
 WEB_DIR = os.path.join(BASE_DIR, "web")
+CSS_DIR = os.path.join(WEB_DIR, "css")
+JS_DIR = os.path.join(WEB_DIR, "js")
+ASSETS_DIR = os.path.join(WEB_DIR, "assets")
+PAGES_DIR = os.path.join(WEB_DIR, "pages")
 
 UNIT_CYCLE = [1, 2, 5, 10, 50, 100]
 
@@ -423,14 +427,27 @@ def _set_param_value(name: str, value: Any) -> None:
 async def handle_index(request: web.Request) -> web.Response:
   return web.FileResponse(os.path.join(WEB_DIR, "index.html"))
 
+# Legacy direct-file routes kept for backward compatibility.
 async def handle_appjs(request: web.Request) -> web.Response:
-  return web.FileResponse(os.path.join(WEB_DIR, "app.js"))
+  return web.FileResponse(os.path.join(JS_DIR, "app_core.js"))
 
 async def handle_hudjs(request: web.Request) -> web.Response:
-  return web.FileResponse(os.path.join(WEB_DIR, "hud_card.js"))
+  return web.FileResponse(os.path.join(JS_DIR, "hud_card.js"))
 
 async def handle_hudcss(request: web.Request) -> web.Response:
-  return web.FileResponse(os.path.join(WEB_DIR, "hud_card.css"))
+  return web.FileResponse(os.path.join(CSS_DIR, "hud_card.css"))
+
+async def handle_appcss(request: web.Request) -> web.Response:
+  return web.FileResponse(os.path.join(CSS_DIR, "app.css"))
+
+async def handle_appcorejs(request: web.Request) -> web.Response:
+  return web.FileResponse(os.path.join(JS_DIR, "app_core.js"))
+
+async def handle_apppagesjs(request: web.Request) -> web.Response:
+  return web.FileResponse(os.path.join(JS_DIR, "app_pages.js"))
+
+async def handle_apprealtimejs(request: web.Request) -> web.Response:
+  return web.FileResponse(os.path.join(JS_DIR, "app_realtime.js"))
 
 async def api_settings(request: web.Request) -> web.Response:
   path = _settings_cache["path"]
@@ -1165,7 +1182,19 @@ def make_app() -> web.Application:
 
   # static-like routes
   app.router.add_get("/", handle_index)
+
+  # Organized asset folders
+  app.router.add_static("/css", str(CSS_DIR), show_index=True)
+  app.router.add_static("/js", str(JS_DIR), show_index=True)
+  app.router.add_static("/assets", str(ASSETS_DIR), show_index=True)
+  app.router.add_static("/pages", str(PAGES_DIR), show_index=True)
+
+  # Legacy direct-file routes (safe to keep during migration)
   app.router.add_get("/app.js", handle_appjs)
+  app.router.add_get("/app.css", handle_appcss)
+  app.router.add_get("/app_core.js", handle_appcorejs)
+  app.router.add_get("/app_pages.js", handle_apppagesjs)
+  app.router.add_get("/app_realtime.js", handle_apprealtimejs)
   app.router.add_get("/hud_card.js", handle_hudjs)
   app.router.add_get("/hud_card.css", handle_hudcss)
 
@@ -1186,7 +1215,6 @@ def make_app() -> web.Application:
   app.router.add_get("/download/params_backup.json", handle_download_params_backup)
   app.router.add_post("/api/params_restore", api_params_restore)
 
-  app.router.add_static("/", str(WEB_DIR), show_index=True)
   return app
 
 
