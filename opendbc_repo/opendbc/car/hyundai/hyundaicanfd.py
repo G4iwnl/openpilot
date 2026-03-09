@@ -289,6 +289,7 @@ def create_lfahda_cluster(packer, CS, CAN, long_active, lat_active):
     values = copy.copy(CS.lfahda_cluster)
     rx_counter = values.pop("COUNTER", None)
   else:
+    return []
     values = {}
     rx_counter = None
     values["LFA_OptUsmSta"] = 2
