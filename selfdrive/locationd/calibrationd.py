@@ -262,7 +262,7 @@ def main() -> NoReturn:
   config_realtime_process([0, 1, 2, 3], 5)
 
   pm = messaging.PubMaster(['liveCalibration'])
-  sm = messaging.SubMaster(['cameraOdometry', 'carState'])
+  sm = messaging.SubMaster(['cameraOdometry', 'carState'], poll='cameraOdometry')
 
   params_reader = Params()
   CP = messaging.log_from_bytes(params_reader.get("CarParams", block=True), car.CarParams)
@@ -270,14 +270,11 @@ def main() -> NoReturn:
   calibrator = Calibrator(param_put=True)
   calibrator.not_car = CP.notCar
 
-  odom_count = 0
   while 1:
     timeout = 0 if sm.frame == -1 else 100
     sm.update(timeout)
-    if not sm.updated['cameraOdometry']:
-      continue
+
     if sm.updated['cameraOdometry']:
-      odom_count += 1
       calibrator.handle_v_ego(sm['carState'].vEgo)
       new_rpy = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
                                            sm['cameraOdometry'].rot,
@@ -290,7 +287,7 @@ def main() -> NoReturn:
         print('got new rpy', new_rpy)
 
     # 4Hz driven by cameraOdometry
-    if odom_count % 5 == 0:
+    if sm.frame % 5 == 0:
       calibrator.send_data(pm, sm.all_checks())
 
 
