@@ -414,9 +414,38 @@ async function updateQuickLink() {
 
 
 
+
+
+async function syncServerTimeOnConnect() {
+  try {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    const body = {
+      epoch_ms: Date.now(),
+      client_iso: new Date().toISOString(),
+      timezone,
+      debug: true, // server side debug print enabled
+    };
+
+    console.log("[time_sync] request", body);
+    const r = await fetch("/api/time_sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const j = await r.json().catch(() => ({}));
+    console.log("[time_sync] response", j);
+    return j;
+  } catch (e) {
+    console.log("[time_sync] failed", e);
+    return { ok: false, error: String(e) };
+  }
+}
+
 function startAll() {
   renderUIText();
   showPage("home", false);
+  console.log("[time_sync] syncing server time on page load");
+  syncServerTimeOnConnect().catch(() => {});
   rtcInitAuto();
   updateQuickLink().catch(() => {});
 
