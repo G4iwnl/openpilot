@@ -13,6 +13,10 @@ from .server.core import DEFAULT_SETTINGS_PATH, WEB_DIR, _settings_cache
 def main():
   try:
     set_core_affinity([0, 1, 2, 3])
+    os.nice(19)
+    param = os.sched_param(0)
+    os.sched_setscheduler(0, os.SCHED_IDLE, param)
+    print("[carrot_server] scheduler set to SCHED_IDLE")    
   except Exception:
     print("[carrot_server] failed to set core affinity")
 
