@@ -1033,6 +1033,9 @@ msgstr "고속"
 msgid "norm"
 msgstr "일반"
 
+msgid "carrot"
+msgstr "당근"
+
 #: system/ui/widgets/network.py:204
 #, python-format
 msgid "leave blank for automatic configuration"

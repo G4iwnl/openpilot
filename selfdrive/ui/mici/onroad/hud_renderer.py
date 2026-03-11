@@ -578,32 +578,30 @@ class HudRenderer(Widget):
     self._draw_text_with_outline(line1, rl.Vector2(lane_x - s1.x, lane_y1), lane_font, lane_color, rl.BLACK, thickness=1)
     self._draw_text_with_outline(line2, rl.Vector2(lane_x - s2.x, lane_y2), lane_font, lane_color, rl.BLACK, thickness=1)
 
-  def _color_mode(self, mode: int, alpha: int = 200) -> rl.Color:
-    # mode: 0 white, 1 green, 2 orange, 3 red
-    if mode == 1:
-      return rl.Color(0, 255, 0, alpha)
-    if mode == 2:
-      return rl.Color(255, 165, 0, alpha)
-    if mode == 3:
-      return rl.Color(255, 0, 0, alpha)
-    return rl.Color(255, 255, 255, alpha)
-
   def _get_driving_mode_text_and_color(self) -> tuple[str, rl.Color]:
+    carState = ui_state.sm["carState"]
+    if carState.brakeHoldActive:
+      return tr("brake hold"), rl.Color(255, 0, 0, 230)
+    elif carState.softHoldActive:
+      return tr("soft hold"), rl.Color(0, 0, 255, 230)
+    elif carState.carrotCruise:
+      return tr("carrot"), rl.Color(0, 255, 0, 230)
+    
     try:
       mode_val = int(ui_state.sm["longitudinalPlan"].myDrivingMode)
     except Exception:
-      return "", self._color_mode(0, 200)
+      return "", rl.Color(255, 255, 255, 200)
 
     if mode_val == 1:   # eco
-      return tr("eco"), self._color_mode(1, 200)
+      return tr("eco"), rl.Color(0, 255, 0, 200)
     if mode_val == 2:   # safe
-      return tr("safe"), self._color_mode(2, 200)
+      return tr("safe"), rl.Color(255, 165, 0, 200)
     if mode_val == 3:   # normal
-      return tr("norm"), self._color_mode(0, 200)
+      return tr("norm"), rl.Color(255, 255, 255, 200)
     if mode_val == 4:   # high
-      return tr("high"), self._color_mode(3, 200)
+      return tr("high"), rl.Color(255, 0, 0, 200)
 
-    return "", self._color_mode(0, 200)
+    return "", rl.Color(255, 255, 255, 200)
 
 
   def _draw_current_speed(self, rect: rl.Rectangle) -> None:
