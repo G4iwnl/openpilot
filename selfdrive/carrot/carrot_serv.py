@@ -1059,7 +1059,7 @@ class CarrotServ:
     msg.carrotMan.xTurnCountDown = int(left_tbt_sec)
     msg.carrotMan.atcType = self.atcType
     msg.carrotMan.vTurnSpeed = int(vturn_speed)
-    msg.carrotMan.szPosRoadName = self.szPosRoadName + self.debugText
+    msg.carrotMan.szPosRoadName = self.debugText #self.szPosRoadName + self.debugText
     msg.carrotMan.szTBTMainText = self.szTBTMainText
     msg.carrotMan.desiredSpeed = int(desired_speed)
     msg.carrotMan.desiredSource = source

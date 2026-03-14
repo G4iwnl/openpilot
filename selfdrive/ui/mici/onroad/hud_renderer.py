@@ -286,10 +286,13 @@ class HudRenderer(Widget):
     pos_x = int(rect.x + margin_x + wheel_txt.width / 2)
     pos_y = int(rect.y + margin_y + wheel_txt.height / 2 + self._wheel_y_filter.x)
 
-    # rotation
+    self._draw_steering_wheel_icon(wheel_txt, pos_x, pos_y)
+    self._draw_wheel_side_info(wheel_txt, pos_x, pos_y)
+
+
+  def _draw_steering_wheel_icon(self, wheel_txt, pos_x: int, pos_y: int) -> None:
     rotation = -ui_state.sm['carState'].steeringAngleDeg
 
-    # Turn intent (around wheel)
     turn_intent_margin = 25
     self._turn_intent.render(rl.Rectangle(
       pos_x - wheel_txt.width / 2 - turn_intent_margin,
@@ -302,11 +305,10 @@ class HudRenderer(Widget):
     dest_rect = rl.Rectangle(pos_x, pos_y, wheel_txt.width, wheel_txt.height)
     origin = (wheel_txt.width / 2, wheel_txt.height / 2)
 
-    # Color: green if lat_active else gray
     if ui_state.lat_active:
-      wheel_color = rl.Color(0, 255, 0, int(self._wheel_alpha_filter.x))     # green
+      wheel_color = rl.Color(0, 255, 0, int(self._wheel_alpha_filter.x))
     else:
-      wheel_color = rl.Color(160, 160, 160, int(self._wheel_alpha_filter.x)) # gray
+      wheel_color = rl.Color(160, 160, 160, int(self._wheel_alpha_filter.x))
 
     rl.draw_texture_pro(wheel_txt, src_rect, dest_rect, origin, rotation, wheel_color)
 
@@ -317,40 +319,103 @@ class HudRenderer(Widget):
       rl.draw_texture(self._txt_exclamation_point, int(exclamation_pos_x), int(exclamation_pos_y), rl.WHITE)
 
 
-    # ----- current time (right of wheel) -----
+  def _get_cpu_temp_text(self) -> str:
+    try:
+      ds = ui_state.sm['deviceState']
+      cpu_temps = getattr(ds, 'cpuTempC', None)
+
+      if cpu_temps is not None and len(cpu_temps) > 0:
+        valid_temps = [float(t) for t in cpu_temps]
+        if len(valid_temps) > 0:
+          cpu_temp = sum(valid_temps) / float(len(valid_temps))
+          return f"CPU: {cpu_temp:.0f}"
+    except Exception:
+      pass
+
+    return "CPU: --"
+
+
+  def _draw_wheel_side_info(self, wheel_txt, pos_x: int, pos_y: int) -> None:
     now_text = datetime.now().strftime("%H:%M")
 
-    # 휠 높이 기준으로 폰트 크기 설정
-    time_font = int(wheel_txt.height * 1.1)  # 90% 정도 (너무 꽉 차지 않게)
+    time_font = int(wheel_txt.height * 1.1)
+    side_font = max(18, int(time_font * 0.33))
 
     time_size = measure_text_cached(self._font_semi_bold, now_text, time_font)
 
     time_x = pos_x + wheel_txt.width / 2 + 15
     time_y = pos_y - time_size.y / 2
 
-    self._draw_text_with_outline(now_text, rl.Vector2(time_x, time_y), time_font, rl.Color(255, 255, 255, 230), rl.BLACK, thickness=1)
+    self._draw_text_with_outline(
+      now_text,
+      rl.Vector2(time_x, time_y),
+      time_font,
+      rl.Color(255, 255, 255, 230),
+      rl.BLACK,
+      thickness=1
+    )
 
-    # ----- steer ratio (right of time) -----
+    info_x = time_x + time_size.x + 25
+
+    cpu_text = self._get_cpu_temp_text()
+
     try:
       steer_ratio = float(ui_state.sm['liveParameters'].steerRatio)
       sr_text = f"SR: {steer_ratio:.1f}"
     except Exception:
       sr_text = "SR: --.-"
 
-    sr_font = max(18, int(time_font * 0.33))
-    sr_size = measure_text_cached(self._font_medium, sr_text, sr_font)
+    try:
+      road_name = ui_state.sm['carrotMan'].szPosRoadName
+      if not road_name:
+        road_name = ""
+    except Exception:
+      road_name = ""
 
-    sr_x = time_x + time_size.x + 12
-    sr_y = pos_y - sr_size.y / 2
+    cpu_size = measure_text_cached(self._font_medium, cpu_text, side_font)
+    sr_size = measure_text_cached(self._font_medium, sr_text, side_font)
+    road_size = measure_text_cached(self._font_medium, road_name, side_font) if road_name else rl.Vector2(0, 0)
+
+    line_gap = max(4, int(side_font * 0.15))
+
+    total_h = cpu_size.y + line_gap + sr_size.y
+    if road_name:
+      total_h += line_gap + road_size.y
+
+    base_y = pos_y - total_h / 2
+
+    cpu_y = base_y
+    sr_y = cpu_y + cpu_size.y + line_gap
+    road_y = sr_y + sr_size.y + line_gap
 
     self._draw_text_with_outline(
-      sr_text,
-      rl.Vector2(sr_x, sr_y),
-      sr_font,
+      cpu_text,
+      rl.Vector2(info_x, cpu_y),
+      side_font,
       rl.Color(255, 255, 255, 210),
       rl.BLACK,
       thickness=1
     )
+
+    self._draw_text_with_outline(
+      sr_text,
+      rl.Vector2(info_x, sr_y),
+      side_font,
+      rl.Color(255, 255, 255, 210),
+      rl.BLACK,
+      thickness=1
+    )
+
+    if road_name:
+      self._draw_text_with_outline(
+        road_name,
+        rl.Vector2(info_x, road_y),
+        side_font,
+        rl.Color(255, 255, 255, 210),
+        rl.BLACK,
+        thickness=1
+      )
+    
   def _get_gear_text(self) -> str:
     sm = ui_state.sm
 
