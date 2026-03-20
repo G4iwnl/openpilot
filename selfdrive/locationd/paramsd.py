@@ -71,6 +71,7 @@ class VehicleParamsLearner:
 
   def handle_log(self, t: float, which: str, msg: capnp._DynamicStructReader):
     if which == 'livePose':
+      t = msg.timestamp * 1e-9
       device_pose = Pose.from_live_pose(msg)
       calibrated_pose = self.calibrator.build_calibrated_pose(device_pose)
 
@@ -133,8 +134,8 @@ class VehicleParamsLearner:
 
     if not self.active:
       # Reset time when stopped so uncertainty doesn't grow
-      self.kf.filter.set_filter_time(t)  # type: ignore
-      self.kf.filter.reset_rewind()      # type: ignore
+      self.kf.filter.set_filter_time(t)
+      self.kf.filter.reset_rewind()
 
   def get_msg(self, valid: bool, debug: bool = False) -> capnp._DynamicStructBuilder:
     x = self.kf.x
@@ -291,43 +292,13 @@ def main():
   params_memory = Params("/dev/shm/params")
   params_memory.remove("LastGPSPosition")
 
-  last_fail_print_t = 0.0
-  last_lp_invalid_print_t = 0.0
-
-  show_debug = False
   while True:
     sm.update()
-
-    ok_alive = sm.all_alive()
-    ok_freq = sm.all_freq_ok()
-    ok_valid = sm.all_valid()
-    ok_all = ok_alive and ok_freq and ok_valid
-
-    if ok_all:
+    if sm.all_checks():
       for which in sorted(sm.updated.keys(), key=lambda x: sm.logMonoTime[x]):
         if sm.updated[which]:
           t = sm.logMonoTime[which] * 1e-9
           learner.handle_log(t, which, sm[which])
-    else:
-      now = time.monotonic()
-      if show_debug and now - last_fail_print_t > 1.0:
-        last_fail_print_t = now
-
-        print(f"\n[liveParameters all_checks FAIL] frame={sm.frame} "
-              f"alive={ok_alive} freq={ok_freq} valid={ok_valid}")
-
-        for s in sm.services:
-          recv_age_ms = (now - sm.recv_time[s]) * 1000.0 if sm.recv_time[s] > 0 else -1.0
-          print(
-            f"  {s:18s} "
-            f"seen={sm.seen[s]} "
-            f"updated={sm.updated[s]} "
-            f"alive={sm.alive[s]} "
-            f"freq_ok={sm.freq_ok[s]} "
-            f"valid={sm.valid[s]} "
-            f"recv_age_ms={recv_age_ms:7.1f} "
-            f"logMonoTime={sm.logMonoTime[s]}"
-          )
 
     if sm.updated[gps_location_service]:
       gps = sm[gps_location_service]
@@ -342,37 +313,14 @@ def main():
         }))
 
     if sm.updated['livePose']:
-      lp_valid = sm.valid["livePose"] and sm.valid["liveCalibration"]
-
-      now = time.monotonic()
-      if show_debug and (not lp_valid) and (now - last_lp_invalid_print_t > 1.0):
-        last_lp_invalid_print_t = now
-
-        print(f"\n[liveParameters lp_valid FAIL] frame={sm.frame} "
-              f"livePose_valid={sm.valid['livePose']} "
-              f"liveCalibration_valid={sm.valid['liveCalibration']} "
-              f"all_checks={ok_all}")
-
-        for s in ['livePose', 'liveCalibration', 'carState', gps_location_service]:
-          recv_age_ms = (now - sm.recv_time[s]) * 1000.0 if sm.recv_time[s] > 0 else -1.0
-          print(
-            f"  {s:18s} "
-            f"seen={sm.seen[s]} "
-            f"updated={sm.updated[s]} "
-            f"alive={sm.alive[s]} "
-            f"freq_ok={sm.freq_ok[s]} "
-            f"valid={sm.valid[s]} "
-            f"recv_age_ms={recv_age_ms:7.1f} "
-            f"logMonoTime={sm.logMonoTime[s]}"
-          )
-
-      msg = learner.get_msg(lp_valid, debug=DEBUG)
+      msg = learner.get_msg(sm.all_checks(), debug=DEBUG)
 
       msg_dat = msg.to_bytes()
       if sm.frame % 1200 == 0:  # once a minute
         params.put_nonblocking("LiveParametersV2", msg_dat)
 
       pm.send('liveParameters', msg_dat)
+
 
 if __name__ == "__main__":
   main()
