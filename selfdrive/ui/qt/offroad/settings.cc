@@ -17,7 +17,6 @@
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 #include "selfdrive/ui/qt/offroad/developer_panel.h"
 #include "selfdrive/ui/qt/offroad/firehose.h"
-#include "selfdrive/ui/qt/offroad/model_panel.h"
 
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon
@@ -505,7 +504,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     panels.append({tr("Firehose"), new FirehosePanel(this)});
   }
   panels.append({ tr("Carrot"), new CarrotPanel(this) });
-  panels.append({ tr("Model"), new ModelPanel(this) });
   panels.append({ tr("Developer"), new DeveloperPanel(this) });
 
   nav_btns = new QButtonGroup(this);

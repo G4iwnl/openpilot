@@ -184,7 +184,6 @@ def get_default_params():
     ("onlysofthold", "1"),
     ("VisionOnly", "0"),
     ("IgnorePaddleShift", "1"),
-    ("DrivingModelGeneration", "0"),
   ]
   return default_params
 
