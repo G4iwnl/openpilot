@@ -42,10 +42,39 @@ from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
-VISION_PKL_PATH = Path(__file__).parent / 'models/driving_vision_tinygrad.pkl'
-POLICY_PKL_PATH = Path(__file__).parent / 'models/driving_policy_tinygrad.pkl'
-VISION_METADATA_PATH = Path(__file__).parent / 'models/driving_vision_metadata.pkl'
-POLICY_METADATA_PATH = Path(__file__).parent / 'models/driving_policy_metadata.pkl'
+MODELS_PATH = Path(__file__).parent / 'models'
+
+DRIVING_MODEL_GENERATIONS = {
+  0: {
+    'vision': MODELS_PATH / 'driving_vision_tinygrad.pkl',
+    'policy': MODELS_PATH / 'driving_policy_tinygrad.pkl',
+    'vision_metadata': MODELS_PATH / 'driving_vision_metadata.pkl',
+    'policy_metadata': MODELS_PATH / 'driving_policy_metadata.pkl',
+  },
+  1: {
+    'vision': MODELS_PATH / 'big_driving_vision_tinygrad.pkl',
+    'policy': MODELS_PATH / 'big_driving_policy_tinygrad.pkl',
+    'vision_metadata': MODELS_PATH / 'big_driving_vision_metadata.pkl',
+    'policy_metadata': MODELS_PATH / 'big_driving_policy_metadata.pkl',
+  },
+}
+
+def get_model_paths(params: Params) -> tuple[Path, Path, Path, Path]:
+  model_gen = int(params.get("DrivingModelGeneration") or "0")
+  paths = DRIVING_MODEL_GENERATIONS.get(model_gen, DRIVING_MODEL_GENERATIONS[0])
+  vision_pkl = paths['vision']
+  policy_pkl = paths['policy']
+  vision_meta = paths['vision_metadata']
+  policy_meta = paths['policy_metadata']
+  # Fall back to default model if selected model files don't exist
+  if not vision_pkl.exists() or not policy_pkl.exists():
+    cloudlog.warning(f"Model generation {model_gen} files not found, falling back to default model")
+    paths = DRIVING_MODEL_GENERATIONS[0]
+    vision_pkl = paths['vision']
+    policy_pkl = paths['policy']
+    vision_meta = paths['vision_metadata']
+    policy_meta = paths['policy_metadata']
+  return vision_pkl, policy_pkl, vision_meta, policy_meta
 
 LAT_SMOOTH_SECONDS = 0.13
 LONG_SMOOTH_SECONDS = 0.3
@@ -93,15 +122,15 @@ class ModelState:
   output: np.ndarray
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
 
-  def __init__(self, context: CLContext):
-    with open(VISION_METADATA_PATH, 'rb') as f:
+  def __init__(self, context: CLContext, vision_pkl_path: Path, policy_pkl_path: Path, vision_meta_path: Path, policy_meta_path: Path):
+    with open(vision_meta_path, 'rb') as f:
       vision_metadata = pickle.load(f)
       self.vision_input_shapes =  vision_metadata['input_shapes']
       self.vision_input_names = list(self.vision_input_shapes.keys())
       self.vision_output_slices = vision_metadata['output_slices']
       vision_output_size = vision_metadata['output_shapes']['outputs'][1]
 
-    with open(POLICY_METADATA_PATH, 'rb') as f:
+    with open(policy_meta_path, 'rb') as f:
       policy_metadata = pickle.load(f)
       self.policy_input_shapes =  policy_metadata['input_shapes']
       self.policy_output_slices = policy_metadata['output_slices']
@@ -131,10 +160,10 @@ class ModelState:
     self.policy_output = np.zeros(policy_output_size, dtype=np.float32)
     self.parser = Parser()
 
-    with open(VISION_PKL_PATH, "rb") as f:
+    with open(vision_pkl_path, "rb") as f:
       self.vision_run = pickle.load(f)
 
-    with open(POLICY_PKL_PATH, "rb") as f:
+    with open(policy_pkl_path, "rb") as f:
       self.policy_run = pickle.load(f)
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
@@ -206,7 +235,10 @@ def main(demo=False):
   cloudlog.warning("setting up CL context")
   cl_context = CLContext()
   cloudlog.warning("CL context ready; loading model")
-  model = ModelState(cl_context)
+  params = Params()
+  vision_pkl_path, policy_pkl_path, vision_meta_path, policy_meta_path = get_model_paths(params)
+  cloudlog.warning(f"loading model: vision={vision_pkl_path.name}, policy={policy_pkl_path.name}")
+  model = ModelState(cl_context, vision_pkl_path, policy_pkl_path, vision_meta_path, policy_meta_path)
   cloudlog.warning(f"models loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
   # visionipc clients
@@ -237,7 +269,6 @@ def main(demo=False):
   sm = SubMaster(["deviceState", "carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "carControl", "liveDelay", "carrotMan", "radarState"])
 
   publish_state = PublishState()
-  params = Params()
 
   # setup filter to track dropped frames
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / ModelConstants.MODEL_FREQ)
