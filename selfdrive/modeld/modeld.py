@@ -34,10 +34,58 @@ from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
-VISION_PKL_PATH = Path(__file__).parent / 'models/driving_vision_tinygrad.pkl'
-POLICY_PKL_PATH = Path(__file__).parent / 'models/driving_policy_tinygrad.pkl'
-VISION_METADATA_PATH = Path(__file__).parent / 'models/driving_vision_metadata.pkl'
-POLICY_METADATA_PATH = Path(__file__).parent / 'models/driving_policy_metadata.pkl'
+# 커스텀 모델 경로
+CUSTOM_MODEL_PATH = Path('/data/models')
+
+# 모델에 필요한 필수 파일 목록
+REQUIRED_MODEL_FILES = [
+    'driving_vision_tinygrad.pkl',
+    'driving_policy_tinygrad.pkl',
+    'driving_vision_metadata.pkl',
+    'driving_policy_metadata.pkl',
+]
+
+def validate_model_files(base: Path) -> bool:
+    """모델 디렉토리의 4개 필수 파일 모두 존재하는지 검증"""
+    for filename in REQUIRED_MODEL_FILES:
+        filepath = base / filename
+        if not filepath.exists():
+            cloudlog.warning(f"Model file missing: {filepath}")
+            return False
+        if filepath.stat().st_size == 0:
+            cloudlog.warning(f"Model file empty: {filepath}")
+            return False
+    return True
+
+def get_model_paths():
+    """커스텀 모델 폴더가 유효하면 사용, 아니면 기본 모델"""
+    default_base = Path(__file__).parent / 'models'
+
+    # /data/models/ 폴더에 유효한 모델이 있으면 사용
+    if CUSTOM_MODEL_PATH.exists() and validate_model_files(CUSTOM_MODEL_PATH):
+        cloudlog.info(f"Using custom model from {CUSTOM_MODEL_PATH}")
+        base = CUSTOM_MODEL_PATH
+    else:
+        cloudlog.info("Using default built-in model")
+        base = default_base
+
+    paths = {
+        'vision_pkl': base / 'driving_vision_tinygrad.pkl',
+        'policy_pkl': base / 'driving_policy_tinygrad.pkl',
+        'vision_meta': base / 'driving_vision_metadata.pkl',
+        'policy_meta': base / 'driving_policy_metadata.pkl',
+    }
+
+    # off-policy 모델이 있으면 경로 추가
+    off_policy_pkl = base / 'driving_off_policy_tinygrad.pkl'
+    off_policy_meta = base / 'driving_off_policy_metadata.pkl'
+    if off_policy_pkl.exists() and off_policy_meta.exists():
+        cloudlog.info(f"Off-policy model found at {base}")
+        paths['off_policy_pkl'] = off_policy_pkl
+        paths['off_policy_meta'] = off_policy_meta
+
+    return paths
+
 MODELS_DIR = Path(__file__).parent / 'models'
 
 LAT_SMOOTH_SECONDS = 0.0
@@ -147,14 +195,34 @@ class ModelState:
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
 
   def __init__(self):
-    with open(VISION_METADATA_PATH, 'rb') as f:
+    # compile_pending_model() 완료 후 실행되므로 여기서 경로 결정
+    model_paths = get_model_paths()
+    vision_pkl_path = model_paths['vision_pkl']
+    policy_pkl_path = model_paths['policy_pkl']
+    vision_meta_path = model_paths['vision_meta']
+    policy_meta_path = model_paths['policy_meta']
+    off_policy_pkl_path = model_paths.get('off_policy_pkl')
+    off_policy_meta_path = model_paths.get('off_policy_meta')
+
+    # 파일 존재 이중 체크 (경쟁 조건 방지)
+    if not Path(vision_pkl_path).exists() or not Path(policy_pkl_path).exists():
+        cloudlog.warning("Custom model files missing at load time, falling back to default")
+        default_base = Path(__file__).parent / 'models'
+        vision_pkl_path = default_base / 'driving_vision_tinygrad.pkl'
+        policy_pkl_path = default_base / 'driving_policy_tinygrad.pkl'
+        vision_meta_path = default_base / 'driving_vision_metadata.pkl'
+        policy_meta_path = default_base / 'driving_policy_metadata.pkl'
+        off_policy_pkl_path = None
+        off_policy_meta_path = None
+
+    with open(vision_meta_path, 'rb') as f:
       vision_metadata = pickle.load(f)
       self.vision_input_shapes =  vision_metadata['input_shapes']
       self.vision_input_names = list(self.vision_input_shapes.keys())
       self.vision_output_slices = vision_metadata['output_slices']
       vision_output_size = vision_metadata['output_shapes']['outputs'][1]
 
-    with open(POLICY_METADATA_PATH, 'rb') as f:
+    with open(policy_meta_path, 'rb') as f:
       policy_metadata = pickle.load(f)
       self.policy_input_shapes =  policy_metadata['input_shapes']
       self.policy_output_slices = policy_metadata['output_slices']
@@ -178,11 +246,30 @@ class ModelState:
     self.vision_output = np.zeros(vision_output_size, dtype=np.float32)
     self.policy_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
     self.policy_output = np.zeros(policy_output_size, dtype=np.float32)
+
+    # off-policy 모델 조건부 로드
+    self.has_off_policy = (off_policy_pkl_path is not None and off_policy_meta_path is not None
+                           and Path(off_policy_pkl_path).exists() and Path(off_policy_meta_path).exists())
+    if self.has_off_policy:
+      with open(off_policy_meta_path, 'rb') as f:
+        off_policy_metadata = pickle.load(f)
+        self.off_policy_input_shapes = off_policy_metadata['input_shapes']
+        self.off_policy_output_slices = off_policy_metadata['output_slices']
+        off_policy_output_size = off_policy_metadata['output_shapes']['outputs'][1]
+      self.off_policy_output = np.zeros(off_policy_output_size, dtype=np.float32)
+      self.off_policy_numpy_inputs = {k: np.zeros(self.off_policy_input_shapes[k], dtype=np.float32) for k in self.off_policy_input_shapes}
+      self.off_policy_tinygrad_inputs = {k: Tensor(v, device='NPY').realize() for k, v in self.off_policy_numpy_inputs.items()}
+      cloudlog.info(f"Off-policy model loaded: output_size={off_policy_output_size}")
+
     self.parser = Parser()
     self.frame_buf_params : dict[str, tuple[int, int, int, int]] = {}
     self.update_imgs = None
-    self.vision_run = pickle.loads(read_file_chunked(str(VISION_PKL_PATH)))
-    self.policy_run = pickle.loads(read_file_chunked(str(POLICY_PKL_PATH)))
+    self.vision_run = pickle.loads(read_file_chunked(str(vision_pkl_path)))
+    self.policy_run = pickle.loads(read_file_chunked(str(policy_pkl_path)))
+
+    if self.has_off_policy:
+      with open(off_policy_pkl_path, 'rb') as f:
+        self.off_policy_run = pickle.load(f)
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
@@ -232,8 +319,18 @@ class ModelState:
     self.policy_output = self.policy_run(**self.policy_inputs).contiguous().realize().uop.base.buffer.numpy().flatten()
     policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(self.policy_output, self.policy_output_slices))
     combined_outputs_dict = {**vision_outputs_dict, **policy_outputs_dict}
+
+    # off-policy 모델 실행 (있을 때만)
+    if self.has_off_policy:
+      self.off_policy_output = self.off_policy_run(**self.off_policy_tinygrad_inputs).contiguous().realize().uop.base.buffer.numpy().flatten()
+      off_policy_outputs_dict = self.parser.parse_off_policy_outputs(self.slice_outputs(self.off_policy_output, self.off_policy_output_slices))
+      combined_outputs_dict.update(off_policy_outputs_dict)
+
     if SEND_RAW_PRED:
-      combined_outputs_dict['raw_pred'] = np.concatenate([self.vision_output.copy(), self.policy_output.copy()])
+      raw_parts = [self.vision_output.copy(), self.policy_output.copy()]
+      if self.has_off_policy:
+        raw_parts.append(self.off_policy_output.copy())
+      combined_outputs_dict['raw_pred'] = np.concatenate(raw_parts)
 
     return combined_outputs_dict
 
