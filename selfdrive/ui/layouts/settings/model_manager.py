@@ -135,7 +135,7 @@ class ModelManagerDialog(Widget):
         super().__init__()
         self._params = Params()
         self._models: list[ModelInfo] = []
-        self._selected_index: int = -1
+        self._selected_model_id: Optional[str] = None
         self._status_text: str = tr("Loading model list...")
         self._status_color: rl.Color = TEXT_NORMAL
         self._is_downloading: bool = False
@@ -254,9 +254,11 @@ class ModelManagerDialog(Widget):
         return name if name else DEFAULT_MODEL_NAME
 
     def _on_download_click(self):
-        if self._selected_index < 0 or self._selected_index >= len(self._models):
+        if not self._selected_model_id:
             return
-        model = self._models[self._selected_index]
+        model = next((m for m in self._models if m.id == self._selected_model_id), None)
+        if model is None:
+            return
         current_name = self._get_current_model_name()
         if (model.name.lower() == current_name.lower() or
                 model.id.lower() == current_name.lower()):
@@ -532,7 +534,7 @@ class ModelManagerDialog(Widget):
                 continue
 
             # Row background
-            is_selected = (i == self._selected_index)
+            is_selected = (model.id == self._selected_model_id)
             is_hover = in_list and rl.check_collision_point_rec(mouse_pos, row_rect) and not self._is_downloading
             if is_selected:
                 row_color = ROW_SELECTED_COLOR
@@ -545,7 +547,7 @@ class ModelManagerDialog(Widget):
             # Handle click
             if (is_hover and not self._is_downloading and
                     rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)):
-                self._selected_index = i
+                self._selected_model_id = model.id
 
             # Row content
             total_size = sum(f.size for f in model.files.values())
@@ -584,7 +586,9 @@ class ModelManagerDialog(Widget):
             close_rect = rl.Rectangle(rect.x + rect.width - btn_w, rect.y, btn_w, rect.height)
             self._close_btn.render(close_rect)
         else:
-            has_selection = (0 <= self._selected_index < len(self._models))
+            has_selection = self._selected_model_id is not None and any(
+                m.id == self._selected_model_id for m in self._models
+            )
             dl_rect = rl.Rectangle(rect.x, rect.y, btn_w * 1.5, rect.height)
             self._download_btn.set_enabled(has_selection)
             self._download_btn.render(dl_rect)
@@ -598,7 +602,7 @@ class ModelManagerDialog(Widget):
 
     def show_event(self):
         super().show_event()
-        self._selected_index = -1
+        self._selected_model_id = None
         if not self._models:
             self._fetch_models()
 
