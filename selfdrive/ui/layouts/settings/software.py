@@ -3,6 +3,7 @@ import time
 import datetime
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui.layouts.settings.model_manager import ModelManagerDialog, has_valid_custom_model, DEFAULT_MODEL_NAME
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.multilang import tr, trn
 from openpilot.system.ui.widgets import Widget, DialogResult
@@ -70,12 +71,21 @@ class SoftwareLayout(Widget):
     self._branch_btn.action_item.set_value(ui_state.params.get("UpdaterTargetBranch") or "")
     self._branch_dialog: MultiOptionDialog | None = None
 
+    # Model selector button
+    self._model_selector_btn = button_item(
+      lambda: tr("Driving Model"),
+      lambda: tr("SELECT"),
+      callback=self._on_select_model,
+    )
+    self._model_manager_dialog: ModelManagerDialog | None = None
+
     self._scroller = Scroller([
       self._onroad_label,
       self._version_item,
       self._download_btn,
       self._install_btn,
       self._branch_btn,
+      self._model_selector_btn,
       button_item(lambda: tr("Uninstall"), lambda: tr("UNINSTALL"), callback=self._on_uninstall),
     ], line_separator=True, spacing=0)
 
@@ -136,6 +146,15 @@ class SoftwareLayout(Widget):
     # Update target branch button value
     current_branch = ui_state.params.get("UpdaterTargetBranch") or ""
     self._branch_btn.action_item.set_value(current_branch)
+
+    # Update model selector button value
+    model_name = ui_state.params.get("DrivingModelName") or ""
+    if isinstance(model_name, bytes):
+      model_name = model_name.decode("utf-8", "replace")
+    model_name = model_name.strip()
+    if not model_name or not has_valid_custom_model():
+      model_name = DEFAULT_MODEL_NAME
+    self._model_selector_btn.action_item.set_value(model_name)
 
     # Update install button
     self._install_btn.set_visible(ui_state.is_offroad() and update_available)
@@ -201,3 +220,8 @@ class SoftwareLayout(Widget):
 
     self._branch_dialog = MultiOptionDialog(tr("Select a branch"), branches, current_target, callback=handle_selection)
     gui_app.push_widget(self._branch_dialog)
+
+  def _on_select_model(self):
+    """Open the model manager dialog."""
+    self._model_manager_dialog = ModelManagerDialog()
+    gui_app.push_widget(self._model_manager_dialog)
