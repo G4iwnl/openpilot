@@ -290,11 +290,11 @@
       "cdescr": "力矩控制车辆 — 值越高方向盘回正速度越快"
     },
     {
-      "group": "조향튜닝",
+      "group": "쏘렌토",
       "name": "CustomSteerDeltaUpLC",
       "title": "_CustomSteerDeltaUpLC(0)",
       "descr": "(토크차량) \n 차선변경 시 일시적용 SteerDeltaUp",
-      "egroup": "LAT",
+      "egroup": "sorento",
       "etitle": "_CustomSteerDeltaUpLC(0)",
       "edescr": "Torque Vehicle — Temporarily applies SteerDeltaUp during lane changes",
       "min": 0,
@@ -306,11 +306,11 @@
       "cdescr": "力矩控制车辆 — 变道期间临时应用转向增大斜率"
     },
     {
-      "group": "조향튜닝",
+      "group": "쏘렌토",
       "name": "CustomSteerDeltaDownLC",
       "title": "_CustomSteerDeltaDownLC(0)",
       "descr": "(토크차량) \n 차선변경 시 일시적용 SteerDeltaDown",
-      "egroup": "LAT",
+      "egroup": "sorento",
       "etitle": "_CustomSteerDeltaDownLC(0)",
       "edescr": "Torque Vehicle — Temporarily applies SteerDeltaDown during lane changes",
       "min": 0,
@@ -1074,11 +1074,11 @@
       "cdescr": "动能回收拨片后, 0: 巡航开启, 1: 巡航就绪, 2: 减速并巡航就绪, 3: 胡萝卜巡航"
     },
     {
-      "group": "시작",
+      "group": "쏘렌토",
       "name": "AutoCruiseControl",
       "title": "오토크루즈제어(HKG only)",
       "descr": "1:소프트홀드 + 오토크루즈\n 2:소프트홀드 오류 발생 차량",
-      "egroup": "START",
+      "egroup": "sorento",
       "etitle": "Auto Cruise control(HKG only)",
       "edescr": "1:Softhold + Auto Cruise, 2:if softhold error",
       "min": 0,
@@ -1088,6 +1088,45 @@
       "cgroup": "启动设置",
       "ctitle": "自动巡航控制 (仅限现代/起亚)",
       "cdescr": "1: 软驻车 + 自动巡航, 2: 如果软驻车报错"
+    },
+    {
+      "group": "쏘렌토",
+      "name": "onlysofthold",
+      "title": "오토크루즈에서 Softhold 기능만 사용",
+      "descr": "",
+      "egroup": "sorento",
+      "etitle": "only use Softhold in Autocruise",
+      "edescr": "",
+      "min": 0,
+      "max": 1,
+      "default": 1,
+      "unit": 1
+    },
+    {
+      "group": "쏘렌토",
+      "name": "IgnorePaddleShift",
+      "title": "패들쉬프트 무시",
+      "descr": "",
+      "egroup": "sorento",
+      "etitle": "IgnorePaddleShift",
+      "edescr": "",
+      "min": 0,
+      "max": 1,
+      "default": 1,
+      "unit": 1
+    },
+    {
+      "group": "쏘렌토",
+      "name": "DecreaseHDA",
+      "title": "HDA자동 감속(CANFD신호 이용) [테스트중]",
+      "descr": "0:사용안함, 1:APN없이 HDA로 감속",
+      "egroup": "sorento",
+      "etitle": "HDA auto decrease",
+      "edescr": "0:no, 1:yes",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "unit": 1
     },
     {
       "group": "시작",
@@ -1138,11 +1177,11 @@
       "cdescr": "1: 标准摄像头, 2: 标准摄像头 + 广角摄像头"
     },
     {
-      "group": "시작",
+      "group": "쏘렌토",
       "name": "HDPuse",
       "title": "HDP 사용(CCNC)",
       "descr": "1:APN사용시\n2:항상",
-      "egroup": "START",
+      "egroup": "sorento",
       "etitle": "Use HDP(CCNC)",
       "edescr": "1:While using APN, 2:Always",
       "min": 0,
@@ -1152,6 +1191,19 @@
       "cgroup": "启动设置",
       "ctitle": "使用 HDP (CCNC)",
       "cdescr": "1: 使用 APN 时, 2: 始终"
+    },
+    {
+      "group": "쏘렌토",
+      "name": "cruiselateral",
+      "title": "크루즈 해제 후 조향 해제",
+      "descr": "",
+      "egroup": "sorento",
+      "etitle": "lfa off on cruise disengage",
+      "edescr": "",
+      "min": 0,
+      "max": 1,
+      "default": 1,
+      "unit": 1
     },
     {
       "group": "시작",
@@ -1634,11 +1686,11 @@
       "cdescr": "向路缘/弯道内侧修正"
     },
     {
-      "group": "조향일반",
+      "group": "쏘렌토",
       "name": "LaneChangeNeedTorque",
       "title": "차선변경 조향토크 사용",
       "descr": "-1:자동차선변경사용안함\n 0: 즉시 차선변경\n 1: 토크필요",
-      "egroup": "LAT",
+      "egroup": "sorento",
       "etitle": "LaneChange use steering torque",
       "edescr": "0:immediate, 1: need torque(nudge), -1: auto lane change off",
       "min": -1,
@@ -1650,11 +1702,11 @@
       "cdescr": "0: 立即变道, 1: 需要力矩 (轻拨), -1: 自动变道关闭"
     },
     {
-      "group": "조향일반",
+      "group": "쏘렌토",
       "name": "LaneChangeDelay",
       "title": "차선변경 지연시간x0.1s(0)",
       "descr": "방향지시등을 켜고 설정시간 후 차선변경합니다.",
-      "egroup": "LAT",
+      "egroup": "sorento",
       "etitle": "LaneChange delayx0.1s(0)",
       "edescr": "Changes lanes after the set time once the turn signal is activated",
       "min": 0,
@@ -1666,11 +1718,11 @@
       "cdescr": "开启转向灯后在设定时间后变道"
     },
     {
-      "group": "조향일반",
+      "group": "쏘렌토",
       "name": "LaneChangeBsd",
       "title": "차선변경 BSD",
       "descr": "0: BSD검출(조향토크허용)\n 1: 조향토크불허\n-1: BSD사용안함",
-      "egroup": "LAT",
+      "egroup": "sorento",
       "etitle": "LaneChange BSD",
       "edescr": "0:BSD detect(allow steer torque), 1: block steer torque, -1: ignore BSD",
       "min": -1,
@@ -2117,17 +2169,30 @@
       "group": "감속제어",
       "name": "AutoNaviSpeedCtrlMode",
       "title": "네비게이션감속모드(2)",
-      "descr": "0: 감속안함\n1: 과속카메라\n2: 과속카메라+과속방지턱\n3: 과속카메라+과속방지턱+이동식카메라",
+      "descr": "0: 감속안함\n1: 과속카메라\n2: 과속카메라+이동식카메라",
       "egroup": "SPEED",
       "etitle": "NaviSpeedControlMode(2)",
-      "edescr": "0: Not Use, 1: Speed cam, 2: cam + speed bump, 3: cam + bump + apn speed cam",
+      "edescr": "0: Not Use, 1: Speed cam, 2: cam + mobile cam",
       "min": 0,
-      "max": 3,
+      "max": 2,
       "default": 2,
       "unit": 1,
       "cgroup": "速度控制",
       "ctitle": "导航减速模式 (2)",
-      "cdescr": "0: 不使用, 1: 限速摄像头, 2: 摄像头 + 减速带, 3: 摄像头 + 减速带 + APN 限速摄像头"
+      "cdescr": "0: 不使用, 1: 限速摄像头, 2: 摄像头 + 移动摄像头"
+    },
+    {
+      "group": "감속제어",
+      "name": "AutoNaviSpeedCtrlBump",
+      "title": "과속방지턱 감속(1)",
+      "descr": "0:감속안함,1:감속 함",
+      "egroup": "SPEED",
+      "etitle": "NaviSpeedControlBump(1)",
+      "edescr": "",
+      "min": 0,
+      "max": 1,
+      "default": 1,
+      "unit": 1
     },
     {
       "group": "감속제어",
