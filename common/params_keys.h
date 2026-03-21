@@ -163,7 +163,12 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"RecordRoadCam", {PERSISTENT, INT, "0"}},
     {"HDPuse", {PERSISTENT, INT, "0"}},
 
+    {"cruiselateral", {PERSISTENT, INT, "1"}},
+    {"DecreaseHDA", {PERSISTENT, INT, "1"}},
+
     {"AutoCruiseControl", {PERSISTENT, INT, "0"}},
+    {"onlysofthold", {PERSISTENT, INT, "1"}},
+    {"VisionOnly", {PERSISTENT, INT, "0"}},
     {"CruiseEcoControl", {PERSISTENT, INT, "2"}},
     {"CarrotCruiseDecel", {PERSISTENT, INT, "-1"}},
     {"CarrotCruiseAtcDecel", {PERSISTENT, INT, "-1"}},
@@ -185,6 +190,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
 
     {"AutoNaviSpeedCtrlEnd", {PERSISTENT, INT, "7"}},
     {"AutoNaviSpeedCtrlMode", {PERSISTENT, INT, "2"}},
+    {"AutoNaviSpeedCtrlBump", {PERSISTENT, INT, "1"}},
     {"AutoRoadSpeedLimitOffset", {PERSISTENT, INT, "-1"}},
     {"AutoNaviSpeedBumpTime", {PERSISTENT, INT, "1"}},
     {"AutoNaviSpeedBumpSpeed", {PERSISTENT, INT, "35"}},
@@ -312,6 +318,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"MaxTimeOffroadMin", {PERSISTENT, INT, "60"}},
 
     {"DisableDM", {PERSISTENT, INT, "0"}},
+    {"IgnorePaddleShift", {PERSISTENT, INT, "1"}},
     {"EnableConnect", {PERSISTENT, INT, "0"}},
     {"MuteDoor", {PERSISTENT, INT, "0"}},
     {"MuteSeatbelt", {PERSISTENT, INT, "0"}},

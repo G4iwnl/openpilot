@@ -92,11 +92,18 @@
         </div>
 
         <div class="mt-4">
-            <button class="btn btn-danger" onclick="uploadSelectedSegments()">
+            <button class="btn btn-danger" onclick="uploadSelectedSegmentsG4()">
+                <i class="bi bi-upload me-2"></i>
+                Upload All Selected Routes To G4 Server
+            </button>
+            <div id="uploadStatus" class="mt-2"></div>
+        </div>
+		
+        <div class="mt-4">
+            <button class="btn btn-danger" onclick="uploadSelectedSegmentsCarrot()">
                 <i class="bi bi-upload me-2"></i>
                 Upload All Selected Routes To Carrot Server
             </button>
-            <div id="uploadStatus" class="mt-2"></div>
         </div>
 		
     </div>
@@ -202,7 +209,141 @@
 			}
 		}
 
-        async function uploadSelectedSegments() {
+        async function uploadSelectedSegmentsG4() {
+			const video = document.getElementById('video');
+			video.pause();
+            const selected = Array.from(document.querySelectorAll('.segment-checkbox:checked'))
+                                .map(cb => cb.value);
+            
+            if(selected.length === 0) {
+                showUploadStatus('No segments selected!', 'danger');
+                return;
+            }
+
+            const progressUI = `
+                <div class="upload-progress mt-3">
+                    <div class="progress mb-2">
+                        <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 text-start">
+                            <small id="uploadProgressText">Preparing upload...</small>
+                        </div>
+                        <div class="col-6 text-end">
+                            <small id="uploadSpeed">-</small>
+                        </div>
+                    </div>
+                    <div class="row mt-1">
+                        <div class="col-12">
+                            <small id="uploadFileInfo" class="text-muted">-</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+            const statusDiv = document.getElementById('uploadStatus');
+            statusDiv.innerHTML = progressUI;
+
+            try {
+                let totalSize = 0;
+                let uploadedSize = 0;
+                const startTime = Date.now();
+                const uploads = [];
+                const selectedSegmentsCount = selected.length;
+
+                document.getElementById('uploadProgressText').textContent = 'Calculating total size...';
+                for (const segment of selected) {
+                    const segmentNum = segment.split('--')[2];
+                    const files = ['rlog.zst', 'qcamera.ts'];
+                    
+                    for (const file of files) {
+                        try {
+                            const response = await fetch(`/file-size?path=/data/media/0/realdata/{{ route }}--${segmentNum}/${file}`);
+                            const { size } = await response.json();
+                            if (size) {
+                                totalSize += size;
+                                uploads.push({ segmentNum, file, size });
+                            }
+                        } catch (e) {
+                            console.warn(`Size check failed for ${file}`, e);
+                        }
+                    }
+                }
+
+                const initialUploadMsg = `Uploading ${uploads.length} files (${selectedSegmentsCount} Segments) ${formatBytes(totalSize)}...`;
+                showUploadStatus(initialUploadMsg, 'info');
+                document.getElementById('uploadProgressText').textContent = initialUploadMsg;
+                document.getElementById('uploadFileInfo').textContent = 
+                    `${selectedSegmentsCount} Segments | ${uploads.length} files | ${formatBytes(totalSize)}`;
+
+                for (const { segmentNum, file, size } of uploads) {
+                    try {
+                        const filePath = `/data/media/0/realdata/{{ route }}--${segmentNum}/${file}`;
+                        document.getElementById('uploadFileInfo').textContent = 
+                            `Uploading: ${file} (${formatBytes(size)})`;
+                        
+                        const formData = new FormData();
+                        const blob = await fetch(filePath).then(r => r.blob());
+                        formData.append('file', blob, file);
+                        formData.append('segment', segmentNum);
+
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('POST', `/footage/full/upload_g4/{{ route }}/${segmentNum}`, true);
+
+                        xhr.upload.onprogress = function(e) {
+                            if (e.lengthComputable && totalSize > 0) {
+                                const loaded = uploadedSize + e.loaded;
+                                const percent = Math.round(loaded / totalSize * 100);
+                                const elapsed = (Date.now() - startTime) / 1000;
+                                const speed = elapsed > 0 ? loaded / (1024 * 1024 * elapsed) : 0;
+                                
+                                document.getElementById('uploadProgressBar').style.width = `${percent}%`;
+                                document.getElementById('uploadProgressText').textContent = 
+                                    `${percent}% (${formatBytes(loaded)}/${formatBytes(totalSize)})`;
+                                document.getElementById('uploadSpeed').textContent = 
+                                    `${speed.toFixed(2)} MB/s`;
+                            }
+                        };
+
+                        await new Promise((resolve, reject) => {
+                            xhr.onload = () => {
+                                if (xhr.status === 200) {
+                                    uploadedSize += size;
+                                    resolve();
+                                } else {
+                                    reject(new Error(`Upload failed: ${xhr.statusText}`));
+                                }
+                            };
+                            xhr.onerror = () => reject(new Error('Upload failed'));
+                            xhr.send(formData);
+                        });
+                    } catch (error) {
+                        console.error(`Upload error for ${file}:`, error);
+                        showUploadStatus(`Error: ${error.message}`, 'danger');
+                        throw error;
+                    }
+                }
+
+                const successAlert = document.createElement('div');
+                successAlert.className = 'alert alert-success';
+                successAlert.textContent = `Upload complete! ${selectedSegmentsCount} segments uploaded`;
+                statusDiv.prepend(successAlert);
+
+                const initialAlert = statusDiv.querySelector('.alert-info');
+                if (initialAlert) initialAlert.remove();
+                
+                const progressElements = document.querySelectorAll('.upload-progress, #uploadProgressBar, #uploadProgressText, #uploadSpeed, #uploadFileInfo');
+                progressElements.forEach(el => el.remove());
+
+            } catch (error) {
+                console.error('Upload failed:', error);
+                showUploadStatus(`Upload failed: ${error.message}`, 'danger');
+                document.getElementById('uploadProgressBar').classList.remove('progress-bar-animated');
+                document.getElementById('uploadProgressBar').classList.add('bg-danger');
+            }
+        }
+		
+		async function uploadSelectedSegmentsCarrot() {
 			const video = document.getElementById('video');
 			video.pause();
             const selected = Array.from(document.querySelectorAll('.segment-checkbox:checked'))
@@ -335,7 +476,6 @@
                 document.getElementById('uploadProgressBar').classList.add('bg-danger');
             }
         }
-		
 
         function showUploadStatus(message, type, append = false) {
             const statusDiv = document.getElementById('uploadStatus');
