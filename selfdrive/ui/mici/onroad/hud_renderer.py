@@ -336,26 +336,113 @@ class HudRenderer(Widget):
 
 
   def _draw_wheel_side_info(self, wheel_txt, pos_x: int, pos_y: int) -> None:
-    now_text = datetime.now().strftime("%H:%M")
+    now = datetime.now()
+
+    try:
+      show_date_time = int(ui_state.show_date_time)
+    except Exception:
+      show_date_time = 1
+
+    try:
+      show_debug_ui = int(ui_state.show_debug_ui)
+    except Exception:
+      show_debug_ui = 0
 
     time_font = int(wheel_txt.height * 1.1)
+    small_dt_font = max(18, int(time_font * 0.62))   # date+time 2줄용
     side_font = max(18, int(time_font * 0.33))
 
-    time_size = measure_text_cached(self._font_semi_bold, now_text, time_font)
-
     time_x = pos_x + wheel_txt.width / 2 + 15
-    time_y = pos_y - time_size.y / 2
 
-    self._draw_text_with_outline(
-      now_text,
-      rl.Vector2(time_x, time_y),
-      time_font,
-      rl.Color(255, 255, 255, 230),
-      rl.BLACK,
-      thickness=1
-    )
+    # --------------------------------------------------------------------------
+    # Date / Time
+    # show_date_time: 0=hide, 1=date+time, 2=time only, 3=date only
+    # --------------------------------------------------------------------------
+    time_block_right = time_x
 
-    info_x = time_x + time_size.x + 25
+    if show_date_time != 0:
+      time_text = now.strftime("%H:%M:%S")
+      date_text = now.strftime("%y-%m-%d")
+
+      if show_date_time == 1:
+        # two lines: both use smaller font
+        dt_font = small_dt_font
+
+        date_size = measure_text_cached(self._font_medium, date_text, dt_font)
+        time_size = measure_text_cached(self._font_semi_bold, time_text, dt_font)
+
+        line_gap = max(2, int(dt_font * 0.10))
+        total_h = date_size.y + line_gap + time_size.y
+        base_y = pos_y - total_h / 2
+
+        date_y = base_y
+        time_y = date_y + date_size.y + line_gap
+
+        block_w = max(date_size.x, time_size.x)
+        date_x = time_x + (block_w - date_size.x) / 2
+        draw_time_x = time_x + (block_w - time_size.x) / 2
+
+        self._draw_text_with_outline(
+          date_text,
+          rl.Vector2(date_x, date_y),
+          dt_font,
+          rl.Color(255, 255, 255, 220),
+          rl.BLACK,
+          thickness=1
+        )
+
+        self._draw_text_with_outline(
+          time_text,
+          rl.Vector2(draw_time_x, time_y),
+          dt_font,
+          rl.Color(255, 255, 255, 230),
+          rl.BLACK,
+          thickness=1
+        )
+
+        time_block_right = time_x + block_w
+
+      elif show_date_time == 2:
+        # time only: large font
+        text_font = time_font
+        time_size = measure_text_cached(self._font_semi_bold, time_text, text_font)
+        time_y = pos_y - time_size.y / 2
+
+        self._draw_text_with_outline(
+          time_text,
+          rl.Vector2(time_x, time_y),
+          text_font,
+          rl.Color(255, 255, 255, 230),
+          rl.BLACK,
+          thickness=1
+        )
+
+        time_block_right = time_x + time_size.x
+
+      elif show_date_time == 3:
+        # date only: also large font
+        text_font = time_font
+        date_size = measure_text_cached(self._font_medium, date_text, text_font)
+        date_y = pos_y - date_size.y / 2
+
+        self._draw_text_with_outline(
+          date_text,
+          rl.Vector2(time_x, date_y),
+          text_font,
+          rl.Color(255, 255, 255, 220),
+          rl.BLACK,
+          thickness=1
+        )
+
+        time_block_right = time_x + date_size.x
+
+    # --------------------------------------------------------------------------
+    # Debug UI
+    # --------------------------------------------------------------------------
+    if show_debug_ui == 0:
+      return
+
+    info_x = time_block_right + 35
 
     cpu_text = self._get_cpu_temp_text()
 
@@ -415,7 +502,8 @@ class HudRenderer(Widget):
         rl.BLACK,
         thickness=1
       )
-    
+
+
   def _get_gear_text(self) -> str:
     sm = ui_state.sm
 
