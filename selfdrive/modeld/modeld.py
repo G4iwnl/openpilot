@@ -34,11 +34,38 @@ from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
-VISION_PKL_PATH = Path(__file__).parent / 'models/driving_vision_tinygrad.pkl'
-POLICY_PKL_PATH = Path(__file__).parent / 'models/driving_policy_tinygrad.pkl'
-VISION_METADATA_PATH = Path(__file__).parent / 'models/driving_vision_metadata.pkl'
-POLICY_METADATA_PATH = Path(__file__).parent / 'models/driving_policy_metadata.pkl'
-MODELS_DIR = Path(__file__).parent / 'models'
+DEFAULT_MODELS_DIR = Path(__file__).parent / 'models'
+CUSTOM_MODEL_PATH = Path('/data/models')
+
+REQUIRED_MODEL_FILES = [
+  'driving_vision_tinygrad.pkl',
+  'driving_policy_tinygrad.pkl',
+  'driving_vision_metadata.pkl',
+  'driving_policy_metadata.pkl',
+]
+
+
+def _validate_model_files(base: Path) -> bool:
+  for filename in REQUIRED_MODEL_FILES:
+    filepath = base / filename
+    if not filepath.exists() or filepath.stat().st_size == 0:
+      return False
+  return True
+
+
+def _get_model_base() -> Path:
+  if CUSTOM_MODEL_PATH.exists() and _validate_model_files(CUSTOM_MODEL_PATH):
+    cloudlog.info(f"Using custom model from {CUSTOM_MODEL_PATH}")
+    return CUSTOM_MODEL_PATH
+  cloudlog.info("Using default built-in model")
+  return DEFAULT_MODELS_DIR
+
+
+MODELS_DIR = _get_model_base()
+VISION_PKL_PATH = MODELS_DIR / 'driving_vision_tinygrad.pkl'
+POLICY_PKL_PATH = MODELS_DIR / 'driving_policy_tinygrad.pkl'
+VISION_METADATA_PATH = MODELS_DIR / 'driving_vision_metadata.pkl'
+POLICY_METADATA_PATH = MODELS_DIR / 'driving_policy_metadata.pkl'
 
 LAT_SMOOTH_SECONDS = 0.0
 LONG_SMOOTH_SECONDS = 0.3
