@@ -442,7 +442,7 @@ class HudRenderer(Widget):
     if show_debug_ui == 0:
       return
 
-    info_x = time_block_right + 35
+    info_x = time_block_right + 25
 
     cpu_text = self._get_cpu_temp_text()
 
