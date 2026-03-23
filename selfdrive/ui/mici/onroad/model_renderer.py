@@ -8,7 +8,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.selfdrive.ui.mici.onroad import blend_colors
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.shader_polygon import draw_polygon, Gradient
 from openpilot.system.ui.widgets import Widget
 from typing import Optional, Any
@@ -91,6 +91,7 @@ class ModelRenderer(Widget):
     
     self._lead_pt_filt = [None, None]
     self._radar_info_items: list[RadarInfoItem] = []
+    self._font_display: rl.Font = gui_app.font(FontWeight.DISPLAY)
 
     self._exp_gradient = Gradient(
       start=(0.0, 1.0),  # Bottom of path
@@ -585,7 +586,34 @@ class ModelRenderer(Widget):
       int(inv_t * start.a + t * end.a)
     ) for start, end in zip(begin_colors, end_colors, strict=True)]
 
+  def _draw_text_with_outline(self, text, pos, font_size,
+                              text_color,
+                              outline_color=rl.BLACK,
+                              thickness=2):
+    x, y = pos.x, pos.y
+    for dx in range(-thickness, thickness + 1):
+      for dy in range(-thickness, thickness + 1):
+        if dx == 0 and dy == 0:
+          continue
+        rl.draw_text_ex(
+          self._font_display,
+          text,
+          rl.Vector2(x + dx, y + dy),
+          font_size,
+          0,
+          outline_color
+        )
 
+    # main text
+    rl.draw_text_ex(
+      self._font_display,
+      text,
+      rl.Vector2(x, y),
+      font_size,
+      0,
+      text_color
+    )
+    
   def _get_radar_info_color(self, lead, v_sum: float):
     radar = bool(getattr(lead, "radar", False))
     model_prob = float(getattr(lead, "modelProb", 0.0))
@@ -718,13 +746,15 @@ class ModelRenderer(Widget):
       tx = int(item.x + (item.w - tw) / 2)
       ty = int(item.y + (item.h - font_size) / 2 - 1)
 
-      rl.draw_text(
-        item.text,
-        tx,
-        ty,
-        font_size,
-        rl.WHITE,
-      )
+      #rl.draw_text(
+      #  item.text,
+      #  tx,
+      #  ty,
+      #  font_size,
+      #  rl.WHITE,
+      #)
+
+      self._draw_text_with_outline(item.text, rl.Vector2(tx, ty), font_size, rl.WHITE, rl.BLACK, thickness=1)
 
 
 
