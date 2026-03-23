@@ -592,12 +592,12 @@ class ModelRenderer(Widget):
 
     if not radar:
       return rl.Color(0, 120, 255, 220)      # BLUE
-    elif model_prob == 0.01:
+    elif abs(model_prob - 0.01) < 0.001:
       return rl.Color(0, 200, 80, 220)       # GREEN
     elif v_sum > 0.0:
-      return rl.Color(255, 115, 0, 220)      # ORANGE
+      return rl.Color(255, 190, 0, 220)      # ORANGE
     else:
-      return rl.Color(201, 34, 49, 220)      # RED
+      return rl.Color(255, 70, 70, 220)      # RED
 
   def _update_radar_info(self, radar_state, path_x_array):
     self._radar_info_items = []
