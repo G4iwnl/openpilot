@@ -829,7 +829,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   # Thrown when manager detects a service exited unexpectedly while driving
   EventName.processNotRunning: {
     ET.NO_ENTRY: process_not_running_alert,
-    ET.SOFT_DISABLE: soft_disable_alert("오기사 출근 전"),
+    ET.SOFT_DISABLE: soft_disable_alert("프로세스가 실행되지 않았습니다"),
   },
 
   EventName.radarFault: {
@@ -1106,3 +1106,4 @@ if __name__ == '__main__':
     for p, alert_list in evs:
       print(f"  {repr(p)}:")
       print("   ", ', '.join(alert_list), "\n")
+      
