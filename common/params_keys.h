@@ -142,7 +142,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"GMapKey", {PERSISTENT, STRING}},
     {"SearchInput", {PERSISTENT, INT}},
 
-    {"CarSelected3", {PERSISTENT, STRING, "Kia Sorento Hybrid 2021-23"}},
+    {"CarSelected3", {PERSISTENT, STRING, "MOCK"}},
     {"SupportedCars", {PERSISTENT, STRING}},
     {"SupportedCars_gm", {PERSISTENT, STRING}},
     {"ShowDebugUI", {PERSISTENT, INT, "1"}},
