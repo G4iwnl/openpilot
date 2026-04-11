@@ -45,6 +45,8 @@ from openpilot.opendbc_repo.opendbc.car.values import PLATFORMS
 sm = messaging.SubMaster(['carState'])
 tempseg = -1
 temproute = "None"
+tempsegc = -1
+temproutec = "None"
 
 app = Flask(__name__)
 
@@ -100,6 +102,51 @@ def download_ecamera(route, segment):
   print("download_route=", route, file_name, segment)
   return send_from_directory(file_name, "ecamera.hevc", as_attachment=True)
         
+def upload_folder_g4_ftp(local_folder, directory, remote_path):
+    from tqdm import tqdm
+    ftp_server = "g4nas.my"
+    ftp_port = 21
+    ftp_username = "sorento"
+    ftp_password = "Thfpsxh1111"
+    ftp = FTP()
+    ftp.connect(ftp_server, ftp_port)
+    ftp.login(ftp_username, ftp_password)
+    ftp.cwd("/sorento")
+
+    try:
+        def create_path(path):
+            try:
+                ftp.mkd(path)
+            except:
+                pass
+            ftp.cwd(path)
+
+        for part in [directory, remote_path]:
+            create_path(part)
+
+        files = []
+        for root, _, filenames in os.walk(local_folder):
+            for filename in filenames:
+                if filename in ['rlog.zst', 'qcamera.ts']:
+                    files.append(os.path.join(root, filename))
+
+        with tqdm(total=len(files), desc="Uploading Files", unit="file") as pbar:
+            for local_file in files:
+                filename = os.path.basename(local_file)
+                try:
+                    with open(local_file, 'rb') as f:
+                        ftp.storbinary(f'STOR {filename}', f)
+                    pbar.update(1)
+                except Exception as e:
+                    print(f"Failed to upload {local_file}: {e}")
+
+        ftp.quit()
+        return True
+    except Exception as e:
+        print(f"FTP Upload Error: {e}")
+        return False
+
+
 def upload_folder_to_ftp(local_folder, directory, remote_path):
     from tqdm import tqdm
     ftp_server = "shind0.synology.me"
@@ -109,9 +156,6 @@ def upload_folder_to_ftp(local_folder, directory, remote_path):
     ftp = FTP()
     ftp.connect(ftp_server, ftp_port)
     ftp.login(ftp_username, ftp_password)
-
-    ftp.cwd("routes")
-
     try:
         def create_path(path):
             try:
@@ -217,16 +261,38 @@ def check_folder_exists():
 
 @app.route("/footage/full/upload_carrot/<route>/<segment>", methods=['POST'])
 def upload_carrot(route, segment):
+    global tempsegc
+    global temproutec
+    if tempsegc != segment or temproutec != route:
+        local_folder = os.path.join(Paths.log_root(), f"{route}--{segment}")
+        if not os.path.isdir(local_folder):
+            abort(404, "Folder not found")
+        car_selected = Params().get("CarName", "none").decode('utf-8')
+        dongle_id = Params().get("DongleId", "unknown").decode('utf-8')
+        directory = f"routes {car_selected} {dongle_id}"
+        success = upload_folder_to_ftp(local_folder, directory, f"{route}--{segment}")
+        if success:
+            temproutec = route
+            tempsegc = segment
+            return "All files uploaded successfully", 200
+        else:
+            return "Failed to upload files", 500
+    else:
+        return "Segment already uploaded", 200
+
+
+@app.route("/footage/full/upload_g4/<route>/<segment>", methods=['POST'])
+def upload_g4(route, segment):
     global tempseg
     global temproute
     if tempseg != segment or temproute != route:
         local_folder = os.path.join(Paths.log_root(), f"{route}--{segment}")
         if not os.path.isdir(local_folder):
             abort(404, "Folder not found")
-        car_selected = Params().get("CarName", "none")
-        dongle_id = Params().get("DongleId", "unknown")
-        directory = f"{car_selected} {dongle_id}"
-        success = upload_folder_to_ftp(local_folder, directory, f"{route}--{segment}")
+        car_selected = Params().get("CarName", "none").decode('utf-8')
+        dongle_id = Params().get("DongleId", "unknown").decode('utf-8')
+        directory = f"routes {car_selected} {dongle_id}"
+        success = upload_folder_g4_ftp(local_folder, directory, f"{route}--{segment}")
         if success:
             temproute = route
             tempseg = segment
@@ -574,7 +640,7 @@ def carinfo():
 
         # 获取车辆基本信息
         try:
-            car_name = params.get("CarName")
+            car_name = params.get("CarName", encoding='utf8')
             if car_name in PLATFORMS:
                 platform = PLATFORMS[car_name]
                 car_fingerprint = platform.config.platform_str
