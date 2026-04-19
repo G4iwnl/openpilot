@@ -194,7 +194,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
 
     {"MapTurnSpeedFactor", {PERSISTENT, INT, "100"}},
     {"ModelTurnSpeedFactor", {PERSISTENT, INT, "0"}},
-    {"StoppingAccel", {PERSISTENT, INT, "-65"}},
+    {"StoppingAccel", {PERSISTENT, INT, "-70"}},
     {"AutoSpeedUptoRoadSpeedLimit", {PERSISTENT, INT, "100"}},
     {"AutoRoadSpeedAdjust", {PERSISTENT, INT, "0"}},
 
@@ -237,7 +237,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"LongTuningKpV", {PERSISTENT, INT, "100"}},
     {"LongTuningKiV", {PERSISTENT, INT, "0"}},
     {"LongTuningKf", {PERSISTENT, INT, "100"}},
-    {"LongActuatorDelay", {PERSISTENT, INT, "35"}},
+    {"LongActuatorDelay", {PERSISTENT, INT, "45"}},
     {"VEgoStopping", {PERSISTENT, INT, "5"}},
 
     {"RadarReactionFactor", {PERSISTENT, INT, "100"}},
@@ -286,14 +286,14 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"SoftHoldMode", {PERSISTENT, INT, "0"}},
 
     {"LatMpcPathCost", {PERSISTENT, INT, "180"}},
-    {"LatMpcMotionCost", {PERSISTENT, INT, "10"}},
+    {"LatMpcMotionCost", {PERSISTENT, INT, "8"}},
     {"LatMpcAccelCost", {PERSISTENT, INT, "120"}},
     {"LatMpcJerkCost", {PERSISTENT, INT, "4"}},
-    {"LatMpcSteeringRateCost", {PERSISTENT, INT, "10"}},
+    {"LatMpcSteeringRateCost", {PERSISTENT, INT, "8"}},
     {"LatMpcInputOffset", {PERSISTENT, INT, "4"}},
 
     {"PathOffset", {PERSISTENT, INT, "0"}},
-    {"CameraYawTrimDeg", {PERSISTENT, INT, "-5"}},
+    {"CameraYawTrimDeg", {PERSISTENT, INT, "0"}},
 
     {"LateralTorqueCustom", {PERSISTENT, INT, "1"}},
     {"LateralTorqueAccelFactor", {PERSISTENT, INT, "2550"}},
@@ -301,7 +301,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"LateralTorqueKpV", {PERSISTENT, INT, "120"}},
     {"LateralTorqueKiV", {PERSISTENT, INT, "20"}},
     {"LateralTorqueKf", {PERSISTENT, INT, "85"}},
-    {"LateralTorqueKd", {PERSISTENT, INT, "10"}},
+    {"LateralTorqueKd", {PERSISTENT, INT, "15"}},
 
     {"CustomSteerMax", {PERSISTENT, INT, "240"}},
     {"CustomSteerDeltaUp", {PERSISTENT, INT, "3"}},
