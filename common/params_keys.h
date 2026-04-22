@@ -173,7 +173,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"ApplyModelSpeed", {PERSISTENT, INT, "0"} },
     {"AutoEngage", {PERSISTENT, INT, "0"}},
     {"DisableMinSteerSpeed", {PERSISTENT, INT, "0"}},
-    {"AutoCurveSpeedLowerLimit", {PERSISTENT, INT, "30"}},
+    {"AutoCurveSpeedLowerLimit", {PERSISTENT, INT, "29"}},
     {"AutoCurveSpeedFactor", {PERSISTENT, INT, "50"}},
     {"AutoCurveSpeedAggressiveness", {PERSISTENT, INT, "70"}},
 
@@ -194,11 +194,11 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
 
     {"MapTurnSpeedFactor", {PERSISTENT, INT, "100"}},
     {"ModelTurnSpeedFactor", {PERSISTENT, INT, "0"}},
-    {"StoppingAccel", {PERSISTENT, INT, "-70"}},
+    {"StoppingAccel", {PERSISTENT, INT, "-65"}},
     {"AutoSpeedUptoRoadSpeedLimit", {PERSISTENT, INT, "100"}},
     {"AutoRoadSpeedAdjust", {PERSISTENT, INT, "0"}},
 
-    {"StopDistanceCarrot", {PERSISTENT, INT, "570"}},
+    {"StopDistanceCarrot", {PERSISTENT, INT, "580"}},
     {"JLeadFactor3", {PERSISTENT, INT, "0"}},
     {"CruiseButtonMode", {PERSISTENT, INT, "1"}},
     {"CancelButtonMode", {PERSISTENT, INT, "0"}},
@@ -235,14 +235,14 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"CruiseMaxVals6", {PERSISTENT, INT, "25"}},
 
     {"LongTuningKpV", {PERSISTENT, INT, "100"}},
-    {"LongTuningKiV", {PERSISTENT, INT, "0"}},
+    {"LongTuningKiV", {PERSISTENT, INT, "15"}},
     {"LongTuningKf", {PERSISTENT, INT, "100"}},
     {"LongActuatorDelay", {PERSISTENT, INT, "45"}},
     {"VEgoStopping", {PERSISTENT, INT, "5"}},
 
     {"RadarReactionFactor", {PERSISTENT, INT, "100"}},
     {"EnableRadarTracks", {PERSISTENT, INT, "1"}},
-    {"RadarLatFactor", {PERSISTENT, INT, "425"}},
+    {"RadarLatFactor", {PERSISTENT, INT, "418"}},
     {"EnableCornerRadar", {PERSISTENT, INT, "1"}},
 
     {"EnableRadarTracksResult", {PERSISTENT | CLEAR_ON_MANAGER_START, INT}},
@@ -254,7 +254,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"HyundaiCameraSCC", {PERSISTENT, INT, "1"}},
     {"FingerPrints", {PERSISTENT | CLEAR_ON_MANAGER_START, STRING}},
     {"IsLdwsCar", {PERSISTENT, INT, "0"}},
-    {"CanfdHDA2", {PERSISTENT, INT, "2"}},
+    {"CanfdHDA2", {PERSISTENT, INT, "1"}},
     {"CanfdDebug", {PERSISTENT, INT, "0"}},
 
     {"SoundVolumeAdjust", {PERSISTENT, INT, "60"}},
@@ -269,7 +269,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"DynamicTFollowLC", {PERSISTENT, INT, "80"}},
     {"TFollowDecelBoost", {PERSISTENT, INT, "10"}},
     {"EnableSpeedTF", {PERSISTENT, INT, "0"}},
-    {"AChangeCostStarting", {PERSISTENT, INT, "10"}},
+    {"AChangeCostStarting", {PERSISTENT, INT, "8"}},
     {"TrafficStopDistanceAdjust", {PERSISTENT, INT, "400"}},
 
     {"HapticFeedbackWhenSpeedCamera", {PERSISTENT, INT, "0"}},
