@@ -5,6 +5,8 @@ import json
 folder_path = "/data/params/d"
 output_file = "/data/backup_params.json"
 
+# 테스트
+
 result = []
 
 for filename in os.listdir(folder_path):
