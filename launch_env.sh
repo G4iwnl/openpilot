@@ -10,5 +10,4 @@ if [ -z "$AGNOS_VERSION" ]; then
   export AGNOS_VERSION="12.4"
 fi
 
-# 테스트코드입니다
 export STAGING_ROOT="/data/safe_staging"
