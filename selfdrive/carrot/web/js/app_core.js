@@ -36,6 +36,7 @@ const UI_STRINGS = {
     home: "홈",
     setting: "설정",
     tools: "도구",
+    logs: "로그",
     terminal: "터미널",
     fleet: "Fleet",
     carrot: "당근",
@@ -125,6 +126,7 @@ const UI_STRINGS = {
     home: "Home",
     setting: "Setting",
     tools: "Tools",
+    logs: "Logs",
     terminal: "Terminal",
     fleet: "Fleet",
     carrot: "Carrot",
@@ -213,6 +215,7 @@ const UI_STRINGS = {
     home: "首页",
     setting: "设置",
     tools: "工具",
+    logs: "日志",
     terminal: "终端",
     fleet: "车队",
     carrot: "胡萝卜",
@@ -316,6 +319,11 @@ const ACTION_LABELS = {
     rebuild_all:      { running: "전체 재빌드 중...",         done: "재빌드+재부팅 시작", failed: "재빌드 실패" },
     shell_cmd:        { running: "명령 실행 중...",           done: "실행 완료",          failed: "실행 실패" },
     install_required: { running: "패키지 설치 중...",         done: "설치 완료",          failed: "설치 실패" },
+    git_remote_add:   { running: "리모트 추가/갱신 중...",    done: "리모트 추가/갱신 완료", failed: "리모트 추가/갱신 실패" },
+    git_log:          { running: "커밋 목록 조회 중...",      done: "조회 완료",          failed: "조회 실패" },
+    git_reset_repo_fetch: { running: "리포지토리 정보 가져오는 중...", done: "가져오기 완료", failed: "가져오기 실패" },
+    git_reset_repo_checkout: { running: "리포지토리 초기화 중...", done: "초기화 완료", failed: "초기화 실패" },
+    reset_calib:      { running: "캘리브레이션 초기화 중...", done: "초기화 완료", failed: "초기화 실패" },
   },
   en: {
     git_pull:         { running: "Checking for updates...",  done: "Update complete",     failed: "Update failed" },
@@ -332,6 +340,11 @@ const ACTION_LABELS = {
     rebuild_all:      { running: "Rebuilding all...",        done: "Rebuild+reboot started", failed: "Rebuild failed" },
     shell_cmd:        { running: "Running command...",       done: "Complete",            failed: "Command failed" },
     install_required: { running: "Installing packages...",   done: "Installed",           failed: "Install failed" },
+    git_remote_add:   { running: "Adding/updating remote...", done: "Remote added/updated", failed: "Add/update remote failed" },
+    git_log:          { running: "Loading commits...",       done: "Loaded",              failed: "Load failed" },
+    git_reset_repo_fetch: { running: "Fetching repo info...", done: "Fetch complete", failed: "Fetch failed" },
+    git_reset_repo_checkout: { running: "Resetting repo...", done: "Reset complete", failed: "Reset failed" },
+    reset_calib:      { running: "Resetting calibration...", done: "Reset complete", failed: "Reset failed" },
   },
   zh: {
     git_pull:         { running: "检查更新中...",             done: "更新完成",            failed: "更新失败" },
@@ -348,6 +361,11 @@ const ACTION_LABELS = {
     rebuild_all:      { running: "全部重建中...",             done: "重建+重启已开始",     failed: "重建失败" },
     shell_cmd:        { running: "运行命令中...",             done: "运行完成",            failed: "命令失败" },
     install_required: { running: "安装包中...",               done: "安装完成",            failed: "安装失败" },
+    git_remote_add:   { running: "添加/更新远程中...",         done: "远程已添加/更新",      failed: "添加/更新失败" },
+    git_log:          { running: "加载提交中...",             done: "加载完成",            failed: "加载失败" },
+    git_reset_repo_fetch: { running: "获取仓库信息中...", done: "获取完成", failed: "获取失败" },
+    git_reset_repo_checkout: { running: "重置仓库中...", done: "重置完成", failed: "重置失败" },
+    reset_calib:      { running: "重置校准中...", done: "重置完成", failed: "重置失败" },
   }
 };
 
@@ -421,10 +439,14 @@ let CURRENT_MAKER = null;
 
 const btnHome = document.getElementById("btnHome");
 const btnSetting = document.getElementById("btnSetting");
+const btnLogs = document.getElementById("btnLogs");
 const btnTerminal = document.getElementById("btnTerminal");
 const btnFleet = document.getElementById("btnFleet");
 const btnLang = document.getElementById("btnLang");
 const langLabel = document.getElementById("langLabel");
+const btnSettingLang = document.getElementById("btnSettingLang");
+const btnQuickLinkWeb = document.getElementById("btnQuickLinkWeb");
+const btnQuickFleet = document.getElementById("btnQuickFleet");
 const btnTools = document.getElementById("btnTools");
 const btnRecordToggle = document.getElementById("btnRecordToggle");
 const btnSettingSearch = document.getElementById("btnSettingSearch");
@@ -441,9 +463,11 @@ const appDialog = document.getElementById("appDialog");
 const appDialogBackdrop = document.getElementById("appDialogBackdrop");
 const appDialogTitle = document.getElementById("appDialogTitle");
 const appDialogBody = document.getElementById("appDialogBody");
+const appDialogChoices = document.getElementById("appDialogChoices");
 const appDialogInputWrap = document.getElementById("appDialogInputWrap");
 const appDialogInput = document.getElementById("appDialogInput");
 const appDialogCancel = document.getElementById("appDialogCancel");
+const appDialogCopy = document.getElementById("appDialogCopy");
 const appDialogConfirm = document.getElementById("appDialogConfirm");
 const appBranchPicker = document.getElementById("appBranchPicker");
 const appBranchPickerBackdrop = document.getElementById("appBranchPickerBackdrop");
@@ -451,11 +475,18 @@ const appBranchPickerTitle = document.getElementById("appBranchPickerTitle");
 const appBranchPickerMeta = document.getElementById("appBranchPickerMeta");
 const appBranchPickerList = document.getElementById("appBranchPickerList");
 const appBranchPickerClose = document.getElementById("appBranchPickerClose");
+const appCarPicker = document.getElementById("appCarPicker");
+const appCarPickerBackdrop = document.getElementById("appCarPickerBackdrop");
+const appCarPickerTitle = document.getElementById("appCarPickerTitle");
+const appCarPickerMeta = document.getElementById("appCarPickerMeta");
+const appCarPickerList = document.getElementById("appCarPickerList");
+const appCarPickerClose = document.getElementById("appCarPickerClose");
 const swipeContainer = document.getElementById("swipeContainer");
 const PAGE_ELEMENTS = {
   setting: document.getElementById("pageSetting"),
   car: document.getElementById("pageCar"),
   tools: document.getElementById("pageTools"),
+  logs: document.getElementById("pageLogs"),
   terminal: document.getElementById("pageTerminal"),
   branch: document.getElementById("pageBranch"),
   carrot: document.getElementById("pageCarrot"),
@@ -508,10 +539,13 @@ let appToastHideTimer = null;
 let appToastRemoveTimer = null;
 let activeAppDialog = null;
 let appDialogSerial = 0;
+let settingScreenHideTimer = null;
+let settingScreenTransitionToken = 0;
+let carScreenHideTimer = null;
+let carScreenTransitionToken = 0;
 
 btnTools.onclick = () => showPage("tools", true, getSwipeTransition(CURRENT_PAGE, "tools"));
 
-const btnChangeCar = document.getElementById("btnChangeCar");
 const curCarLabelCar = document.getElementById("curCarLabelCar");
 const curCarLabelSetting = document.getElementById("curCarLabelSetting");
 
@@ -540,9 +574,10 @@ const modelMeta = document.getElementById("modelMeta");
 btnHome.onclick = () => showPage("carrot", true, getSwipeTransition(CURRENT_PAGE, "carrot"));
 btnRecordToggle.onclick = () => toggleRecord();
 btnSetting.onclick = () => showPage("setting", true, getSwipeTransition(CURRENT_PAGE, "setting"));
+if (btnLogs) btnLogs.onclick = () => showPage("logs", true, getSwipeTransition(CURRENT_PAGE, "logs"));
 btnTerminal.onclick = () => showPage("terminal", true, getSwipeTransition(CURRENT_PAGE, "terminal"));
 
-btnFleet.onclick = async () => {
+async function openFleetLink() {
   const ip = location.hostname;
   const url = `http://${ip}:8082/`;
   const ok = await appConfirm(
@@ -551,11 +586,26 @@ btnFleet.onclick = async () => {
   );
   if (!ok) return;
   window.open(url, "_blank", "noopener");
-};
+}
 
-btnLang.onclick = () => toggleLang();
+if (btnFleet) btnFleet.onclick = () => { openFleetLink().catch(() => {}); };
+if (btnQuickFleet) btnQuickFleet.onclick = () => { openFleetLink().catch(() => {}); };
+if (btnLang) btnLang.onclick = () => toggleLang();
+if (btnSettingLang) btnSettingLang.onclick = () => toggleLang();
 
-btnChangeCar.onclick = () => showPage("car", true);
+if (settingCarRow) {
+  settingCarRow.onclick = () => {
+    if (typeof window.openCarPickerFlow === "function") window.openCarPickerFlow();
+    else showPage("car", true);
+  };
+  settingCarRow.onkeydown = (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      if (typeof window.openCarPickerFlow === "function") window.openCarPickerFlow();
+      else showPage("car", true);
+    }
+  };
+}
 btnBackCar.onclick = () => history.back();
 carTitle.onclick = () => history.back();
 modelTitle.onclick = () => showCarScreen("makers");
@@ -572,9 +622,12 @@ const branchList = document.getElementById("branchList");
 const quickLink = document.getElementById("toolsQuickLink");
 const chipQuickLabel = document.getElementById("toolsQuickLinkTitle");
 const btnSaveQuickLink = document.getElementById("btnToolsQuickLink");
-let QUICK_LINK_URL = "";
+const QUICK_LINK_FIXED_URL = "https://man.carrotpilot.app/";
+let QUICK_LINK_URL = QUICK_LINK_FIXED_URL;
 let QUICK_LINK_STATUS = "loading";
 let QUICK_LINK_MESSAGE = "";
+let quickLinkLoadPromise = null;
+let quickLinkLoadedAt = 0;
 let quickLinkActionTimer = null;
 
 btnBackBranch.onclick = () => history.back();
@@ -607,6 +660,13 @@ function setDisplayedPage(page) {
   });
   if (swipeContainer) swipeContainer.style.minHeight = "";
   if (settingScreenHost) settingScreenHost.style.minHeight = "";
+}
+
+function clearPendingScreenHide(timerRef) {
+  if (timerRef) {
+    window.clearTimeout(timerRef);
+  }
+  return null;
 }
 
 function getSwipeTransition(fromPage, toPage) {
@@ -798,17 +858,34 @@ function showPage(page, pushHistory = false, transition = null) {
     teardownTerminalPage();
   }
   CURRENT_PAGE = page;
-
-  if (transition && prevPage !== page) animatePageTransition(prevPage, page, transition);
-  else setDisplayedPage(page);
-
   document.body.dataset.page = page;
-  window.dispatchEvent(new CustomEvent("carrot:pagechange", { detail: { page, prevPage } }));
 
   btnHome.classList.toggle("active", page === "carrot");
   btnSetting.classList.toggle("active", page === "setting");
   btnTools.classList.toggle("active", page === "tools");
+  if (btnLogs) btnLogs.classList.toggle("active", page === "logs");
   btnTerminal.classList.toggle("active", page === "terminal");
+
+  if (typeof updateAppViewportMetrics === "function") {
+    updateAppViewportMetrics();
+  }
+
+  if (page === "setting" && SETTINGS) {
+    if (typeof syncSettingViewportLayout === "function") {
+      syncSettingViewportLayout().catch(() => {});
+    } else if (pushHistory || !CURRENT_GROUP) {
+      showSettingScreen("groups", false);
+    }
+  }
+
+  if (page === "carrot" && window.HomeDrive && typeof window.HomeDrive.refresh === "function") {
+    window.HomeDrive.refresh();
+  }
+
+  if (transition && prevPage !== page) animatePageTransition(prevPage, page, transition);
+  else setDisplayedPage(page);
+
+  window.dispatchEvent(new CustomEvent("carrot:pagechange", { detail: { page, prevPage } }));
 
   if (page !== "setting" && typeof closeSettingSearchPanel === "function") {
     closeSettingSearchPanel({ clear: false });
@@ -837,11 +914,11 @@ function showPage(page, pushHistory = false, transition = null) {
     initToolsPage();
     updateQuickLink().catch(() => {});
   }
+  if (page === "logs" && typeof initLogsPage === "function") {
+    initLogsPage();
+  }
   if (page === "terminal" && typeof initTerminalPage === "function") {
     initTerminalPage();
-  }
-  if (page === "carrot" && window.HomeDrive && typeof window.HomeDrive.refresh === "function") {
-    window.HomeDrive.refresh();
   }
   if (page === "carrot") {
     loadRecordState().catch(() => {});
@@ -851,6 +928,7 @@ function showPage(page, pushHistory = false, transition = null) {
     (page === "setting") ? { page: "setting", screen: "groups", group: null } :
     (page === "car") ? { page: "car", screen: "makers", maker: null } :
     (page === "tools") ? { page: "tools" } :
+    (page === "logs") ? { page: "logs" } :
     (page === "terminal") ? { page: "terminal" } :
     (page === "carrot") ? { page: "carrot" } :
     (page === "branch") ? { page: "branch" } :
@@ -869,6 +947,9 @@ function showSettingScreen(which, pushHistory = false) {
     ? getSettingGroupLabel(CURRENT_GROUP)
     : (CURRENT_GROUP || "");
   const splitLandscape = (CURRENT_PAGE === "setting" && typeof isCompactLandscapeMode === "function" && isCompactLandscapeMode());
+  const transitionToken = ++settingScreenTransitionToken;
+
+  settingScreenHideTimer = clearPendingScreenHide(settingScreenHideTimer);
 
   if (splitLandscape) {
     settingTitle.textContent = UI_STRINGS[LANG].setting || "Setting";
@@ -893,10 +974,17 @@ function showSettingScreen(which, pushHistory = false) {
   if (settingSubnavWrap) settingSubnavWrap.style.display = isGroups ? "none" : "";
 
   showEl.style.display = "";
-  requestAnimationFrame(() => showEl.classList.remove("hidden"));
+  requestAnimationFrame(() => {
+    if (transitionToken !== settingScreenTransitionToken) return;
+    showEl.classList.remove("hidden");
+  });
 
   hideEl.classList.add("hidden");
-  setTimeout(() => { hideEl.style.display = "none"; }, 170);
+  settingScreenHideTimer = window.setTimeout(() => {
+    if (transitionToken !== settingScreenTransitionToken) return;
+    hideEl.style.display = "none";
+    settingScreenHideTimer = null;
+  }, 170);
 
   if (pushHistory) {
     history.pushState({ page: "setting", screen: which, group: CURRENT_GROUP || null }, "");
@@ -917,12 +1005,22 @@ function showCarScreen(which, pushHistory = false) {
   const isMakers = (which === "makers");
   const showEl = isMakers ? carScreenMakers : carScreenModels;
   const hideEl = isMakers ? carScreenModels : carScreenMakers;
+  const transitionToken = ++carScreenTransitionToken;
+
+  carScreenHideTimer = clearPendingScreenHide(carScreenHideTimer);
 
   showEl.style.display = "";
-  requestAnimationFrame(() => showEl.classList.remove("hidden"));
+  requestAnimationFrame(() => {
+    if (transitionToken !== carScreenTransitionToken) return;
+    showEl.classList.remove("hidden");
+  });
 
   hideEl.classList.add("hidden");
-  setTimeout(() => { hideEl.style.display = "none"; }, 170);
+  carScreenHideTimer = window.setTimeout(() => {
+    if (transitionToken !== carScreenTransitionToken) return;
+    hideEl.style.display = "none";
+    carScreenHideTimer = null;
+  }, 170);
 
   if (pushHistory) {
     history.pushState({ page: "car", screen: which, maker: CURRENT_MAKER || null }, "");
@@ -942,6 +1040,7 @@ function toggleLang() {
   // Update static UI text
   renderUIText();
   loadRecordState().catch(() => {});
+  if (typeof rerenderPageLangUi === "function") rerenderPageLangUi();
 
   if (SETTINGS) {
     if (typeof rebuildSettingSearchEntries === "function") rebuildSettingSearchEntries();
@@ -959,16 +1058,19 @@ function toggleLang() {
 function renderUIText() {
   const s = UI_STRINGS[LANG];
   if (!s) return;
-  document.title = s.home || "Home";
+  document.title = "CarrotPilot";
 
   // Nav bar (nested spans — set last child text)
   setNavText("btnHome", s.home);
   setNavText("btnSetting", s.setting);
   setNavText("btnTools", s.tools);
+  setNavText("btnLogs", s.logs);
   setNavText("btnTerminal", s.terminal);
   setNavText("btnFleet", s.fleet);
+  setText("btnQuickLinkWeb", "Web");
+  setText("btnQuickFleet", s.fleet);
 
-  setText("carrotTitle", s.home || "Home");
+  setText("carrotTitle", "CarrotPilot");
 
   // Car Select
   setText("carTitle", s.car_select);
@@ -979,7 +1081,6 @@ function renderUIText() {
   // Setting
   setText("settingTitleText", s.setting);
   setText("btnBackGroups", s.back);
-  setText("btnChangeCar", s.change);
   setText("groupsTitle", s.groups);
   setText("itemsTitle", s.items);
 
@@ -987,8 +1088,7 @@ function renderUIText() {
   setText("toolsTitle", s.tools);
   setText("gitCommandsTitle", s.git_commands);
   setText("userSystemTitle", s.user_system);
-  setText("toolsQuickLinkTitle", s.quick_link);
-  setText("btnToolsQuickLink", s.open);
+  setText("toolsQuickLinkTitle", "Link");
   setText("userSettingsTitle", s.section_settings_backup);
   setText("btnReboot", s.reboot);
   setText("btnBackupSettings", s.backup);
@@ -1022,6 +1122,8 @@ function renderUIText() {
   }
   setText("appBranchPickerTitle", s.branch_select);
   setText("appBranchPickerClose", s.close);
+  setText("appCarPickerTitle", s.car_select);
+  setText("appCarPickerClose", s.cancel);
   updateLangLabel();
   syncHomeUtilityButtons();
   if (window.DrivingHud && typeof window.DrivingHud.renderText === "function") {
@@ -1045,23 +1147,32 @@ function setText(id, txt) {
 }
 
 function updateLangLabel() {
-  if (!langLabel) return;
-
-  const main = langLabel.querySelector(".lang-label__main");
-  const sub = langLabel.querySelector(".lang-label__sub");
+  const main = langLabel?.querySelector(".lang-label__main");
+  const sub = langLabel?.querySelector(".lang-label__sub");
   const emoji = LANG_EMOJI[LANG] || "🌐";
-  if (main && sub) {
-    main.textContent = emoji;
-    sub.textContent = "";
-    sub.hidden = true;
-  } else {
-    langLabel.textContent = emoji;
+  if (langLabel) {
+    if (main && sub) {
+      main.textContent = emoji;
+      sub.textContent = "";
+      sub.hidden = true;
+    } else {
+      langLabel.textContent = emoji;
+    }
   }
 
   if (btnLang) {
     const text = `${getUIText("lang", "lang")} (${LANG})`;
     btnLang.setAttribute("aria-label", text);
     btnLang.title = text;
+  }
+  if (btnSettingLang) {
+    const label = LANG === "en"
+      ? "Language · English"
+      : LANG === "zh"
+        ? "语言 · 中文"
+        : "언어 · 한국어";
+    btnSettingLang.textContent = label;
+    btnSettingLang.title = label;
   }
   document.documentElement.lang = LANG;
 }
@@ -1074,6 +1185,7 @@ function syncModalBodyLock() {
   const hasOpenDialog =
     Boolean(appDialog && !appDialog.hidden) ||
     Boolean(appBranchPicker && !appBranchPicker.hidden) ||
+    Boolean(appCarPicker && !appCarPicker.hidden) ||
     Boolean(settingSearchPanel && !settingSearchPanel.hidden);
   document.body.classList.toggle("dialog-open", hasOpenDialog);
 }
@@ -1139,6 +1251,10 @@ function resolveAppDialog(result) {
     }
     appDialog.hidden = true;
     syncModalBodyLock();
+    if (appDialogChoices) {
+      appDialogChoices.hidden = true;
+      appDialogChoices.innerHTML = "";
+    }
     if (appDialogInputWrap) appDialogInputWrap.hidden = true;
     if (appDialogInput) {
       appDialogInput.value = "";
@@ -1153,7 +1269,9 @@ function resolveAppDialog(result) {
 
 function cancelAppDialog() {
   if (!activeAppDialog) return;
-  const result = activeAppDialog.mode === "prompt" ? null : false;
+  const result = activeAppDialog.mode === "prompt" || activeAppDialog.mode === "choice"
+    ? null
+    : false;
   resolveAppDialog(result);
 }
 
@@ -1182,16 +1300,59 @@ function openAppDialog(options = {}) {
         ? getUIText("input_title", "Input")
         : getUIText("notice", "Notice"));
   const message = options.message || "";
+  const messageHtml = options.messageHtml || "";
+  const useHtml = Boolean(options.html);
   const confirmLabel = options.confirmLabel || getUIText("ok", "OK");
   const cancelLabel = options.cancelLabel || getUIText("cancel", "Cancel");
+  const choices = Array.isArray(options.choices)
+    ? options.choices.filter((choice) => choice && (choice.label || choice.labelHtml))
+    : [];
+  const isChoice = mode === "choice" || choices.length > 0;
   const showCancel = mode !== "alert";
 
   appDialogTitle.textContent = title;
-  appDialogBody.textContent = String(message);
+  if (useHtml) appDialogBody.innerHTML = String(messageHtml || message);
+  else appDialogBody.textContent = String(message);
+  // When choices exist, body should not grow (just show message); otherwise body scrolls fully
+  appDialogBody.style.flex = isChoice ? "0 0 auto" : "1 1 auto";
   appDialogConfirm.textContent = confirmLabel;
   appDialogCancel.textContent = cancelLabel;
   appDialogCancel.hidden = !showCancel;
   appDialogCancel.setAttribute("aria-hidden", showCancel ? "false" : "true");
+  appDialogConfirm.hidden = isChoice;
+  appDialogConfirm.setAttribute("aria-hidden", isChoice ? "true" : "false");
+
+  const copyText = options.copyText || "";
+  if (appDialogCopy) {
+    appDialogCopy.hidden = !copyText;
+    appDialogCopy.textContent = LANG === "en" ? "Copy" : LANG === "zh" ? "复制" : "복사";
+    appDialogCopy.onclick = copyText ? () => {
+      copyToClipboard(copyText);
+      alert(LANG === "ko" ? "복사되었습니다" : LANG === "zh" ? "已复制" : "Copied");
+    } : null;
+  }
+
+  if (appDialogChoices) {
+    appDialogChoices.innerHTML = "";
+    appDialogChoices.hidden = !isChoice;
+    for (const choice of choices) {
+      const button = document.createElement("button");
+      button.type = "button";
+      let btnClass = choice.danger
+        ? "btn btn--danger app-dialog__choiceBtn"
+        : "btn app-dialog__choiceBtn";
+      if (choice.className) btnClass += " " + choice.className;
+      button.className = btnClass;
+      if (choice.labelHtml) {
+        button.innerHTML = choice.labelHtml;
+      } else {
+        button.textContent = String(choice.label);
+      }
+      button.style.cssText = "text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;";
+      button.addEventListener("click", () => resolveAppDialog(choice.value));
+      appDialogChoices.appendChild(button);
+    }
+  }
 
   if (appDialogInputWrap && appDialogInput) {
     const isPrompt = mode === "prompt";
@@ -1217,6 +1378,9 @@ function openAppDialog(options = {}) {
       if (mode === "prompt" && appDialogInput) {
         appDialogInput.focus();
         appDialogInput.select();
+      } else if (isChoice && appDialogChoices) {
+        const firstChoice = appDialogChoices.querySelector("button");
+        if (firstChoice && typeof firstChoice.focus === "function") firstChoice.focus();
       } else {
         appDialogConfirm.focus();
       }
@@ -1229,7 +1393,10 @@ function appAlert(message, opts = {}) {
     mode: "alert",
     title: opts.title,
     message,
+    messageHtml: opts.messageHtml,
+    html: opts.html,
     confirmLabel: opts.confirmLabel,
+    copyText: opts.copyText,
   });
 }
 
@@ -1278,12 +1445,7 @@ document.addEventListener("keydown", (ev) => {
 });
 
 function syncHomeUtilityButtons() {
-  if (btnSaveQuickLink) {
-    const label = getUIText("open", "Open");
-    btnSaveQuickLink.textContent = label;
-    btnSaveQuickLink.setAttribute("aria-label", label);
-    btnSaveQuickLink.title = label;
-  }
+  return;
 }
 
 function flashQuickLinkActionLabel(label, duration = 1400) {
@@ -1325,48 +1487,62 @@ function renderQuickLinkUI() {
     btnSaveQuickLink.disabled = !hasUrl;
     btnSaveQuickLink.setAttribute("aria-disabled", hasUrl ? "false" : "true");
   }
+
+  if (btnQuickLinkWeb) {
+    if (hasUrl) {
+      btnQuickLinkWeb.href = QUICK_LINK_URL;
+      btnQuickLinkWeb.setAttribute("aria-disabled", "false");
+    } else {
+      btnQuickLinkWeb.removeAttribute("href");
+      btnQuickLinkWeb.setAttribute("aria-disabled", "true");
+    }
+  }
 }
 
 function setServerStateStatus() {}
 
-async function updateQuickLink() {
-  QUICK_LINK_URL = "";
-  QUICK_LINK_STATUS = "loading";
+async function updateQuickLink(options = {}) {
+  const silent = options.silent === true;
+  QUICK_LINK_URL = QUICK_LINK_FIXED_URL;
+  QUICK_LINK_STATUS = "ready";
   QUICK_LINK_MESSAGE = "";
-  renderQuickLinkUI();
-
-  try {
-    const values = await bulkGet(["GithubUsername"]);
-    const githubId = String(values["GithubUsername"] || "").trim();
-
-    if (!githubId) {
-      QUICK_LINK_STATUS = "empty";
-      QUICK_LINK_MESSAGE = "";
-      renderQuickLinkUI();
-      return;
-    }
-
-    QUICK_LINK_URL = `https://shind0.synology.me/carrot/go/?id=${encodeURIComponent(githubId)}`;
-    QUICK_LINK_STATUS = "ready";
-    QUICK_LINK_MESSAGE = "";
-    renderQuickLinkUI();
-  } catch (e) {
-    QUICK_LINK_STATUS = "error";
-    QUICK_LINK_MESSAGE = `QuickLink error: ${e?.message || e}`;
-    renderQuickLinkUI();
-    console.log("[QuickLink] failed:", e);
-  }
+  quickLinkLoadPromise = null;
+  quickLinkLoadedAt = Date.now();
+  if (!silent || CURRENT_PAGE === "tools") renderQuickLinkUI();
+  return QUICK_LINK_URL;
 }
 
 async function openQuickLink() {
-  if (!QUICK_LINK_URL) return;
-  window.open(QUICK_LINK_URL, "_blank", "noopener");
+  QUICK_LINK_URL = QUICK_LINK_FIXED_URL;
+  renderQuickLinkUI();
+  const msg = LANG === "ko"
+    ? `Web을 여시겠습니까?\n\n${QUICK_LINK_FIXED_URL}`
+    : `${getUIText("open", "Open")} Web?\n\n${QUICK_LINK_FIXED_URL}`;
+  const ok = await appConfirm(msg, { title: "Web" });
+  if (!ok) return;
+  window.open(QUICK_LINK_FIXED_URL, "_blank", "noopener");
 }
 
-if (btnSaveQuickLink) {
-  btnSaveQuickLink.onclick = () => {
-    openQuickLink().catch((e) => console.log("[QuickLink] open failed:", e));
+if (btnQuickLinkWeb) {
+  btnQuickLinkWeb.onclick = (e) => {
+    e.preventDefault();
+    openQuickLink().catch(() => {});
   };
+}
+
+function copyToClipboard(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).catch(() => {});
+    return;
+  }
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.cssText = "position:fixed;top:-9999px;opacity:0";
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try { document.execCommand("copy"); } catch {}
+  document.body.removeChild(ta);
 }
 
 function escapeHtml(s) {
@@ -1411,11 +1587,11 @@ async function setParam(name, value) {
 }
 
 /* ── Swipe Navigation ──────────────────────────────────── */
-const SWIPE_PAGES = ["carrot", "setting", "tools", "terminal"];
+const SWIPE_PAGES = ["carrot", "setting", "tools", "logs", "terminal"];
 const SETTING_BACK_EDGE_WIDTH = 32;
 
 function isLandscapeRailMode() {
-  return window.matchMedia("(orientation: landscape) and (max-height: 560px) and (pointer: coarse)").matches;
+  return window.matchMedia("(orientation: landscape)").matches;
 }
 
 function isSettingItemsScreenActive() {

@@ -3,10 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <title>Home</title>
+  <title>CarrotPilot</title>
+  <link rel="icon" type="image/png" href="/assets/img_chffr_wheel.png?v=2604-01" />
   <link rel="stylesheet" href="/css/tokens.css?v=2603-73" />
-  <link rel="stylesheet" href="/css/hud_card.css?v=2604-03" />
-  <link rel="stylesheet" href="/css/app.css?v=2603-175" />
+  <link rel="stylesheet" href="/css/hud_card.css?v=2604-09" />
+  <link rel="stylesheet" href="/css/app.css?v=2604-53" />
 </head>
 
 <body>
@@ -60,9 +61,12 @@
       <div id="settingScreenHost" class="screen-host">
         <!-- Groups Screen -->
         <div id="settingScreenGroups" class="screen">
-          <div id="settingCarRow" class="row-between mb-md" style="padding:var(--sp-md) 0; border-bottom:1px solid var(--md-outline-var);">
-            <div id="curCarLabelSetting" style="font-weight:700; font-size:var(--fs-title-md);">-</div>
-            <button id="btnChangeCar" class="btn">Change</button>
+          <div id="settingCarRow" class="mb-md setting-car-entry" role="button" tabindex="0" aria-label="차량 선택 열기">
+            <div class="setting-car-entry__text">
+              <div class="setting-car-entry__eyebrow">차량 선택</div>
+              <div id="curCarLabelSetting" class="setting-car-entry__value">-</div>
+            </div>
+            <span class="setting-car-entry__chevron" aria-hidden="true"></span>
           </div>
           <h3 id="groupsTitle" class="section-title">Groups</h3>
           <div id="groupList"></div>
@@ -107,21 +111,39 @@
       </div>
 
       <div class="tools-scroll-stack">
-        <div class="section">
-          <h3 id="gitCommandsTitle" class="section-title">Git Commands</h3>
-          <div class="row-wrap">
+        <div class="row-wrap mb-md" style="gap: var(--sp-md);">
+          <a id="btnQuickLinkWeb" class="btn btn--filled" href="#" aria-disabled="true" style="text-decoration:none; font-weight:700;">Web</a>
+          <button id="btnQuickFleet" class="btn btn--filled" type="button">Fleet</button>
+          <button id="btnDeviceInfo" class="btn btn--filled" type="button">Device Info</button>
+        </div>
+
+        <div class="section tools-group is-open" data-tools-group="git">
+          <button class="tools-group__toggle" type="button" aria-expanded="true" aria-controls="toolsGroupBodyGit">
+            <span id="gitCommandsTitle" class="section-title tools-group__title">Git Commands</span>
+            <span class="tools-group__chevron" aria-hidden="true"></span>
+          </button>
+          <div id="toolsGroupBodyGit" class="tools-group__body row-wrap">
             <button id="btnGitPull" class="btn">git pull</button>
             <button id="btnGitSync" class="btn">git sync</button>
             <button id="btnGitReset" class="btn">git reset</button>
+            <button id="btnGitLog" class="btn">git log</button>
+            <button id="btnGitRemote" class="btn">change repository</button>
             <button id="btnGitBranch" class="btn">change branch</button>
+            <button id="btnGitAddRemote" class="btn">add remote</button>
+            <button id="btnGitResetRepo" class="btn btn--danger">reset repo</button>
           </div>
         </div>
 
         <hr class="divider">
 
-        <div class="section">
-          <h3 id="userSystemTitle" class="section-title">User / System</h3>
-          <div class="row-wrap">
+        <div class="section tools-group" data-tools-group="system">
+          <button class="tools-group__toggle" type="button" aria-expanded="false" aria-controls="toolsGroupBodySystem">
+            <span id="userSystemTitle" class="section-title tools-group__title">User / System</span>
+            <span class="tools-group__chevron" aria-hidden="true"></span>
+          </button>
+          <div id="toolsGroupBodySystem" class="tools-group__body row-wrap hidden" hidden>
+            <button id="btnDeviceLang" class="btn">Device Lang</button>
+            <button id="btnResetCalib" class="btn btn--danger">Reset Calib</button>
             <button id="btnSendTmuxLog" class="btn">capture tmux</button>
             <button id="btnSendTmuxServerLog" class="btn">send tmux</button>
             <button id="btnInstallRequired" class="btn">install flask</button>
@@ -134,25 +156,20 @@
 
         <hr class="divider">
 
-        <div class="section">
-          <h3 id="toolsQuickLinkTitle" class="section-title">Quick Link</h3>
-          <div class="row-wrap">
-            <button id="btnToolsQuickLink" class="btn">open</button>
-          </div>
-          <div class="muted mt-sm">
-            <a id="toolsQuickLink" class="home-utility-linkInline" href="#" target="_blank" rel="noopener">Quick Link</a>
+        <div class="section tools-group" data-tools-group="settings">
+          <button class="tools-group__toggle" type="button" aria-expanded="false" aria-controls="toolsGroupBodySettings">
+            <span id="userSettingsTitle" class="section-title tools-group__title">Settings</span>
+            <span class="tools-group__chevron" aria-hidden="true"></span>
+          </button>
+          <div id="toolsGroupBodySettings" class="tools-group__body row-wrap hidden" hidden>
+            <button id="btnBackupSettings" class="btn">Backup</button>
+            <button id="btnRestoreSettings" class="btn">Restore</button>
+            <button id="btnCopySettings" class="btn">Copy</button>
+            <button id="btnViewSettings" class="btn">View</button>
           </div>
         </div>
 
-        <hr class="divider">
 
-        <div class="section">
-          <h3 id="userSettingsTitle" class="section-title">Settings</h3>
-          <div class="row-wrap">
-            <button id="btnBackupSettings" class="btn">backup settings</button>
-            <button id="btnRestoreSettings" class="btn">restore settings</button>
-          </div>
-        </div>
       </div>
 
       <div class="tools-console-dock">
@@ -219,6 +236,32 @@
       </div>
     </div>
 
+    <!-- ════════════ LOGS ════════════ -->
+    <div id="pageLogs" class="page" style="display:none;">
+      <div class="logs-shell">
+        <div class="logs-tabbar">
+          <div class="logs-tabs" role="tablist" aria-label="Logs">
+            <button id="logsTabDashcam" class="logs-tab is-active" type="button" role="tab" aria-selected="true">
+              <span>대시캠</span>
+            </button>
+            <button id="logsTabScreen" class="logs-tab" type="button" role="tab" aria-selected="false">
+              <span>화면녹화</span>
+            </button>
+          </div>
+        </div>
+
+        <section id="logsDashcamPanel" class="logs-panel" aria-labelledby="logsTabDashcam">
+          <div id="dashcamStatus" class="dashcam-status" hidden></div>
+          <div id="dashcamRoutes" class="dashcam-routes"></div>
+        </section>
+
+        <section id="logsScreenPanel" class="logs-panel" hidden aria-labelledby="logsTabScreen">
+          <div id="screenrecordStatus" class="dashcam-status" hidden></div>
+          <div id="screenrecordVideos" class="screenrecord-list"></div>
+        </section>
+      </div>
+    </div>
+
     <!-- ════════════ CARROT TEST ════════════ -->
     <div id="pageCarrot" class="page" style="display:none;">
       <div class="page-header page-header--hidden" aria-hidden="true">
@@ -227,8 +270,15 @@
 
       <div id="carrotStage" class="carrot-stage">
         <video id="carrotRoadVideo" class="carrot-stage__video" autoplay playsinline muted style="display:none;"></video>
+        <canvas id="carrotLastFrameCanvas" class="carrot-stage__videoHold" aria-hidden="true"></canvas>
         <canvas id="carrotOverlayCanvas" class="carrot-stage__canvas"></canvas>
         <canvas id="carrotHudCanvas" class="carrot-stage__hud"></canvas>
+        <div id="carrotOnroadAlert" class="carrot-stage__alert" hidden aria-live="polite" aria-atomic="true">
+          <div id="carrotOnroadAlertBox" class="carrot-stage__alert-box">
+            <div id="carrotOnroadAlertText1" class="carrot-stage__alert-text carrot-stage__alert-text--primary"></div>
+            <div id="carrotOnroadAlertText2" class="carrot-stage__alert-text carrot-stage__alert-text--secondary" hidden></div>
+          </div>
+        </div>
 
         <div id="visionStartOverlay" class="vision-start-overlay">
           <button id="btnStartVision" class="btn btn--filled" type="button" style="font-size:1.2rem; padding: 16px 32px; border-radius: 99px;">
@@ -236,14 +286,20 @@
           </button>
         </div>
 
+        <div id="carrotStageLoading" class="carrot-stage__loading" hidden aria-live="polite" aria-busy="true">
+          <div class="carrot-stage__loadingPanel">
+            <div class="carrot-stage__spinner" aria-hidden="true"></div>
+            <div id="carrotStageLoadingText" class="carrot-stage__loadingText">연결중</div>
+          </div>
+        </div>
+
         <div class="carrot-stage__topbar">
           <div id="carrotStageStatus" class="carrot-stage__status">waiting stream...</div>
         </div>
         <div id="carrotStageDebug" class="carrot-stage__debug">LD:- LT:- SR:-</div>
-        <div class="carrot-zoom" role="group" aria-label="Display modes">
-          <button class="smallBtn carrot-zoom__btn" type="button" data-display-index="0">축소</button>
-          <button class="smallBtn carrot-zoom__btn" type="button" data-display-index="1">정사이즈</button>
-          <button class="smallBtn carrot-zoom__btn" type="button" data-display-index="2">크롭</button>
+        <div class="carrot-stage__controls" role="group" aria-label="Display and recording controls">
+          <button id="btnDisplayModeCycle" class="carrot-stage__controlBtn carrot-stage__controlBtn--display" type="button" aria-label="Display mode">2X</button>
+          <button id="btnRecordToggle" class="carrot-stage__controlBtn carrot-stage__controlBtn--record" type="button" aria-label="Record">REC</button>
         </div>
 
         <div id="carrotStageMeta" class="carrot-stage__meta">model:- road:- cal:-</div>
@@ -276,7 +332,7 @@
         <div class="hudMetricCell">
           <span class="hudMetricIcon" aria-hidden="true">
             <svg viewBox="0 0 24 24" focusable="false">
-              <path fill="currentColor" d="M11 21h-1l1-7H8.5a.5.5 0 0 1-.39-.81L13 3h1l-1 7h2.5a.5.5 0 0 1 .39.81z"/>
+              <path id="hudAuxIconPath" fill="currentColor" d="M11 21h-1l1-7H8.5a.5.5 0 0 1-.39-.81L13 3h1l-1 7h2.5a.5.5 0 0 1 .39.81z"/>
             </svg>
           </span>
           <span id="hudDiskVal" class="hudMetricValue">--.-V</span>
@@ -309,6 +365,7 @@
               <div id="hudGapNum" class="hudGapText">(--)</div>
             </div>
             <div class="hudGearStatus">
+              <div id="hudGearStep" class="hudGearStep" hidden>1</div>
               <div id="hudGearLabel" class="hudGearLabel">GEAR</div>
               <div id="hudGear" class="hudGearValue">P</div>
             </div>
@@ -332,10 +389,6 @@
 
   <video id="rtcVideo" class="rtcVideo rtcVideo--shared" autoplay playsinline muted></video>
 
-  <div class="global-home-record-fab" aria-hidden="true">
-    <button id="btnRecordToggle" class="fab fab--round fab--record" aria-label="Record">OFF</button>
-  </div>
-
   <!-- Bottom Navigation (Material 3 style) -->
   <nav class="topbar">
     <button id="btnHome" class="nav-btn active">
@@ -356,26 +409,17 @@
       </span>
       <span>Tools</span>
     </button>
+    <button id="btnLogs" class="nav-btn">
+      <span class="nav-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm0 2.5L17.5 8H14zM8 13h8v2H8zm0 4h8v2H8zm0-8h4v2H8z"/></svg>
+      </span>
+      <span>Logs</span>
+    </button>
     <button id="btnTerminal" class="nav-btn">
       <span class="nav-icon">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2m0 2v10h16V7zm2.8 8.6 3.8-3.6-3.8-3.6 1.4-1.4 5.2 5-5.2 5zm7.7 0H18v2h-3.5z"/></svg>
       </span>
       <span>Terminal</span>
-    </button>
-    <button id="btnFleet" class="nav-btn">
-      <span class="nav-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>
-      </span>
-      <span>Fleet</span>
-    </button>
-    <button id="btnLang" class="nav-btn langToggle">
-      <span class="nav-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
-      </span>
-      <span id="langLabel" class="lang-label">
-        <span class="lang-label__main">🇰🇷</span>
-        <span class="lang-label__sub"></span>
-      </span>
     </button>
   </nav>
 
@@ -388,10 +432,12 @@
         <div id="appDialogTitle" class="app-dialog__title">알림</div>
       </div>
       <div id="appDialogBody" class="app-dialog__body">-</div>
+      <div id="appDialogChoices" class="app-dialog__choices" hidden></div>
       <div id="appDialogInputWrap" class="app-dialog__inputWrap" hidden>
         <input id="appDialogInput" type="text" class="input-text app-dialog__input" />
       </div>
       <div class="app-dialog__actions">
+        <button id="appDialogCopy" class="smallBtn" type="button" hidden>복사</button>
         <button id="appDialogCancel" class="smallBtn" type="button">취소</button>
         <button id="appDialogConfirm" class="smallBtn btn--filled" type="button">확인</button>
       </div>
@@ -412,11 +458,25 @@
     </div>
   </div>
 
-  <script src="/js/hud_card.js?v=2604-02"></script>
-  <script src="/js/app_core.js?v=2603-110"></script>
-  <script src="/js/app_pages.js?v=2603-119"></script>
-  <script src="/js/raw_capnp.js?v=2604-01"></script>
-  <script src="/js/app_realtime.js?v=2604-02"></script>
-  <script src="/js/home_drive.js?v=2604-02"></script>
+  <div id="appCarPicker" class="app-dialog app-car-picker" hidden>
+    <button id="appCarPickerBackdrop" class="app-dialog__backdrop" type="button" aria-label="Close car picker"></button>
+    <div class="app-dialog__sheet app-branch-picker__sheet app-car-picker__sheet" role="dialog" aria-modal="true" aria-labelledby="appCarPickerTitle" aria-describedby="appCarPickerMeta">
+      <div class="app-branch-picker__head app-car-picker__head">
+        <div class="app-branch-picker__titles">
+          <div id="appCarPickerTitle" class="app-dialog__title">차량 선택</div>
+          <div id="appCarPickerMeta" class="muted app-branch-picker__meta">-</div>
+        </div>
+        <button id="appCarPickerClose" class="smallBtn" type="button">닫기</button>
+      </div>
+      <div id="appCarPickerList" class="app-branch-picker__list app-car-picker__list"></div>
+    </div>
+  </div>
+
+  <script src="/js/hud_card.js?v=2604-05"></script>
+  <script src="/js/app_core.js?v=2604-22"></script>
+  <script src="/js/app_pages.js?v=2604-35"></script>
+  <script src="/js/raw_capnp.js?v=2604-05"></script>
+  <script src="/js/app_realtime.js?v=2604-17"></script>
+  <script src="/js/home_drive.js?v=2604-27"></script>
 </body>
 </html>

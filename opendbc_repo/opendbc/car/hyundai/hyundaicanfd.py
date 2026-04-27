@@ -203,12 +203,12 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_steer, 
       "LKA_MODE": 2,
       "LKA_ICON": 2 if enabled else 1,
       "TORQUE_REQUEST": apply_steer,
-      #"DampingGain": 3 if enabled else 100,
+      "DampingGain": 100, #3 if enabled else 100,
       "STEER_REQ": 1 if lat_active else 0,
       #"STEER_MODE": 0,
       "HAS_LANE_SAFETY": 0,  # hide LKAS settings
       "VALUE63": 0,
-      "VALUE64": 0,
+      "VALUE64": 100,
     }
 
   if CP.flags & HyundaiFlags.CANFD_HDA2:
@@ -598,10 +598,10 @@ def _get_desire_and_lane_changing(md):
     desire = md.meta.desire.raw
     ds = md.meta.desireState
     if len(ds) > 4:
-      if ds[1] > 0.8: lane_changing = 1
-      if ds[2] > 0.8: lane_changing = 2
-      if ds[3] > 0.8: lane_changing = 3
-      if ds[4] > 0.8: lane_changing = 4
+      if ds[1] > 0.7: lane_changing = 1
+      if ds[2] > 0.7: lane_changing = 2
+      if ds[3] > 0.7: lane_changing = 3
+      if ds[4] > 0.7: lane_changing = 4
   return desire, lane_changing
 
 def _apply_lane_desire(values, desire):
@@ -674,7 +674,7 @@ def _make_ccnc_values(values, CS, lat_active, frame, hud_control,
 
 def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control,
                          disp_angle, left_lane_warning, right_lane_warning,
-                         enable_corner_radar, stopping):
+                         enable_corner_radar, stopping, canfd_debug):
   ret = []
 
   md = CS.MD
@@ -772,7 +772,7 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control,
           values["SOUNDS_2"] = 0
           values["SOUNDS_4"] = 0
 
-        if values["ALERTS_3"] in [3, 4, 11, 12, 13, 14, 17, 19, 26, 7, 8, 9, 10]: # hide gap distance msg.(11,12,13,14)
+        if values["ALERTS_3"] in [3, 4, 11, 12, 13, 14, 17, 19, 20, 26, 27, 28, 7, 8, 9, 10]: # hide gap distance msg.(11,12,13,14), lanechange(19,20,27, 28)
           values["ALERTS_3"] = 0
           values["SOUNDS_3"] = 0
 
@@ -867,6 +867,10 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control,
 
         if (left_lane_warning and not CS.out.leftBlinker) or (right_lane_warning and not CS.out.rightBlinker):
           values["VIBRATE"] = 1
+
+        if canfd_debug > 0:
+          values["FAULT_LSS"] = 0
+          values["FAULT_DAS"] = 0
 
         ret.append(packer.make_can_msg("CCNC_0x162", CAN.ECAN, values))
 

@@ -48,7 +48,12 @@ let LIVE_RUNTIME_FETCH_T = null;
 let LIVE_RUNTIME_FETCH_IN_FLIGHT = null;
 let LIVE_RUNTIME_POLL_ACTIVE = false;
 let LAST_HUD_PAYLOAD_SIGNATURE = "";
-const RTC_STATS_POLL_MS = 2000;
+const RTC_STATS_POLL_MS = 1000;
+const RTC_FREEZE_MAX_STALL_SAMPLES = 8;
+const RTC_INITIAL_FRAME_MAX_STALL_SAMPLES = 14;
+const RTC_FREEZE_CURRENT_TIME_EPSILON = 0.05;
+const RTC_FREEZE_RECOVERY_COOLDOWN_MS = 4000;
+const RTC_RESUME_PROGRESS_CHECK_MS = 900;
 const RTC_PERF_STATE = {
   active: false,
   collectedAtMs: 0,
@@ -57,22 +62,250 @@ const RTC_PERF_STATE = {
   codec: "",
   inbound: null,
   video: null,
+  network: null,
   error: "",
 };
 window.CarrotRtcPerf = RTC_PERF_STATE;
 let RTC_STATS_T = null;
+const RTC_RATE_STATE = {
+  lastBytesReceived: null,
+  lastCollectedAtMs: 0,
+};
+const RTC_FREEZE_STATE = {
+  stallSamples: 0,
+  lastFramesDecoded: null,
+  lastTotalVideoFrames: null,
+  lastCurrentTime: null,
+  lastRecoveredAtMs: 0,
+  consecutiveRecoveries: 0,
+  everDecodedFrame: false,
+};
+let RTC_FREEZE_RECOVER_T = null;
+let RTC_VIDEO_EVENTS_BOUND = false;
+let RTC_WAIT_TRACK_PC = null;
+let RTC_RESUME_CHECK_T = null;
+const RTC_VISIBILITY_STATE = {
+  hiddenAtMs: 0,
+  currentTimeAtHide: null,
+};
+const RTC_TRACE_ENABLED = false;
+let RTC_PC_SEQ = 0;
+
+function rtcPcLabel(pc) {
+  if (!pc) return "none";
+  if (!pc.__carrotRtcLabel) {
+    RTC_PC_SEQ += 1;
+    pc.__carrotRtcLabel = `pc${RTC_PC_SEQ}`;
+  }
+  return pc.__carrotRtcLabel;
+}
+
+function rtcBuildTraceSnapshot(pc = RTC_PC) {
+  const video = getRtcVideoElement();
+  const track = video?.srcObject?.getVideoTracks?.()?.[0] || null;
+  return {
+    conn: pc?.connectionState || "none",
+    ice: pc?.iceConnectionState || "none",
+    framesDecoded: RTC_PERF_STATE.inbound?.framesDecoded ?? null,
+    fps: RTC_PERF_STATE.inbound?.framesPerSecond ?? null,
+    currentTime: Number.isFinite(Number(video?.currentTime)) ? Number(video.currentTime).toFixed(2) : null,
+    readyState: Number.isFinite(Number(video?.readyState)) ? Number(video.readyState) : null,
+    trackState: track?.readyState || null,
+    trackMuted: typeof track?.muted === "boolean" ? track.muted : null,
+    hold: Boolean(getRtcStageElement()?.classList.contains("is-video-held")),
+  };
+}
+
+function rtcTrace(event, extra = {}, pc = RTC_PC) {
+  if (!RTC_TRACE_ENABLED) return;
+  console.log("[RTC TRACE]", {
+    ts: Date.now(),
+    iso: new Date().toISOString(),
+    event,
+    pc: rtcPcLabel(pc),
+    ...rtcBuildTraceSnapshot(pc),
+    ...extra,
+  });
+}
+
+function rtcPcSawTrack(pc) {
+  return Boolean(pc && pc.__carrotTrackSeen);
+}
+
+function getRtcVideoElement() {
+  return document.getElementById("carrotRoadVideo") || document.getElementById("rtcVideo");
+}
+
+function getLegacyRtcVideoElement() {
+  return document.getElementById("rtcVideo");
+}
+
+function getRtcVideoHoldElement() {
+  return document.getElementById("carrotLastFrameCanvas");
+}
+
+function getRtcStageElement() {
+  return document.getElementById("carrotStage");
+}
+
+function rtcShowVideoHold(show) {
+  const stage = getRtcStageElement();
+  if (!stage) return;
+  stage.classList.toggle("is-video-held", Boolean(show));
+}
+
+function rtcClearVideoHold() {
+  const hold = getRtcVideoHoldElement();
+  if (hold) {
+    const ctx = hold.getContext("2d");
+    if (ctx) {
+      ctx.clearRect(0, 0, hold.width || 0, hold.height || 0);
+    }
+  }
+  rtcShowVideoHold(false);
+}
+
+function rtcCaptureVideoHoldFrame() {
+  const video = getRtcVideoElement();
+  const hold = getRtcVideoHoldElement();
+  if (!video || !hold || Number(video.readyState || 0) < 2) return false;
+
+  const targetWidth = Math.max(1, Number(hold.width || video.videoWidth || 0));
+  const targetHeight = Math.max(1, Number(hold.height || video.videoHeight || 0));
+  if (!targetWidth || !targetHeight) return false;
+
+  const ctx = hold.getContext("2d");
+  if (!ctx) return false;
+
+  if (hold.width !== targetWidth) hold.width = targetWidth;
+  if (hold.height !== targetHeight) hold.height = targetHeight;
+  try {
+    ctx.clearRect(0, 0, targetWidth, targetHeight);
+    ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+    rtcShowVideoHold(true);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function isCarrotPageActive() {
+  return document.body?.dataset?.page === "carrot";
+}
 
 function isCarrotPageVisible() {
-  return document.body?.dataset?.page === "carrot" && !document.hidden;
+  return isCarrotPageActive() && !document.hidden;
 }
 
 function shouldRunCarrotHudRealtime() {
-  return isCarrotPageVisible();
+  return isCarrotPageActive();
 }
 
 function shouldRunCarrotVisionRealtime() {
-  return isCarrotPageVisible() && window.CARROT_VISION_ACTIVE;
+  return isCarrotPageActive() && window.CARROT_VISION_ACTIVE;
 }
+
+function isLandscapeOrientation() {
+  if (typeof window.matchMedia === "function") {
+    try {
+      return window.matchMedia("(orientation: landscape)").matches;
+    } catch {}
+  }
+  return Number(window.innerWidth || 0) > Number(window.innerHeight || 0);
+}
+
+function isFullscreenActive() {
+  return Boolean(
+    document.fullscreenElement ||
+    document.webkitFullscreenElement ||
+    document.msFullscreenElement
+  );
+}
+
+async function requestCarrotFullscreen(options = {}) {
+  const quiet = Boolean(options.quiet);
+  if (!isLandscapeOrientation()) return false;
+  if (isFullscreenActive()) return true;
+
+  const root = document.documentElement || document.body;
+  if (!root) return false;
+
+  const request =
+    root.requestFullscreen ||
+    root.webkitRequestFullscreen ||
+    root.msRequestFullscreen;
+  if (typeof request !== "function") {
+    if (!quiet && typeof showAppToast === "function") {
+      showAppToast(getUIText("fullscreen_not_supported", "Fullscreen not supported on this browser."), { tone: "error" });
+    }
+    return false;
+  }
+
+  try {
+    const result = request.call(root);
+    if (result && typeof result.then === "function") {
+      await result;
+    }
+    return true;
+  } catch (error) {
+    console.log("[fullscreen] request failed", error);
+    return false;
+  }
+}
+
+async function exitCarrotFullscreen(options = {}) {
+  const quiet = Boolean(options.quiet);
+  if (!isFullscreenActive()) return true;
+
+  const exit =
+    document.exitFullscreen ||
+    document.webkitExitFullscreen ||
+    document.msExitFullscreen;
+  if (typeof exit !== "function") {
+    if (!quiet && typeof showAppToast === "function") {
+      showAppToast(getUIText("fullscreen_not_supported", "Fullscreen not supported on this browser."), { tone: "error" });
+    }
+    return false;
+  }
+
+  try {
+    const result = exit.call(document);
+    if (result && typeof result.then === "function") {
+      await result;
+    }
+    return true;
+  } catch (error) {
+    console.log("[fullscreen] exit failed", error);
+    return false;
+  }
+}
+
+async function toggleCarrotFullscreen(options = {}) {
+  if (isFullscreenActive()) {
+    return exitCarrotFullscreen(options);
+  }
+  return requestCarrotFullscreen(options);
+}
+
+function shouldKeepCarrotFullscreen() {
+  return document.body?.dataset?.page === "carrot" && Boolean(window.CARROT_VISION_ACTIVE);
+}
+
+async function syncCarrotFullscreenLifecycle() {
+  if (shouldKeepCarrotFullscreen()) return;
+  await exitCarrotFullscreen({ quiet: true }).catch(() => {});
+}
+
+window.RequestCarrotFullscreen = requestCarrotFullscreen;
+window.ExitCarrotFullscreen = exitCarrotFullscreen;
+window.ToggleCarrotFullscreen = toggleCarrotFullscreen;
+
+window.addEventListener("carrot:pagechange", () => {
+  void syncCarrotFullscreenLifecycle();
+});
+window.addEventListener("carrot:visionchange", () => {
+  void syncCarrotFullscreenLifecycle();
+});
 
 function emitCarrotRenderRequest(detail = {}) {
   window.dispatchEvent(new CustomEvent("carrot:render-request", { detail }));
@@ -80,6 +313,12 @@ function emitCarrotRenderRequest(detail = {}) {
 
 function emitCarrotVisionChange(active) {
   window.dispatchEvent(new CustomEvent("carrot:visionchange", { detail: { active: Boolean(active) } }));
+}
+
+function maybeRequestCarrotFullscreenOnPageChange(detail = {}) {
+  if (String(detail?.page || "") !== "carrot") return;
+  if (!window.CARROT_VISION_ACTIVE) return;
+  requestCarrotFullscreen({ quiet: true }).catch(() => {});
 }
 
 function getLiveRuntimeDataSignature(payload) {
@@ -132,6 +371,7 @@ async function fetchLiveRuntimeState(force = false) {
       shouldNotifyRender = shouldNotifyRender || wasOk;
 	    } finally {
       if (shouldNotifyRender) {
+        _hudMarkDirty();
         emitCarrotRenderRequest({ force: false, overlayDirty: true, hudDirty: true });
       }
 	      LIVE_RUNTIME_FETCH_IN_FLIGHT = null;
@@ -142,7 +382,7 @@ async function fetchLiveRuntimeState(force = false) {
 }
 
 function getLiveRuntimePollMs() {
-  return shouldRunCarrotHudRealtime() ? 1000 : 3000;
+  return isCarrotPageVisible() ? 1000 : 3000;
 }
 
 function scheduleLiveRuntimeStateFetch(ms = getLiveRuntimePollMs()) {
@@ -178,8 +418,33 @@ function resetRtcPerfState() {
   RTC_PERF_STATE.codec = "";
   RTC_PERF_STATE.inbound = null;
   RTC_PERF_STATE.video = null;
+  RTC_PERF_STATE.network = null;
   RTC_PERF_STATE.error = "";
+  RTC_RATE_STATE.lastBytesReceived = null;
+  RTC_RATE_STATE.lastCollectedAtMs = 0;
   window.CarrotRtcPerf = RTC_PERF_STATE;
+}
+
+function rtcResetFreezeWatchdog() {
+  RTC_FREEZE_STATE.stallSamples = 0;
+  RTC_FREEZE_STATE.lastFramesDecoded = null;
+  RTC_FREEZE_STATE.lastTotalVideoFrames = null;
+  RTC_FREEZE_STATE.lastCurrentTime = null;
+  RTC_FREEZE_STATE.everDecodedFrame = false;
+}
+
+function rtcCancelResumeCheck() {
+  if (RTC_RESUME_CHECK_T) {
+    clearTimeout(RTC_RESUME_CHECK_T);
+    RTC_RESUME_CHECK_T = null;
+  }
+}
+
+function rtcCancelFreezeRecovery() {
+  if (RTC_FREEZE_RECOVER_T) {
+    clearTimeout(RTC_FREEZE_RECOVER_T);
+    RTC_FREEZE_RECOVER_T = null;
+  }
 }
 
 function stopRtcPerfPolling() {
@@ -226,11 +491,77 @@ function extractRtcInboundVideoStats(statsReport, statsMap) {
   };
 }
 
+function extractRtcTransportStats(statsMap) {
+  let selectedPair = null;
+  statsMap.forEach((report) => {
+    if (report?.type !== "candidate-pair") return;
+    if (!(report.selected === true || report.nominated === true || report.state === "succeeded")) return;
+    if (!selectedPair || report.selected === true || report.nominated === true) {
+      selectedPair = report;
+    }
+  });
+
+  return {
+    rttMs: Number.isFinite(Number(selectedPair?.currentRoundTripTime))
+      ? Number(selectedPair.currentRoundTripTime) * 1000
+      : null,
+  };
+}
+
+function computeRtcBitrateMbps(bytesReceived, collectedAtMs) {
+  const nextBytes = Number(bytesReceived);
+  const nextAtMs = Number(collectedAtMs);
+  if (!Number.isFinite(nextBytes) || !Number.isFinite(nextAtMs)) {
+    return null;
+  }
+
+  const prevBytes = RTC_RATE_STATE.lastBytesReceived;
+  const prevAtMs = RTC_RATE_STATE.lastCollectedAtMs;
+  RTC_RATE_STATE.lastBytesReceived = nextBytes;
+  RTC_RATE_STATE.lastCollectedAtMs = nextAtMs;
+
+  if (!Number.isFinite(prevBytes) || !Number.isFinite(prevAtMs)) {
+    return null;
+  }
+
+  const deltaBytes = nextBytes - prevBytes;
+  const deltaMs = nextAtMs - prevAtMs;
+  if (deltaBytes < 0 || deltaMs < 250) {
+    return null;
+  }
+  return (deltaBytes * 8) / (deltaMs / 1000) / 1_000_000;
+}
+
+function buildRtcNetworkStats(inboundStats, videoStats, statsMap, collectedAtMs) {
+  const width = Number.isFinite(Number(inboundStats?.frameWidth))
+    ? Number(inboundStats.frameWidth)
+    : Number.isFinite(Number(videoStats?.width))
+      ? Number(videoStats.width)
+      : null;
+  const height = Number.isFinite(Number(inboundStats?.frameHeight))
+    ? Number(inboundStats.frameHeight)
+    : Number.isFinite(Number(videoStats?.height))
+      ? Number(videoStats.height)
+      : null;
+  const resolutionLabel =
+    Number.isFinite(width) && width > 0 && Number.isFinite(height) && height > 0
+      ? `${Math.round(width)}x${Math.round(height)}`
+      : "";
+  const bitrateMbps = computeRtcBitrateMbps(inboundStats?.bytesReceived, collectedAtMs);
+  const transport = extractRtcTransportStats(statsMap);
+  return {
+    resolutionLabel,
+    bitrateMbps: Number.isFinite(Number(bitrateMbps)) ? Number(bitrateMbps) : null,
+    rttMs: Number.isFinite(Number(transport.rttMs)) ? Number(transport.rttMs) : null,
+  };
+}
+
 async function collectRtcPerfStats() {
   const pc = RTC_PC;
   if (!pc) return;
 
   try {
+    const collectedAtMs = Date.now();
     const stats = await pc.getStats(null);
     let inboundVideoReport = null;
     stats.forEach((report) => {
@@ -240,51 +571,89 @@ async function collectRtcPerfStats() {
       }
     });
 
-    const video = document.getElementById("rtcVideo");
+    const video = getRtcVideoElement();
     const inbound = extractRtcInboundVideoStats(inboundVideoReport, stats);
     RTC_PERF_STATE.active = shouldRunCarrotVisionRealtime();
-    RTC_PERF_STATE.collectedAtMs = Date.now();
+    RTC_PERF_STATE.collectedAtMs = collectedAtMs;
     RTC_PERF_STATE.connectionState = pc.connectionState || "unknown";
     RTC_PERF_STATE.iceConnectionState = pc.iceConnectionState || "unknown";
     RTC_PERF_STATE.codec = inbound.codec;
     RTC_PERF_STATE.inbound = inbound.inbound;
     RTC_PERF_STATE.video = readRtcVideoPlaybackQuality(video);
+    RTC_PERF_STATE.network = buildRtcNetworkStats(inbound.inbound, RTC_PERF_STATE.video, stats, collectedAtMs);
     RTC_PERF_STATE.error = "";
     window.CarrotRtcPerf = RTC_PERF_STATE;
+    rtcUpdateFreezeWatchdog(pc, video);
+    _hudMarkDirty();
+    emitCarrotRenderRequest({ force: false, overlayDirty: false, hudDirty: true });
   } catch (error) {
     RTC_PERF_STATE.active = shouldRunCarrotVisionRealtime();
     RTC_PERF_STATE.collectedAtMs = Date.now();
     RTC_PERF_STATE.connectionState = pc.connectionState || "unknown";
     RTC_PERF_STATE.iceConnectionState = pc.iceConnectionState || "unknown";
+    RTC_PERF_STATE.network = null;
     RTC_PERF_STATE.error = error?.message || String(error);
     window.CarrotRtcPerf = RTC_PERF_STATE;
+    rtcResetFreezeWatchdog();
+    _hudMarkDirty();
+    emitCarrotRenderRequest({ force: false, overlayDirty: false, hudDirty: true });
   }
 }
 
 function scheduleRtcPerfPolling(ms = RTC_STATS_POLL_MS) {
-  if (RTC_STATS_T || !shouldRunCarrotVisionRealtime()) return;
+  if (RTC_STATS_T) return;
   RTC_STATS_T = setTimeout(async () => {
     RTC_STATS_T = null;
     if (!shouldRunCarrotVisionRealtime()) return;
     await collectRtcPerfStats().catch(() => {});
-    scheduleRtcPerfPolling(RTC_STATS_POLL_MS);
+    scheduleRtcPerfPolling(isCarrotPageVisible() ? RTC_STATS_POLL_MS : 2500);
   }, ms);
 }
 
 function startRtcPerfPolling(force = false) {
-  if (force) collectRtcPerfStats().catch(() => {});
-  scheduleRtcPerfPolling(force ? 500 : RTC_STATS_POLL_MS);
+  if (force && isCarrotPageVisible()) collectRtcPerfStats().catch(() => {});
+  scheduleRtcPerfPolling(force ? (isCarrotPageVisible() ? 500 : 2500) : (isCarrotPageVisible() ? RTC_STATS_POLL_MS : 2500));
 }
 
 
 // ===== WebRTC (auto) =====
 let RTC_PC = null;
+let RTC_PENDING_PC = null;
+let RTC_STANDBY_PC = null;
 let RTC_RETRY_T = null;
 let RTC_WAIT_TRACK_T = null;
 let RTC_FAIL_COUNT = 0;
 function rtcHasLiveTrack() {
-  const video = document.getElementById("rtcVideo");
-  return Boolean(video && video.srcObject);
+  const video = getRtcVideoElement();
+  const stream = video?.srcObject;
+  if (!stream) return false;
+  if (stream.active === false) return false;
+  if (typeof stream.getVideoTracks !== "function") return true;
+  const tracks = stream.getVideoTracks();
+  if (!tracks.length) return true;
+  return tracks.some((track) => track && track.readyState !== "ended");
+}
+
+function rtcHasUsableTrack() {
+  const video = getRtcVideoElement();
+  const stream = video?.srcObject;
+  if (!stream) return false;
+  if (stream.active === false) return false;
+  if (typeof stream.getVideoTracks !== "function") return true;
+  const tracks = stream.getVideoTracks();
+  if (!tracks.length) return true;
+  return tracks.some((track) => track && track.readyState !== "ended");
+}
+
+function rtcClosePeer(pc) {
+  if (!pc) return;
+  try { pc.ontrack = null; } catch {}
+  try { pc.onconnectionstatechange = null; } catch {}
+  try { pc.oniceconnectionstatechange = null; } catch {}
+  try { pc.close(); } catch {}
+  if (RTC_PC === pc) RTC_PC = null;
+  if (RTC_PENDING_PC === pc) RTC_PENDING_PC = null;
+  if (RTC_STANDBY_PC === pc) RTC_STANDBY_PC = null;
 }
 
 function rtcStatusSet(s) {
@@ -299,19 +668,174 @@ function rtcCancelRetry() {
   }
 }
 
-async function rtcDisconnect() {
+async function rtcDisconnect(options = {}) {
+  const keepVideo = Boolean(options.keepVideo);
   rtcCancelRetry();
   rtcDisarmTrackTimeout();
+  rtcCancelResumeCheck();
+  rtcCancelFreezeRecovery();
   stopRtcPerfPolling();
-  try { if (RTC_PC) RTC_PC.close(); } catch {}
+  const activePc = RTC_PC;
+  const pendingPc = RTC_PENDING_PC;
+  const standbyPc = RTC_STANDBY_PC;
   RTC_PC = null;
+  RTC_PENDING_PC = null;
+  RTC_STANDBY_PC = null;
+  rtcClosePeer(pendingPc);
+  rtcClosePeer(activePc);
+  rtcClosePeer(standbyPc);
   resetRtcPerfState();
+  rtcResetFreezeWatchdog();
 
-  const video = document.getElementById("rtcVideo");
-  if (video) {
-    video.srcObject = null;
-    video.style.display = "none";
+  if (!keepVideo) {
+    rtcClearVideoHold();
+    const video = getRtcVideoElement();
+    if (video) {
+      video.srcObject = null;
+    }
+    const legacyVideo = getLegacyRtcVideoElement();
+    if (legacyVideo && legacyVideo !== video) {
+      legacyVideo.srcObject = null;
+    }
   }
+}
+
+function rtcConnectionLooksLive(pc = RTC_PC) {
+  if (!pc) return false;
+  return pc.connectionState === "connected" || pc.iceConnectionState === "completed";
+}
+
+function rtcIsWaitingForInitialTrack(pc = RTC_PC) {
+  return Boolean(RTC_WAIT_TRACK_T && RTC_WAIT_TRACK_PC && RTC_WAIT_TRACK_PC === pc);
+}
+
+function rtcIsWaitingForInitialTrack(pc = RTC_PC) {
+  return Boolean(RTC_WAIT_TRACK_T && RTC_WAIT_TRACK_PC && RTC_WAIT_TRACK_PC === pc);
+}
+
+function rtcUpdateFreezeSnapshot(snapshot) {
+  RTC_FREEZE_STATE.lastFramesDecoded = snapshot.framesDecoded;
+  RTC_FREEZE_STATE.lastTotalVideoFrames = snapshot.totalVideoFrames;
+  RTC_FREEZE_STATE.lastCurrentTime = snapshot.currentTime;
+}
+
+function rtcScheduleFreezeRecovery(reason, options = {}) {
+  const force = Boolean(options.force);
+  if (!shouldRunCarrotVisionRealtime() || _rtcConnecting || RTC_PENDING_PC || RTC_FREEZE_RECOVER_T) return;
+  const now = Date.now();
+  if (!force && (now - RTC_FREEZE_STATE.lastRecoveredAtMs < RTC_FREEZE_RECOVERY_COOLDOWN_MS)) return;
+
+  RTC_FREEZE_STATE.consecutiveRecoveries++;
+  RTC_FREEZE_STATE.lastRecoveredAtMs = now;
+  RTC_FREEZE_STATE.stallSamples = 0;
+  rtcStatusSet(reason);
+  rtcTrace("freeze_recovery_scheduled", {
+    reason,
+    force,
+    attempt: RTC_FREEZE_STATE.consecutiveRecoveries,
+  }, RTC_PC || RTC_PENDING_PC);
+  console.warn("[RTC] road video stalled, reconnecting", {
+    reason,
+    attempt: RTC_FREEZE_STATE.consecutiveRecoveries,
+    connectionState: RTC_PERF_STATE.connectionState,
+    iceConnectionState: RTC_PERF_STATE.iceConnectionState,
+    inbound: RTC_PERF_STATE.inbound,
+    video: RTC_PERF_STATE.video,
+  });
+
+  RTC_FREEZE_RECOVER_T = setTimeout(async () => {
+    RTC_FREEZE_RECOVER_T = null;
+    if (!shouldRunCarrotVisionRealtime()) return;
+    rtcCaptureVideoHoldFrame();
+    RTC_FAIL_COUNT = 0;
+    await rtcConnectOnce({ force: true }).catch(() => {});
+  }, 0);
+}
+
+function rtcUpdateFreezeWatchdog(pc, video) {
+  if (!shouldRunCarrotVisionRealtime() || !video) {
+    rtcResetFreezeWatchdog();
+    return;
+  }
+
+  if (rtcIsWaitingForInitialTrack(pc)) {
+    rtcResetFreezeWatchdog();
+    return;
+  }
+
+  // PC connected but track dead/muted/inactive → force reconnect
+  if (rtcConnectionLooksLive(pc) && !rtcHasUsableTrack() && video.srcObject) {
+    rtcResetFreezeWatchdog();
+    return;
+  }
+
+  if (!rtcConnectionLooksLive(pc) || !rtcHasLiveTrack()) {
+    rtcResetFreezeWatchdog();
+    return;
+  }
+
+  const snapshot = {
+    framesDecoded: Number.isFinite(Number(RTC_PERF_STATE.inbound?.framesDecoded)) ? Number(RTC_PERF_STATE.inbound.framesDecoded) : null,
+    totalVideoFrames: Number.isFinite(Number(RTC_PERF_STATE.video?.totalVideoFrames)) ? Number(RTC_PERF_STATE.video.totalVideoFrames) : null,
+    currentTime: Number.isFinite(Number(RTC_PERF_STATE.video?.currentTime)) ? Number(RTC_PERF_STATE.video.currentTime) : null,
+  };
+  const readyState = Number.isFinite(Number(RTC_PERF_STATE.video?.readyState)) ? Number(RTC_PERF_STATE.video.readyState) : Number(video.readyState || 0);
+
+  if (readyState < 2 || (snapshot.framesDecoded == null && snapshot.totalVideoFrames == null && snapshot.currentTime == null)) {
+    rtcResetFreezeWatchdog();
+    rtcUpdateFreezeSnapshot(snapshot);
+    return;
+  }
+
+  if (RTC_FREEZE_STATE.lastFramesDecoded == null && RTC_FREEZE_STATE.lastTotalVideoFrames == null && RTC_FREEZE_STATE.lastCurrentTime == null) {
+    rtcUpdateFreezeSnapshot(snapshot);
+    RTC_FREEZE_STATE.stallSamples = 0;
+    return;
+  }
+
+  const hasProgress =
+    (snapshot.framesDecoded != null && RTC_FREEZE_STATE.lastFramesDecoded != null && snapshot.framesDecoded > RTC_FREEZE_STATE.lastFramesDecoded) ||
+    (snapshot.totalVideoFrames != null && RTC_FREEZE_STATE.lastTotalVideoFrames != null && snapshot.totalVideoFrames > RTC_FREEZE_STATE.lastTotalVideoFrames) ||
+    (snapshot.currentTime != null && RTC_FREEZE_STATE.lastCurrentTime != null && snapshot.currentTime > RTC_FREEZE_STATE.lastCurrentTime + RTC_FREEZE_CURRENT_TIME_EPSILON);
+
+  if (hasProgress) {
+    RTC_FREEZE_STATE.stallSamples = 0;
+    RTC_FREEZE_STATE.consecutiveRecoveries = 0;
+    if (!RTC_FREEZE_STATE.everDecodedFrame) {
+      RTC_FREEZE_STATE.everDecodedFrame = true;
+    }
+  } else {
+    RTC_FREEZE_STATE.stallSamples++;
+  }
+  rtcUpdateFreezeSnapshot(snapshot);
+
+  const stallLimit = RTC_FREEZE_STATE.everDecodedFrame ? RTC_FREEZE_MAX_STALL_SAMPLES : RTC_INITIAL_FRAME_MAX_STALL_SAMPLES;
+  if (RTC_FREEZE_STATE.stallSamples >= stallLimit) {
+    rtcScheduleFreezeRecovery(RTC_FREEZE_STATE.everDecodedFrame ? "video stalled, reconnecting..." : "no initial frame, reconnecting...");
+  }
+}
+
+function rtcBindVideoEvents() {
+  if (RTC_VIDEO_EVENTS_BOUND) return;
+  const video = getRtcVideoElement();
+  if (!video) return;
+
+  RTC_VIDEO_EVENTS_BOUND = true;
+  const nudgePlayback = () => {
+    if (!shouldRunCarrotVisionRealtime() || !video.srcObject) return;
+    video.play().catch(() => {});
+    collectRtcPerfStats().catch(() => {});
+  };
+
+  video.addEventListener("playing", () => {
+    RTC_FREEZE_STATE.stallSamples = 0;
+    RTC_FREEZE_STATE.everDecodedFrame = true;
+    rtcClearVideoHold();
+    collectRtcPerfStats().catch(() => {});
+  });
+  ["waiting", "stalled", "suspend", "pause", "ended"].forEach((eventName) => {
+    video.addEventListener(eventName, nudgePlayback);
+  });
 }
 
 function rtcScheduleRetry(ms = 2000) {
@@ -326,21 +850,53 @@ function rtcScheduleRetry(ms = 2000) {
   }, backoff);
 }
 
-function rtcArmTrackTimeout(ms = 5000) {
+function rtcArmTrackTimeout(ms = 5000, expectedPc = RTC_PC) {
+  if (rtcPcSawTrack(expectedPc)) {
+    rtcTrace("track_timeout_arm_skipped", { timeoutMs: ms, reason: "track already seen" }, expectedPc);
+    return;
+  }
   if (RTC_WAIT_TRACK_T) clearTimeout(RTC_WAIT_TRACK_T);
+  RTC_WAIT_TRACK_PC = expectedPc;
   RTC_WAIT_TRACK_T = setTimeout(async () => {
     RTC_WAIT_TRACK_T = null;
+    if (RTC_WAIT_TRACK_PC !== expectedPc || (RTC_PC !== expectedPc && RTC_PENDING_PC !== expectedPc)) return;
+    if (rtcPcSawTrack(expectedPc)) {
+      RTC_WAIT_TRACK_PC = null;
+      rtcTrace("track_timeout_ignored", { timeoutMs: ms, reason: "track arrived before timeout fired" }, expectedPc);
+      return;
+    }
+    RTC_WAIT_TRACK_PC = null;
+    rtcTrace("track_timeout", { timeoutMs: ms }, expectedPc);
     rtcStatusSet("no track, retry...");
-    await rtcDisconnect();
+    rtcCaptureVideoHoldFrame();
+    if (RTC_PENDING_PC === expectedPc) {
+      rtcClosePeer(expectedPc);
+      rtcScheduleRetry(2000);
+      return;
+    }
+    await rtcDisconnect({ keepVideo: true });
     rtcScheduleRetry(2000);
   }, ms);
 }
 
-function rtcDisarmTrackTimeout() {
+function rtcDisarmTrackTimeout(expectedPc = null) {
+  if (expectedPc && RTC_WAIT_TRACK_PC && RTC_WAIT_TRACK_PC !== expectedPc) return;
   if (RTC_WAIT_TRACK_T) {
     clearTimeout(RTC_WAIT_TRACK_T);
     RTC_WAIT_TRACK_T = null;
   }
+  RTC_WAIT_TRACK_PC = null;
+}
+
+function rtcScheduleResumeHealthCheck(reason = "returned visible") {
+  rtcCancelResumeCheck();
+  RTC_RESUME_CHECK_T = setTimeout(async () => {
+    RTC_RESUME_CHECK_T = null;
+    if (!shouldRunCarrotVisionRealtime() || _rtcConnecting || RTC_PENDING_PC || !RTC_PC) return;
+    if (!rtcConnectionLooksLive(RTC_PC) || !rtcHasLiveTrack()) {
+      rtcScheduleFreezeRecovery(`${reason}, reconnecting...`, { force: true });
+    }
+  }, RTC_RESUME_PROGRESS_CHECK_MS);
 }
 
 async function waitIceComplete(pc, timeoutMs = 8000) {
@@ -360,25 +916,58 @@ async function waitIceComplete(pc, timeoutMs = 8000) {
 
 let _rtcConnecting = false;
 
-async function rtcConnectOnce() {
+async function rtcConnectOnce(options = {}) {
+  const force = Boolean(options.force);
   if (!shouldRunCarrotVisionRealtime()) return;
-  if (_rtcConnecting) return;
-  if (RTC_PC && (RTC_PC.connectionState === "connected" || RTC_PC.connectionState === "connecting")) return;
+  if (_rtcConnecting || RTC_PENDING_PC) return;
+  if (!force && RTC_PC && (RTC_PC.connectionState === "connected" || RTC_PC.connectionState === "connecting") && rtcHasLiveTrack()) return;
 
   _rtcConnecting = true;
+  let previousPc = RTC_PC || RTC_STANDBY_PC;
   try {
-    await rtcDisconnect();
-    rtcStatusSet("connecting...");
+    rtcCancelRetry();
+    rtcDisarmTrackTimeout();
+    rtcCancelResumeCheck();
+    rtcCancelFreezeRecovery();
+    rtcTrace("connect_start", {
+      force,
+      hasPreviousPc: Boolean(previousPc),
+      hasLiveTrack: rtcHasLiveTrack(),
+    }, previousPc || RTC_PC);
+
+    const keepPreviousVisible = Boolean(previousPc && rtcHasLiveTrack());
+    if (keepPreviousVisible) {
+      if (RTC_STANDBY_PC && RTC_STANDBY_PC !== previousPc) {
+        rtcClosePeer(RTC_STANDBY_PC);
+      }
+      RTC_STANDBY_PC = previousPc;
+      if (RTC_PC === previousPc) {
+        RTC_PC = null;
+      }
+      stopRtcPerfPolling();
+      resetRtcPerfState();
+      rtcResetFreezeWatchdog();
+      rtcStatusSet("reconnecting...");
+    } else {
+      await rtcDisconnect({ keepVideo: true });
+      previousPc = null;
+      rtcStatusSet("connecting...");
+    }
 
     const pc = new RTCPeerConnection({
       iceServers: [],
       sdpSemantics: "unified-plan",
       iceCandidatePoolSize: 1,
     });
-    RTC_PC = pc;
-    startRtcPerfPolling(true);
+    rtcPcLabel(pc);
+    pc.__carrotTrackSeen = false;
+    RTC_PENDING_PC = pc;
+    rtcTrace("pc_created", {
+      keepPreviousVisible,
+      hasPreviousPc: Boolean(previousPc),
+    }, pc);
 
-    const video = document.getElementById("rtcVideo");
+    const video = getRtcVideoElement();
     if (video) {
       video.muted = true;
       video.playsInline = true;
@@ -387,8 +976,14 @@ async function rtcConnectOnce() {
     pc.addTransceiver("video", { direction: "recvonly" });
 
     pc.ontrack = async (ev) => {
-      const videoEl = document.getElementById("rtcVideo");
+      if (RTC_PENDING_PC !== pc) return;
+      const videoEl = getRtcVideoElement();
       if (!videoEl) return;
+      rtcTrace("track_received", {
+        kind: ev.track?.kind || null,
+        streamCount: Array.isArray(ev.streams) ? ev.streams.length : 0,
+      }, pc);
+      pc.__carrotTrackSeen = true;
 
       let stream = ev.streams && ev.streams[0];
       if (!stream) {
@@ -396,31 +991,83 @@ async function rtcConnectOnce() {
       }
 
       videoEl.srcObject = stream;
-      videoEl.style.display = "block";
+      RTC_PENDING_PC = null;
+      RTC_PC = pc;
+      const retiringPc = RTC_STANDBY_PC && RTC_STANDBY_PC !== pc ? RTC_STANDBY_PC : null;
+      RTC_STANDBY_PC = null;
       try { await videoEl.play(); } catch (e) { console.log("[RTC] play() failed", e); }
       rtcStatusSet("track: " + ev.track.kind);
-      rtcDisarmTrackTimeout();
+      rtcDisarmTrackTimeout(pc);
       RTC_FAIL_COUNT = 0;
+      rtcResetFreezeWatchdog();
+      rtcClearVideoHold();
+      startRtcPerfPolling(true);
       collectRtcPerfStats().catch(() => {});
+      if (retiringPc) {
+        rtcClosePeer(retiringPc);
+      }
+
+      // Detect server-side track close → immediate recovery (guarded by PC identity)
+      ev.track.addEventListener("ended", () => {
+        rtcTrace("track_ended", {
+          kind: ev.track?.kind || null,
+          trackReadyState: ev.track?.readyState || null,
+        }, pc);
+        console.warn("[RTC] remote track ended");
+        if ((RTC_PC === pc || RTC_PENDING_PC === pc) && shouldRunCarrotVisionRealtime() && !_rtcConnecting) {
+          rtcCaptureVideoHoldFrame();
+          rtcScheduleFreezeRecovery("remote track ended", { force: true });
+        }
+      });
     };
 
     pc.onconnectionstatechange = () => {
+      const isPending = RTC_PENDING_PC === pc;
+      const isActive = RTC_PC === pc;
+      if (!isPending && !isActive) return;
       const state = pc.connectionState;
+      rtcTrace("connection_state_change", {
+        isPending,
+        isActive,
+        state,
+      }, pc);
       rtcStatusSet("conn: " + state);
       if (state === "connected") RTC_FAIL_COUNT = 0;
-      collectRtcPerfStats().catch(() => {});
-      if (state === "failed" || state === "disconnected" || state === "closed") {
-        rtcDisconnect();
+      if (isActive) {
+        collectRtcPerfStats().catch(() => {});
+      }
+      if (state === "failed" || state === "closed") {
+        rtcCaptureVideoHoldFrame();
+        if (isPending) {
+          rtcClosePeer(pc);
+        } else {
+          rtcDisconnect({ keepVideo: true }).catch(() => {});
+        }
         rtcScheduleRetry(2000);
       }
     };
 
     pc.oniceconnectionstatechange = () => {
+      const isPending = RTC_PENDING_PC === pc;
+      const isActive = RTC_PC === pc;
+      if (!isPending && !isActive) return;
       const state = pc.iceConnectionState;
+      rtcTrace("ice_state_change", {
+        isPending,
+        isActive,
+        state,
+      }, pc);
       rtcStatusSet("ice: " + state);
-      collectRtcPerfStats().catch(() => {});
-      if (state === "failed" || state === "disconnected" || state === "closed") {
-        rtcDisconnect();
+      if (isActive) {
+        collectRtcPerfStats().catch(() => {});
+      }
+      if (state === "failed" || state === "closed") {
+        rtcCaptureVideoHoldFrame();
+        if (isPending) {
+          rtcClosePeer(pc);
+        } else {
+          rtcDisconnect({ keepVideo: true }).catch(() => {});
+        }
         rtcScheduleRetry(2000);
       }
     };
@@ -428,6 +1075,9 @@ async function rtcConnectOnce() {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
     await waitIceComplete(pc, 8000);
+    rtcTrace("offer_ready", {
+      localSdpBytes: pc.localDescription?.sdp?.length || 0,
+    }, pc);
 
     const body = {
       sdp: pc.localDescription.sdp,
@@ -449,13 +1099,27 @@ async function rtcConnectOnce() {
 
     const answer = await response.json();
     if (!answer || !answer.sdp) throw new Error("bad answer");
+    rtcTrace("answer_received", {
+      remoteSdpBytes: answer.sdp?.length || 0,
+      answerType: answer.type || "answer",
+    }, pc);
 
     await pc.setRemoteDescription({ type: answer.type || "answer", sdp: answer.sdp });
+    rtcTrace("answer_applied", {}, pc);
     rtcStatusSet("connected (waiting track...)");
-    rtcArmTrackTimeout(6000);
+    rtcArmTrackTimeout(6000, pc);
   } catch (e) {
+    rtcTrace("connect_error", {
+      message: e?.message || String(e),
+    }, RTC_PENDING_PC || previousPc || RTC_PC);
     rtcStatusSet("error: " + e.message);
-    await rtcDisconnect();
+    rtcCaptureVideoHoldFrame();
+    if (RTC_PENDING_PC) {
+      rtcClosePeer(RTC_PENDING_PC);
+    }
+    if (!RTC_PC && !RTC_STANDBY_PC) {
+      await rtcDisconnect({ keepVideo: true });
+    }
     rtcScheduleRetry(2000);
   } finally {
     _rtcConnecting = false;
@@ -478,12 +1142,13 @@ window.CARROT_VISION_ACTIVE = false;
 
 window.CarrotVisionStart = async function() {
   if (window.CARROT_VISION_ACTIVE) return;
+  requestCarrotFullscreen({ quiet: false }).catch(() => {});
   window.CARROT_VISION_ACTIVE = true;
   emitCarrotVisionChange(true);
   
   const btn = document.getElementById("visionStartOverlay");
   if (btn) btn.style.display = "none";
-  
+
   rtcStatusSet("waiting server...");
   await waitServerReady(8000);
   syncCarrotRealtimeLifecycle(true);
@@ -492,6 +1157,7 @@ window.CarrotVisionStart = async function() {
 function rtcInitAuto() {
   const btn = document.getElementById("btnStartVision");
   if (btn) btn.onclick = window.CarrotVisionStart;
+  rtcBindVideoEvents();
 }
 
 const RAW_HUD_LOG_PREFIX = "[raw hud]";
@@ -523,9 +1189,13 @@ let RAW_DECODE_WORKER = null;
 let RAW_DECODE_WORKER_FAILED = false;
 let RAW_DECODE_REQ_ID = 0;
 const RAW_DECODE_PENDING = new Map();
-const RAW_DECODE_SEQ = {
+const RAW_DECODE_BACKPRESSURE = {
   hud: Object.create(null),
   overlay: Object.create(null),
+};
+const RAW_DECODE_EPOCH = {
+  hud: 0,
+  overlay: 0,
 };
 
 function rejectPendingRawDecodeRequests(message) {
@@ -611,15 +1281,81 @@ async function decodeRawMessage(streamKind, service, data) {
   });
 }
 
-function nextRawDecodeSeq(streamKind, service) {
-  const bucket = RAW_DECODE_SEQ[streamKind];
-  const next = Number(bucket[service] || 0) + 1;
-  bucket[service] = next;
-  return next;
+function getRawDecodeEpoch(streamKind) {
+  return Number(RAW_DECODE_EPOCH[streamKind] || 0);
 }
 
-function isLatestRawDecodeSeq(streamKind, service, seq) {
-  return RAW_DECODE_SEQ[streamKind]?.[service] === seq;
+function invalidateRawDecodeState(streamKind) {
+  RAW_DECODE_EPOCH[streamKind] = getRawDecodeEpoch(streamKind) + 1;
+  const nextEpoch = RAW_DECODE_EPOCH[streamKind];
+  const bucket = RAW_DECODE_BACKPRESSURE[streamKind];
+  Object.values(bucket).forEach((state) => {
+    state.pendingData = null;
+    state.pendingEpoch = nextEpoch;
+    state.pendingVersion = Number(state.pendingVersion || 0) + 1;
+  });
+}
+
+function getRawDecodeServiceState(streamKind, service) {
+  const bucket = RAW_DECODE_BACKPRESSURE[streamKind];
+  if (!bucket[service]) {
+    bucket[service] = {
+      inFlight: false,
+      pendingData: null,
+      pendingEpoch: getRawDecodeEpoch(streamKind),
+      pendingVersion: 0,
+    };
+  }
+  return bucket[service];
+}
+
+function shouldApplyDecodedStream(streamKind) {
+  return streamKind === "hud" ? shouldRunCarrotHudRealtime() : shouldRunCarrotVisionRealtime();
+}
+
+async function flushRawDecodeQueue(streamKind, service, applyDecoded) {
+  const state = getRawDecodeServiceState(streamKind, service);
+  if (state.inFlight) return;
+  state.inFlight = true;
+  try {
+    while (state.pendingData != null) {
+      const nextData = state.pendingData;
+      const pendingEpoch = state.pendingEpoch;
+      const pendingVersion = state.pendingVersion;
+      state.pendingData = null;
+
+      let decoded = null;
+      try {
+        decoded = await decodeRawMessage(streamKind, service, nextData);
+      } catch (error) {
+        console.log(`[raw decode] ${streamKind}/${service} failed`, error);
+        continue;
+      }
+
+      if (!decoded) continue;
+      if (!shouldApplyDecodedStream(streamKind)) continue;
+      if (pendingEpoch !== getRawDecodeEpoch(streamKind)) continue;
+      if (state.pendingData != null || state.pendingEpoch !== pendingEpoch || state.pendingVersion !== pendingVersion) continue;
+      applyDecoded(decoded);
+    }
+  } finally {
+    state.inFlight = false;
+    if (state.pendingData != null) {
+      flushRawDecodeQueue(streamKind, service, applyDecoded).catch((error) => {
+        console.log(`[raw decode] ${streamKind}/${service} queue restart failed`, error);
+      });
+    }
+  }
+}
+
+function queueRawDecodedMessage(streamKind, service, data, applyDecoded) {
+  const state = getRawDecodeServiceState(streamKind, service);
+  state.pendingData = data;
+  state.pendingEpoch = getRawDecodeEpoch(streamKind);
+  state.pendingVersion = Number(state.pendingVersion || 0) + 1;
+  flushRawDecodeQueue(streamKind, service, applyDecoded).catch((error) => {
+    console.log(`[raw decode] ${streamKind}/${service} queue failed`, error);
+  });
 }
 
 function buildRawMultiplexUrl(services) {
@@ -649,30 +1385,26 @@ async function parseRawMultiplexFrame(data) {
   };
 }
 
-async function handleHudDecodedMessage(service, data) {
-  const seq = nextRawDecodeSeq("hud", service);
-  const decoded = await decodeRawMessage("hud", service, data);
-  if (!decoded) return;
-  if (!isLatestRawDecodeSeq("hud", service, seq)) return;
-  RAW_HUD_STATE[service] = decoded;
-  window.CarrotHudState = RAW_HUD_STATE;
-  _hudMarkDirty();
-  emitCarrotRenderRequest({
-    hudDirty: true,
-    overlayDirty: RAW_HUD_OVERLAY_DIRTY_SERVICES.has(service),
+function handleHudDecodedMessage(service, data) {
+  queueRawDecodedMessage("hud", service, data, (decoded) => {
+    RAW_HUD_STATE[service] = decoded;
+    window.CarrotHudState = RAW_HUD_STATE;
+    _hudMarkDirty();
+    emitCarrotRenderRequest({
+      hudDirty: true,
+      overlayDirty: RAW_HUD_OVERLAY_DIRTY_SERVICES.has(service),
+    });
   });
 }
 
-async function handleOverlayDecodedMessage(service, data) {
-  const seq = nextRawDecodeSeq("overlay", service);
-  const decoded = await decodeRawMessage("overlay", service, data);
-  if (!decoded) return;
-  if (!isLatestRawDecodeSeq("overlay", service, seq)) return;
-  RAW_OVERLAY_STATE[service] = decoded;
-  window.CarrotOverlayState = RAW_OVERLAY_STATE;
-  emitCarrotRenderRequest({
-    hudDirty: true,
-    overlayDirty: !RAW_OVERLAY_HUD_ONLY_SERVICES.has(service),
+function handleOverlayDecodedMessage(service, data) {
+  queueRawDecodedMessage("overlay", service, data, (decoded) => {
+    RAW_OVERLAY_STATE[service] = decoded;
+    window.CarrotOverlayState = RAW_OVERLAY_STATE;
+    emitCarrotRenderRequest({
+      hudDirty: true,
+      overlayDirty: !RAW_OVERLAY_HUD_ONLY_SERVICES.has(service),
+    });
   });
 }
 
@@ -684,7 +1416,7 @@ function drivingHudUpdateFromCarPayload(j) {
     cpuTempC: j.cpuTempC,
     memPct: j.memPct,
     diskPct: j.diskPct,
-    diskLabel: j.diskLabel,
+    voltageV: j.voltageV,
     vEgoKph,
     vSetKph: j.vSetKph,
     temp: j.temp,
@@ -693,6 +1425,7 @@ function drivingHudUpdateFromCarPayload(j) {
     tfGap: j.tfGap,
     tfBars: j.tfBars,
     gear: j.gear,
+    gearStep: j.gearStep,
     gpsOk: j.gpsOk,
     driveMode: j.driveMode,
     speedLimitKph: j.speedLimitKph,
@@ -706,6 +1439,7 @@ function drivingHudUpdateFromCarPayload(j) {
     payload.cpuTempC ?? "-",
     payload.memPct ?? "-",
     payload.diskPct ?? "-",
+    payload.voltageV ?? "-",
     payload.vEgoKph ?? "-",
     payload.vSetKph ?? "-",
     payload.temp?.source ?? "-",
@@ -716,6 +1450,7 @@ function drivingHudUpdateFromCarPayload(j) {
     payload.tfGap ?? "-",
     payload.tfBars ?? "-",
     payload.gear ?? "-",
+    payload.gearStep ?? "-",
     payload.gpsOk ?? "-",
     payload.driveMode?.name ?? "-",
     payload.driveMode?.kind ?? "-",
@@ -729,9 +1464,84 @@ function drivingHudUpdateFromCarPayload(j) {
   window.DrivingHud.update(payload);
 }
 
+function averageFiniteMetric(values) {
+  const samples = Array.isArray(values)
+    ? values.map((value) => Number(value)).filter((value) => Number.isFinite(value))
+    : [];
+  if (!samples.length) return null;
+  const total = samples.reduce((sum, value) => sum + value, 0);
+  return total / samples.length;
+}
+
+function pickFiniteMetric(...values) {
+  for (const value of values) {
+    if (value === null || value === undefined || value === "") continue;
+    const numeric = Number(value);
+    if (Number.isFinite(numeric)) return numeric;
+  }
+  return null;
+}
+
+function deriveNormalizedHudDeviceMetrics(rawHudState) {
+  const liveServices = window.CarrotLiveRuntimeState?.services;
+  const liveDeviceState = liveServices?.deviceState && typeof liveServices.deviceState === "object"
+    ? liveServices.deviceState
+    : {};
+  const livePeripheralState = liveServices?.peripheralState && typeof liveServices.peripheralState === "object"
+    ? liveServices.peripheralState
+    : {};
+  const rawDeviceState = rawHudState?.deviceState && typeof rawHudState.deviceState === "object"
+    ? rawHudState.deviceState
+    : {};
+  const rawPeripheralState = rawHudState?.peripheralState && typeof rawHudState.peripheralState === "object"
+    ? rawHudState.peripheralState
+    : {};
+
+  const cpuTempC = pickFiniteMetric(
+    averageFiniteMetric(liveDeviceState.cpuTempC),
+    averageFiniteMetric(rawDeviceState.cpuTempC),
+  );
+  const memPct = pickFiniteMetric(
+    liveDeviceState.memoryUsagePercent,
+    rawDeviceState.memoryUsagePercent,
+  );
+  const freeSpacePct = pickFiniteMetric(liveDeviceState.freeSpacePercent);
+  const diskPct = Number.isFinite(freeSpacePct)
+    ? Math.min(100, Math.max(0, 100 - freeSpacePct))
+    : null;
+  const voltageMv = pickFiniteMetric(
+    livePeripheralState.voltage,
+    rawPeripheralState.voltage,
+  );
+  const voltageV = Number.isFinite(voltageMv) ? (voltageMv / 1000.0) : null;
+
+  return { cpuTempC, memPct, diskPct, voltageV };
+}
+
+function deriveNormalizedHudVehicleMetrics(rawHudState) {
+  const liveServices = window.CarrotLiveRuntimeState?.services;
+  const liveCarState = liveServices?.carState && typeof liveServices.carState === "object"
+    ? liveServices.carState
+    : {};
+  const rawCarState = rawHudState?.carState && typeof rawHudState.carState === "object"
+    ? rawHudState.carState
+    : {};
+
+  const gearStep = pickFiniteMetric(
+    rawCarState.gearStep,
+    liveCarState.gearStep,
+  );
+
+  return {
+    gearStep: Number.isFinite(gearStep) && gearStep > 0 ? Math.round(gearStep) : null,
+  };
+}
+
 function drivingHudUpdateFromRawState() {
   const payload = window.CarrotRawCapnp?.deriveHudPayload?.(RAW_HUD_STATE);
   if (!payload) return;
+  Object.assign(payload, deriveNormalizedHudDeviceMetrics(RAW_HUD_STATE));
+  Object.assign(payload, deriveNormalizedHudVehicleMetrics(RAW_HUD_STATE));
   drivingHudUpdateFromCarPayload(payload);
 }
 
@@ -803,7 +1613,7 @@ function rawHudConnectService(service) {
         console.log(RAW_HUD_LOG_PREFIX, service, "hello", hello);
         return;
       }
-      await handleHudDecodedMessage(service, ev.data);
+      handleHudDecodedMessage(service, ev.data);
     } catch (e) {
       console.log(RAW_HUD_LOG_PREFIX, service, "bad msg", e);
     }
@@ -851,7 +1661,7 @@ function rawHudConnectMultiplex() {
       }
       const frame = await parseRawMultiplexFrame(ev.data);
       if (!RAW_HUD_SERVICES.includes(frame.service)) return;
-      await handleHudDecodedMessage(frame.service, frame.payload);
+      handleHudDecodedMessage(frame.service, frame.payload);
     } catch (e) {
       console.log(RAW_HUD_MUX_LOG_PREFIX, "bad msg", e);
     }
@@ -875,6 +1685,7 @@ function rawHudConnectMultiplex() {
 }
 
 function rawHudConnectAll() {
+  invalidateRawDecodeState("hud");
   if (!RAW_HUD_MUX_DISABLED) {
     rawHudConnectMultiplex();
     if (RAW_HUD_MUX_WS) {
@@ -926,7 +1737,7 @@ function rawOverlayConnectService(service) {
         console.log(RAW_OVERLAY_LOG_PREFIX, service, "hello", hello);
         return;
       }
-      await handleOverlayDecodedMessage(service, ev.data);
+      handleOverlayDecodedMessage(service, ev.data);
     } catch (e) {
       console.log(RAW_OVERLAY_LOG_PREFIX, service, "bad msg", e);
     }
@@ -973,7 +1784,7 @@ function rawOverlayConnectMultiplex() {
       }
       const frame = await parseRawMultiplexFrame(ev.data);
       if (!RAW_OVERLAY_SERVICES.includes(frame.service)) return;
-      await handleOverlayDecodedMessage(frame.service, frame.payload);
+      handleOverlayDecodedMessage(frame.service, frame.payload);
     } catch (e) {
       console.log(RAW_OVERLAY_MUX_LOG_PREFIX, "bad msg", e);
     }
@@ -997,6 +1808,7 @@ function rawOverlayConnectMultiplex() {
 }
 
 function rawOverlayConnectAll() {
+  invalidateRawDecodeState("overlay");
   if (!RAW_OVERLAY_MUX_DISABLED) {
     rawOverlayConnectMultiplex();
     if (RAW_OVERLAY_MUX_WS) return;
@@ -1005,6 +1817,7 @@ function rawOverlayConnectAll() {
 }
 
 async function rawHudDisconnectAll() {
+  invalidateRawDecodeState("hud");
   _hudStopRenderLoop();
   if (RAW_HUD_MUX_RETRY_T) {
     clearTimeout(RAW_HUD_MUX_RETRY_T);
@@ -1023,6 +1836,7 @@ async function rawHudDisconnectAll() {
 }
 
 async function rawOverlayDisconnectAll() {
+  invalidateRawDecodeState("overlay");
   if (RAW_OVERLAY_MUX_RETRY_T) {
     clearTimeout(RAW_OVERLAY_MUX_RETRY_T);
     RAW_OVERLAY_MUX_RETRY_T = null;
@@ -1087,9 +1901,10 @@ function syncCarrotRealtimeLifecycle(forceFetch = false) {
   const nextVisionActive = shouldRunCarrotVisionRealtime();
 
   if (nextHudActive === _carrotHudRealtimeActive && nextVisionActive === _carrotVisionRealtimeActive && !forceFetch) {
-    if (nextVisionActive && !_rtcConnecting && !rtcHasLiveTrack()) {
+    if (nextVisionActive && !_rtcConnecting && (!RTC_PC || !rtcHasLiveTrack())) {
       rtcConnectOnce().catch(() => {});
     }
+    if (nextVisionActive) scheduleRtcPerfPolling();
     if (nextHudActive) _hudScheduleRender();
     return;
   }
@@ -1112,10 +1927,11 @@ function syncCarrotRealtimeLifecycle(forceFetch = false) {
 
   if (nextVisionActive) {
     console.log("[perf] carrot vision realtime -> active");
+    requestCarrotFullscreen({ quiet: true }).catch(() => {});
     ensureRawDecodeWorker();
     rawOverlayConnectAll();
     startRtcPerfPolling(true);
-    if (!_rtcConnecting && !rtcHasLiveTrack()) {
+    if (!_rtcConnecting && (!RTC_PC || !rtcHasLiveTrack())) {
       rtcCancelRetry();
       RTC_FAIL_COUNT = 0;
       rtcConnectOnce().catch(() => {});
@@ -1130,8 +1946,33 @@ function syncCarrotRealtimeLifecycle(forceFetch = false) {
   emitCarrotRenderRequest({ force: true, overlayDirty: true, hudDirty: true });
 }
 
-document.addEventListener("visibilitychange", () => syncCarrotRealtimeLifecycle(false));
-window.addEventListener("carrot:pagechange", () => syncCarrotRealtimeLifecycle(false));
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    const video = getRtcVideoElement();
+    RTC_VISIBILITY_STATE.hiddenAtMs = Date.now();
+    RTC_VISIBILITY_STATE.currentTimeAtHide = Number(video?.currentTime || 0);
+  }
+  syncCarrotRealtimeLifecycle(false);
+  if (!document.hidden && shouldRunCarrotVisionRealtime() && RTC_PC && !_rtcConnecting) {
+    collectRtcPerfStats().catch(() => {});
+    rtcScheduleResumeHealthCheck("returned visible");
+  }
+});
+
+window.addEventListener("offline", () => {
+  rtcStatusSet("offline");
+});
+
+window.addEventListener("online", () => {
+  syncCarrotRealtimeLifecycle(false);
+  if (shouldRunCarrotVisionRealtime() && RTC_PC && !_rtcConnecting) {
+    rtcScheduleResumeHealthCheck("network resumed");
+  }
+});
+window.addEventListener("carrot:pagechange", (event) => {
+  maybeRequestCarrotFullscreenOnPageChange(event?.detail || {});
+  syncCarrotRealtimeLifecycle(false);
+});
 
 
 
