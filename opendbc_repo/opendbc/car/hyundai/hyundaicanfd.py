@@ -492,7 +492,7 @@ def create_tcs_messages(packer, CAN, CS):
     values["DriverBrakingLowSens"] = 0
     #values["NEW_SIGNAL_1"] = 0 # accel과 관련..  옆두부 꺼지는것과 관련? 확인필요
     #values["ACC_REQ"] = 1 # 옆두부 꺼지는것과 관련? 확인필요.. 항상 켜지게함..
-    values["NEW_SIGNAL_1"] = 0 if values["ACC_REQ"] == 1 else 1 # 옆두부..
+    values["NEW_SIGNAL_1"] = 0 # 옆두부..
     #ret.append(packer.make_can_msg("TCS", CAN.CAM, values, rx_counter = rx_counter))
     ret.append(packer.make_can_msg("TCS", CAN.CAM, values))
   return ret
@@ -711,10 +711,10 @@ def create_ccnc_messages(CP, packer, CAN, frame, CC, CS, hud_control,
           elif CS.scc_control is not None and CS.scc_control["InfoDisplay"] == 4:
             if 10 < frame % 30 <= 16 and not stopping:
               values["CRUISE_BUTTONS"] = 2
-          else:
-            if CS.adrv_0x1ea is not None and CS.adrv_0x1ea["HDA_MODE2"] == 0: # if corner radar is disabled, send main btn
-              if 10 < frame % 1000 <= 16 and CS.out.vEgo > 3:
-                values["ADAPTIVE_CRUISE_MAIN_BTN"] = 1
+          #else:
+            #if CS.adrv_0x1ea is not None and CS.adrv_0x1ea["HDA_MODE2"] == 0: # if corner radar is disabled, send main btn
+              #if 10 < frame % 1000 <= 16 and CS.out.vEgo > 3:
+                #values["ADAPTIVE_CRUISE_MAIN_BTN"] = 1
 
         ret.append(packer.make_can_msg(CS.cruise_btns_msg_canfd, CAN.CAM, values))
 
