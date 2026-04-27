@@ -135,9 +135,9 @@ class RadarInterface(RadarInterfaceBase):
       msg = self.rcp_tracks.vl[f"RADAR_TRACK_{addr:x}"]
 
       if self.radar_group1:
-        valid = msg['VALID_CNT1'] > 0
+        valid = msg['VALID_CNT1'] > 10
       elif self.canfd:
-        valid = msg['VALID_CNT'] > 0
+        valid = msg['VALID_CNT'] > 10
       else:
         valid = msg['STATE'] in (3, 4)
 
