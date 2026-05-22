@@ -149,7 +149,7 @@ EmptyAlert = Alert("" , "", AlertStatus.normal, AlertSize.none, Priority.LOWEST,
 
 class NoEntryAlert(Alert):
   def __init__(self, alert_text_2: str,
-               alert_text_1: str = "HDA3 파일럿 사용불가",
+               alert_text_1: str = "루시 파일럿 사용불가",
                visual_alert: car.CarControl.HUDControl.VisualAlert=VisualAlert.none):
     super().__init__(alert_text_1, alert_text_2, AlertStatus.normal,
                      AlertSize.mid, Priority.LOW, visual_alert,
@@ -168,7 +168,7 @@ class SoftDisableAlert(Alert):
 class UserSoftDisableAlert(SoftDisableAlert):
   def __init__(self, alert_text_2: str):
     super().__init__(alert_text_2),
-    self.alert_text_1 = "HDA3 파일럿 준비 완료"
+    self.alert_text_1 = "오기사 준비 완료"
 
 class ImmediateDisableAlert(Alert):
   def __init__(self, alert_text_2: str):
@@ -392,7 +392,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.startup: {
-    ET.PERMANENT: StartupAlert("HDA3 파일럿 준비 완료")
+    ET.PERMANENT: StartupAlert("오기사 준비 완료")
   },
 
   EventName.startupMaster: {
@@ -953,7 +953,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.speedTooLow: {
     ET.IMMEDIATE_DISABLE: Alert(
-      "HDA3 파일럿 사용불가",
+      "루시 파일럿 사용불가",
       "속도를 높이고 활성화하세요",
       AlertStatus.normal, AlertSize.mid,
       Priority.HIGH, VisualAlert.none, AudibleAlert.disengage, 3.),
