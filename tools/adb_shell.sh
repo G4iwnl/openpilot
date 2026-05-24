@@ -6,3 +6,5 @@ send "export TERM=xterm-256color\r"
 send "su comma\r"
 send "clear\r"
 interact
+
+#test
