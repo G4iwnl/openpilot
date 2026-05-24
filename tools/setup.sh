@@ -187,3 +187,6 @@ check_dir
 check_git
 [ -z $SKIP_GIT_CLONE ] && git_clone
 install_with_op
+
+
+#test
