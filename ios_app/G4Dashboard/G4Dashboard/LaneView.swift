@@ -118,9 +118,15 @@ struct LaneView: View {
         let scale = 0.22 + 0.65 * (1 - t)
         let carW = 34 * scale, carH = 24 * scale
 
-        // 좌우 차선 오프셋: 내 차선 너비만큼 옆으로
-        let laneOffset = w * 0.24 * (1 - t * 0.6)
-        let cx = isLeft ? vx - laneOffset : vx + laneOffset
+        // 현재 Y에서의 차선 경계선을 원근법으로 보간
+        // frac: 0=바닥, 1=소실점 (1-t 와 동일)
+        let frac = 1 - t
+        let outerL  = w * 0.12 + frac * (vx - 18 - w * 0.12)
+        let innerL  = w * 0.38 + frac * (vx -  7 - w * 0.38)
+        let innerR  = w * 0.62 + frac * (vx +  7 - w * 0.62)
+        let outerR  = w * 0.88 + frac * (vx + 18 - w * 0.88)
+        // 옆 차선 중심
+        let cx = isLeft ? (outerL + innerL) / 2 : (innerR + outerR) / 2
 
         var carPath = Path()
         carPath.addRoundedRect(
