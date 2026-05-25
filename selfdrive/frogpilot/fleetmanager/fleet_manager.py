@@ -24,8 +24,10 @@
 # THE SOFTWARE.
 import os
 import secrets
+import json
+import threading
 
-from flask import Flask, jsonify, render_template, Response, request, send_from_directory, redirect, url_for, abort
+from flask import Flask, jsonify, render_template, Response, request, send_from_directory, redirect, url_for, abort, stream_with_context
 from openpilot.common.realtime import set_core_affinity
 import openpilot.selfdrive.frogpilot.fleetmanager.helpers as fleet
 from openpilot.system.hardware.hw import Paths
@@ -35,7 +37,6 @@ from ftplib import FTP
 
 from openpilot.common.params import Params
 from cereal import log, messaging
-from cereal import log, messaging
 import time
 from functools import wraps
 from openpilot.opendbc_repo.opendbc.car.interfaces import CarInterfaceBase
@@ -43,6 +44,82 @@ from openpilot.opendbc_repo.opendbc.car.values import PLATFORMS
 
 # Initialize messaging
 sm = messaging.SubMaster(['carState'])
+
+# Dashboard state for iPhone app streaming
+_dashboard_state = {
+  "speed": 0, "setSpeed": 0, "speedLimit": 0,
+  "leftBlinker": False, "rightBlinker": False,
+  "cruiseEnabled": False, "cruiseAvailable": False,
+  "accel": 0.0, "leadDist": 0.0, "leadSpeed": 0.0, "leadRelSpeed": 0.0,
+  "hasLead": False, "steeringAngle": 0.0,
+  "brakePressed": False, "gasPressed": False,
+  "gear": "N", "opEnabled": False,
+  "laneLineProbs": [0.0, 0.0, 0.0, 0.0]
+}
+_dashboard_lock = threading.Lock()
+
+_GEAR_MAP = {
+  "park": "P", "reverse": "R", "neutral": "N", "drive": "D",
+  "low": "L", "sport": "S", "manumatic": "M", "brake": "B",
+  "eco": "E", "unknown": "?"
+}
+
+def _dashboard_updater():
+  dm = messaging.SubMaster(['carState', 'controlsState', 'radarState', 'modelV2'])
+  params = Params()
+  speed_limit = 0
+  sl_tick = 0
+
+  while True:
+    try:
+      dm.update(100)
+      cs = dm['carState']
+      ctrl = dm['controlsState']
+      radar = dm['radarState']
+      model = dm['modelV2']
+
+      gear_str = _GEAR_MAP.get(str(cs.gearShifter).split('.')[-1].lower(), '?')
+
+      sl_tick += 1
+      if sl_tick >= 10:
+        sl_tick = 0
+        try:
+          sl = params.get_int("roadLimitSpeed")
+          speed_limit = sl if sl and sl > 0 else 0
+        except Exception:
+          speed_limit = 0
+
+      lead = radar.leadOne
+      has_lead = bool(lead.status)
+      probs = list(model.laneLineProbs)
+      if len(probs) < 4:
+        probs = (probs + [0.0, 0.0, 0.0, 0.0])[:4]
+
+      state = {
+        "speed": round(cs.vEgo * 3.6, 1),
+        "setSpeed": round(float(ctrl.vCruise), 1),
+        "speedLimit": speed_limit,
+        "leftBlinker": bool(cs.leftBlinker),
+        "rightBlinker": bool(cs.rightBlinker),
+        "cruiseEnabled": bool(cs.cruiseState.enabled),
+        "cruiseAvailable": bool(cs.cruiseState.available),
+        "accel": round(float(ctrl.aTarget), 2),
+        "leadDist": round(float(lead.dRel), 1) if has_lead else 0.0,
+        "leadSpeed": round(float(lead.vLead) * 3.6, 1) if has_lead else 0.0,
+        "leadRelSpeed": round(float(lead.vRel) * 3.6, 1) if has_lead else 0.0,
+        "hasLead": has_lead,
+        "steeringAngle": round(float(cs.steeringAngleDeg), 1),
+        "brakePressed": bool(cs.brakePressed),
+        "gasPressed": bool(cs.gasPressed),
+        "gear": gear_str,
+        "opEnabled": bool(ctrl.enabled),
+        "laneLineProbs": [round(p, 2) for p in probs]
+      }
+
+      with _dashboard_lock:
+        _dashboard_state.update(state)
+    except Exception:
+      time.sleep(0.1)
 tempseg = -1
 temproute = "None"
 tempsegc = -1
@@ -764,13 +841,38 @@ def carinfo():
         traceback.print_exc()
         return render_template("carinfo.html", car_info={"error": f"Error getting vehicle information: {str(e)}"})
 
+@app.route("/api/dashboard/stream")
+def dashboard_stream():
+  def generate():
+    while True:
+      with _dashboard_lock:
+        data = dict(_dashboard_state)
+      yield f"data: {json.dumps(data)}\n\n"
+      time.sleep(0.1)
+  return Response(
+    stream_with_context(generate()),
+    mimetype="text/event-stream",
+    headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no", "Connection": "keep-alive",
+             "Access-Control-Allow-Origin": "*"}
+  )
+
+@app.route("/api/dashboard/status")
+def dashboard_status():
+  with _dashboard_lock:
+    data = dict(_dashboard_state)
+  resp = jsonify(data)
+  resp.headers["Access-Control-Allow-Origin"] = "*"
+  return resp
+
 def main():
   try:
     set_core_affinity([0, 1, 2, 3])
   except Exception:
     cloudlog.exception("fleet_manager: failed to set core affinity")
+  t = threading.Thread(target=_dashboard_updater, daemon=True)
+  t.start()
   app.secret_key = secrets.token_hex(32)
-  app.run(host="0.0.0.0", port=8082)
+  app.run(host="0.0.0.0", port=8082, threaded=True)
 
 
 if __name__ == '__main__':
