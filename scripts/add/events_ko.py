@@ -231,7 +231,7 @@ def startup_master_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubM
   if "REPLAY" in os.environ:
     branch = "replay"
 
-  return StartupAlert("엠블러 파일럿에 오신걸 환영합니다", branch, alert_status=AlertStatus.userPrompt)
+  return StartupAlert("루시 파일럿에 오신걸 환영합니다", branch, alert_status=AlertStatus.userPrompt)
 
 def below_engage_speed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   return NoEntryAlert(f"{get_display_speed(CP.minEnableSpeed, metric)} 이상의 속도에서 활성됩니다")
@@ -388,7 +388,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.selfdriveInitializing: {
-    ET.NO_ENTRY: NoEntryAlert("시스템이 준비중입니다"),
+    ET.NO_ENTRY: NoEntryAlert("오기사 준비 중"),
   },
 
   EventName.startup: {
@@ -440,7 +440,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.aeb: {
     ET.PERMANENT: Alert(
-      "정지 준비 완료",
+      "정지! 정지!",
       "추돌 위험: AEB 작동",
       AlertStatus.critical, AlertSize.full,
       Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.none, 2.),
@@ -449,7 +449,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.stockAeb: {
     ET.PERMANENT: Alert(
-      "정지 준비 완료",
+      "정지! 정지!",
       "추돌 위험: AEB 작동",
       AlertStatus.critical, AlertSize.full,
       Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.warningSoft, 2.),
@@ -458,7 +458,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.fcw: {
     ET.PERMANENT: Alert(
-      "정지 준비 완료",
+      "정지! 정지!",
       "추돌 위험",
       AlertStatus.critical, AlertSize.full,
       Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.warningSoft, 2.),
@@ -552,7 +552,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.preLaneChangeLeft: {
     ET.WARNING: Alert(
-      "차선 변경 대기",
+      "차선 변경",
       "",
       AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
@@ -560,7 +560,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.preLaneChangeRight: {
     ET.WARNING: Alert(
-      "차선 변경 대기",
+      "차선 변경",
       "",
       AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
@@ -576,7 +576,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.laneChange: {
     ET.WARNING: Alert(
-      "차선 변경 준비 완료",
+      "차선 변경 준비",
       "",
       AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
@@ -585,7 +585,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   EventName.steerSaturated: {
     ET.WARNING: Alert(
       "핸들을 잡으세요",
-      "회전이 조향 한도를 초과함",
+      "조향 한도 초과",
       AlertStatus.userPrompt, AlertSize.mid,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, 2.),
   },
@@ -719,8 +719,8 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.steerTimeLimit: {
-    ET.SOFT_DISABLE: soft_disable_alert("차량 조향제어 시간 제한"),
-    ET.NO_ENTRY: NoEntryAlert("차량 조향제어 시간 제한"),
+    ET.SOFT_DISABLE: soft_disable_alert("조향제어 시간 제한"),
+    ET.NO_ENTRY: NoEntryAlert("조향제어 시간 제한"),
   },
 
   EventName.outOfSpace: {
@@ -927,12 +927,12 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.reverseGear: {
     ET.PERMANENT: Alert(
-      "후진 준비 완료",
+      "후진 중",
       "",
       AlertStatus.normal, AlertSize.full,
       Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .2, creation_delay=0.5),
-    ET.USER_DISABLE: SoftDisableAlert("후진 준비 완료"),
-    ET.NO_ENTRY: NoEntryAlert("후진 준비 완료"),
+    ET.USER_DISABLE: SoftDisableAlert("후진 중"),
+    ET.NO_ENTRY: NoEntryAlert("후진 중"),
   },
 
   # On cars that use stock ACC the car can decide to cancel ACC for various reasons.
