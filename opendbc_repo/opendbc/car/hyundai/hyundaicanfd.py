@@ -485,8 +485,6 @@ def create_tcs_messages(packer, CAN, CS):
   ret = []
   if CS.tcs is not None:
     values = copy.copy(CS.tcs)
-    ret.append(packer.make_can_msg("TCS", CAN.CAM, values))
-  return ret # 문제시 488-489 삭제
     #rx_counter = values.pop("COUNTER", None)
     values["DriverBraking"] = 0
     values["NEW_SIGNAL_20"] = 0
