@@ -65,10 +65,7 @@ _GEAR_MAP = {
 }
 
 def _dashboard_updater():
-  dm = messaging.SubMaster(['carState', 'controlsState', 'radarState', 'modelV2'])
-  params = Params()
-  speed_limit = 0
-  sl_tick = 0
+  dm = messaging.SubMaster(['carState', 'controlsState', 'radarState', 'modelV2', 'carrotMan'])
 
   while True:
     try:
@@ -77,17 +74,11 @@ def _dashboard_updater():
       ctrl = dm['controlsState']
       radar = dm['radarState']
       model = dm['modelV2']
+      carrot = dm['carrotMan']
 
       gear_str = _GEAR_MAP.get(str(cs.gearShifter).split('.')[-1].lower(), '?')
 
-      sl_tick += 1
-      if sl_tick >= 10:
-        sl_tick = 0
-        try:
-          sl = params.get_int("roadLimitSpeed")
-          speed_limit = sl if sl and sl > 0 else 0
-        except Exception:
-          speed_limit = 0
+      speed_limit = int(carrot.nRoadLimitSpeed) if carrot.nRoadLimitSpeed > 0 else 0
 
       lead = radar.leadOne
       has_lead = bool(lead.status)
