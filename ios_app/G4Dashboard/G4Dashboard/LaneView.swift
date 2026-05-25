@@ -16,6 +16,18 @@ struct LaneView: View {
             if viewModel.data.hasLead {
                 drawLeadCar(context, w, h, vanishX, vanishY, baseY)
             }
+            if viewModel.data.hasLeadLeft {
+                drawSideCar(context, w, h, vanishX, vanishY, baseY,
+                            dist: viewModel.data.leadLeftDist,
+                            relSpeed: viewModel.data.leadLeftRelSpeed,
+                            isLeft: true)
+            }
+            if viewModel.data.hasLeadRight {
+                drawSideCar(context, w, h, vanishX, vanishY, baseY,
+                            dist: viewModel.data.leadRightDist,
+                            relSpeed: viewModel.data.leadRightRelSpeed,
+                            isLeft: false)
+            }
             drawEgoCar(context, w, h)
         }
         .background(Color(red: 0.04, green: 0.04, blue: 0.07))
@@ -96,6 +108,34 @@ struct LaneView: View {
 
         ctx.fill(carPath, with: .color(carColor.opacity(0.78)))
         ctx.stroke(carPath, with: .color(carColor), style: StrokeStyle(lineWidth: 1.2))
+    }
+
+    private func drawSideCar(_ ctx: GraphicsContext, _ w: CGFloat, _ h: CGFloat,
+                              _ vx: CGFloat, _ vy: CGFloat, _ by: CGFloat,
+                              dist: Double, relSpeed: Double, isLeft: Bool) {
+        let t = CGFloat(min(max(dist, 1), 120) / 120)
+        let y = by - (by - vy) * (1 - t) - 8
+        let scale = 0.22 + 0.65 * (1 - t)
+        let carW = 34 * scale, carH = 24 * scale
+
+        // 좌우 차선 오프셋: 내 차선 너비만큼 옆으로
+        let laneOffset = w * 0.24 * (1 - t * 0.6)
+        let cx = isLeft ? vx - laneOffset : vx + laneOffset
+
+        var carPath = Path()
+        carPath.addRoundedRect(
+            in: CGRect(x: cx - carW / 2, y: y - carH, width: carW, height: carH),
+            cornerSize: CGSize(width: 3 * scale, height: 3 * scale)
+        )
+
+        let carColor: Color = relSpeed < -5
+            ? Color(red: 1.0, green: 0.28, blue: 0.28)
+            : relSpeed > 5
+            ? Color(red: 0.28, green: 1.0, blue: 0.45)
+            : Color(red: 1.0, green: 0.82, blue: 0.18)
+
+        ctx.fill(carPath, with: .color(carColor.opacity(0.55)))
+        ctx.stroke(carPath, with: .color(carColor.opacity(0.85)), style: StrokeStyle(lineWidth: 1.0))
     }
 
     private func drawEgoCar(_ ctx: GraphicsContext, _ w: CGFloat, _ h: CGFloat) {

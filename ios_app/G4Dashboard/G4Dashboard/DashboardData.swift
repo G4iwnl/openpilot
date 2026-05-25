@@ -19,4 +19,12 @@ struct DashboardData: Codable {
     var gear: String = "N"
     var opEnabled: Bool = false
     var laneLineProbs: [Double] = [0, 0, 0, 0]
+    var hasLeadLeft: Bool = false
+    var leadLeftDist: Double = 0
+    var leadLeftRelSpeed: Double = 0
+    var leadLeftDPath: Double = 0
+    var hasLeadRight: Bool = false
+    var leadRightDist: Double = 0
+    var leadRightRelSpeed: Double = 0
+    var leadRightDPath: Double = 0
 }

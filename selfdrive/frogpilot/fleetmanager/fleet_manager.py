@@ -54,7 +54,9 @@ _dashboard_state = {
   "hasLead": False, "steeringAngle": 0.0,
   "brakePressed": False, "gasPressed": False,
   "gear": "N", "opEnabled": False,
-  "laneLineProbs": [0.0, 0.0, 0.0, 0.0]
+  "laneLineProbs": [0.0, 0.0, 0.0, 0.0],
+  "hasLeadLeft": False, "leadLeftDist": 0.0, "leadLeftRelSpeed": 0.0, "leadLeftDPath": 0.0,
+  "hasLeadRight": False, "leadRightDist": 0.0, "leadRightRelSpeed": 0.0, "leadRightDPath": 0.0,
 }
 _dashboard_lock = threading.Lock()
 
@@ -82,6 +84,10 @@ def _dashboard_updater():
 
       lead = radar.leadOne
       has_lead = bool(lead.status)
+      ll = radar.leadLeft
+      lr = radar.leadRight
+      has_ll = bool(ll.status)
+      has_lr = bool(lr.status)
       probs = list(model.laneLineProbs)
       if len(probs) < 4:
         probs = (probs + [0.0, 0.0, 0.0, 0.0])[:4]
@@ -104,7 +110,15 @@ def _dashboard_updater():
         "gasPressed": bool(cs.gasPressed),
         "gear": gear_str,
         "opEnabled": bool(ctrl.enabled),
-        "laneLineProbs": [round(p, 2) for p in probs]
+        "laneLineProbs": [round(p, 2) for p in probs],
+        "hasLeadLeft": has_ll,
+        "leadLeftDist": round(float(ll.dRel), 1) if has_ll else 0.0,
+        "leadLeftRelSpeed": round(float(ll.vRel) * 3.6, 1) if has_ll else 0.0,
+        "leadLeftDPath": round(float(ll.dPath), 2) if has_ll else 0.0,
+        "hasLeadRight": has_lr,
+        "leadRightDist": round(float(lr.dRel), 1) if has_lr else 0.0,
+        "leadRightRelSpeed": round(float(lr.vRel) * 3.6, 1) if has_lr else 0.0,
+        "leadRightDPath": round(float(lr.dPath), 2) if has_lr else 0.0,
       }
 
       with _dashboard_lock:
