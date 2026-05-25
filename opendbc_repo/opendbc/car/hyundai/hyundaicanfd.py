@@ -335,7 +335,7 @@ def create_acc_control_scc2(packer, CAN, enabled, accel_last, accel, stopping, g
     return None
   enabled = (enabled or CS.softHoldActive > 0) and CS.paddle_button_prev == 0
 
-  acc_mode = 1 if not enabled else (2 if gas_override else 1)
+  acc_mode = 1 if not enabled else (2 if gas_override else 1)#문제시 0원복
 
   if hyundai_jerk.carrot_cruise == 1:
     acc_mode = 4 if enabled else 0
