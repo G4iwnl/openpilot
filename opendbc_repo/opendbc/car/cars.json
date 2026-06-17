@@ -1,0 +1,1977 @@
+[
+  {
+    "platform": "ACURA_ILX",
+    "make": "Acura",
+    "name": "Acura ILX 2016-19"
+  },
+  {
+    "platform": "ACURA_RDX",
+    "make": "Acura",
+    "name": "Acura RDX 2016-18"
+  },
+  {
+    "platform": "ACURA_RDX_3G",
+    "make": "Acura",
+    "name": "Acura RDX 2019-21"
+  },
+  {
+    "platform": "AUDI_A3_MK3",
+    "make": "Audi",
+    "name": "Audi A3 2014-19"
+  },
+  {
+    "platform": "AUDI_A3_MK3",
+    "make": "Audi",
+    "name": "Audi A3 Sportback e-tron 2017-18"
+  },
+  {
+    "platform": "AUDI_Q2_MK1",
+    "make": "Audi",
+    "name": "Audi Q2 2018"
+  },
+  {
+    "platform": "AUDI_Q3_MK2",
+    "make": "Audi",
+    "name": "Audi Q3 2019-23"
+  },
+  {
+    "platform": "AUDI_A3_MK3",
+    "make": "Audi",
+    "name": "Audi RS3 2018"
+  },
+  {
+    "platform": "AUDI_A3_MK3",
+    "make": "Audi",
+    "name": "Audi S3 2015-17"
+  },
+  {
+    "platform": "BUICK_BABYENCLAVE",
+    "make": "Buick",
+    "name": "Buick Baby Enclave 2020-23"
+  },
+  {
+    "platform": "BUICK_LACROSSE",
+    "make": "Buick",
+    "name": "Buick LaCrosse 2017-19"
+  },
+  {
+    "platform": "BUICK_REGAL",
+    "make": "Buick",
+    "name": "Buick Regal Essence 2018"
+  },
+  {
+    "platform": "CADILLAC_CT6_ACC",
+    "make": "CT6-2019",
+    "name": "CT6-2019 Advanced ACC"
+  },
+  {
+    "platform": "SEAT_ATECA_MK1",
+    "make": "CUPRA",
+    "name": "CUPRA Ateca 2018-23"
+  },
+  {
+    "platform": "CADILLAC_ATS",
+    "make": "Cadillac",
+    "name": "Cadillac ATS Premium Performance 2018"
+  },
+  {
+    "platform": "CADILLAC_CT6_CC",
+    "make": "Cadillac",
+    "name": "Cadillac CT6 No ACC"
+  },
+  {
+    "platform": "CADILLAC_ESCALADE",
+    "make": "Cadillac",
+    "name": "Cadillac Escalade 2017"
+  },
+  {
+    "platform": "CADILLAC_ESCALADE_ESV",
+    "make": "Cadillac",
+    "name": "Cadillac Escalade ESV 2016"
+  },
+  {
+    "platform": "CADILLAC_ESCALADE_ESV_2019",
+    "make": "Cadillac",
+    "name": "Cadillac Escalade ESV 2019"
+  },
+  {
+    "platform": "CADILLAC_XT4",
+    "make": "Cadillac",
+    "name": "Cadillac XT4 2023"
+  },
+  {
+    "platform": "CADILLAC_XT5_CC",
+    "make": "Cadillac",
+    "name": "Cadillac XT5 No ACC"
+  },
+  {
+    "platform": "CHEVROLET_BOLT_EUV",
+    "make": "Chevrolet",
+    "name": "Chevrolet Bolt EUV 2022-23"
+  },
+  {
+    "platform": "CHEVROLET_BOLT_CC",
+    "make": "Chevrolet",
+    "name": "Chevrolet Bolt EUV 2022-23 - No-ACC"
+  },
+  {
+    "platform": "CHEVROLET_BOLT_CC",
+    "make": "Chevrolet",
+    "name": "Chevrolet Bolt EV 2017-23 - No-ACC"
+  },
+  {
+    "platform": "CHEVROLET_BOLT_EUV",
+    "make": "Chevrolet",
+    "name": "Chevrolet Bolt EV 2022-23"
+  },
+  {
+    "platform": "CHEVROLET_EQUINOX",
+    "make": "Chevrolet",
+    "name": "Chevrolet Equinox 2019-22"
+  },
+  {
+    "platform": "CHEVROLET_EQUINOX_CC",
+    "make": "Chevrolet",
+    "name": "Chevrolet Equinox NO ACC 2019-22"
+  },
+  {
+    "platform": "CHEVROLET_MALIBU_CC",
+    "make": "Chevrolet",
+    "name": "Chevrolet Malibu No ACC"
+  },
+  {
+    "platform": "CHEVROLET_MALIBU",
+    "make": "Chevrolet",
+    "name": "Chevrolet Malibu Premier 2017"
+  },
+  {
+    "platform": "CHEVROLET_SILVERADO",
+    "make": "Chevrolet",
+    "name": "Chevrolet Silverado 1500 2020-21"
+  },
+  {
+    "platform": "CHEVROLET_SUBURBAN_CC",
+    "make": "Chevrolet",
+    "name": "Chevrolet Suburban 2016-20"
+  },
+  {
+    "platform": "CHEVROLET_SUBURBAN",
+    "make": "Chevrolet",
+    "name": "Chevrolet Suburban Premier 2016-20"
+  },
+  {
+    "platform": "CHEVROLET_TRAX",
+    "make": "Chevrolet",
+    "name": "Chevrolet TRAX 2024"
+  },
+  {
+    "platform": "CHEVROLET_TRAILBLAZER",
+    "make": "Chevrolet",
+    "name": "Chevrolet Trailblazer 2021-22"
+  },
+  {
+    "platform": "CHEVROLET_TRAILBLAZER_CC",
+    "make": "Chevrolet",
+    "name": "Chevrolet Trailblazer NO ACC 2021-22"
+  },
+  {
+    "platform": "CHEVROLET_TRAVERSE",
+    "make": "Chevrolet",
+    "name": "Chevrolet Traverse 2022-23"
+  },
+  {
+    "platform": "CHEVROLET_VOLT",
+    "make": "Chevrolet",
+    "name": "Chevrolet Volt 2017-18"
+  },
+  {
+    "platform": "CHEVROLET_VOLT_2019",
+    "make": "Chevrolet",
+    "name": "Chevrolet Volt 2019"
+  },
+  {
+    "platform": "CHEVROLET_VOLT_CC",
+    "make": "Chevrolet",
+    "name": "Chevrolet Volt LT 2017-18"
+  },
+  {
+    "platform": "CHRYSLER_PACIFICA_2018",
+    "make": "Chrysler",
+    "name": "Chrysler Pacifica 2017-18"
+  },
+  {
+    "platform": "CHRYSLER_PACIFICA_2020",
+    "make": "Chrysler",
+    "name": "Chrysler Pacifica 2019-20"
+  },
+  {
+    "platform": "CHRYSLER_PACIFICA_2020",
+    "make": "Chrysler",
+    "name": "Chrysler Pacifica 2021-23"
+  },
+  {
+    "platform": "CHRYSLER_PACIFICA_2018_HYBRID",
+    "make": "Chrysler",
+    "name": "Chrysler Pacifica Hybrid 2017-18"
+  },
+  {
+    "platform": "CHRYSLER_PACIFICA_2019_HYBRID",
+    "make": "Chrysler",
+    "name": "Chrysler Pacifica Hybrid 2019-25"
+  },
+  {
+    "platform": "DODGE_DURANGO",
+    "make": "Dodge",
+    "name": "Dodge Durango 2020-21"
+  },
+  {
+    "platform": "FORD_BRONCO_SPORT_MK1",
+    "make": "Ford",
+    "name": "Ford Bronco Sport 2021-24"
+  },
+  {
+    "platform": "FORD_ESCAPE_MK4",
+    "make": "Ford",
+    "name": "Ford Escape 2020-22"
+  },
+  {
+    "platform": "FORD_ESCAPE_MK4_5",
+    "make": "Ford",
+    "name": "Ford Escape 2023-24"
+  },
+  {
+    "platform": "FORD_ESCAPE_MK4",
+    "make": "Ford",
+    "name": "Ford Escape Hybrid 2020-22"
+  },
+  {
+    "platform": "FORD_ESCAPE_MK4_5",
+    "make": "Ford",
+    "name": "Ford Escape Hybrid 2023-24"
+  },
+  {
+    "platform": "FORD_ESCAPE_MK4",
+    "make": "Ford",
+    "name": "Ford Escape Plug-in Hybrid 2020-22"
+  },
+  {
+    "platform": "FORD_ESCAPE_MK4_5",
+    "make": "Ford",
+    "name": "Ford Escape Plug-in Hybrid 2023-24"
+  },
+  {
+    "platform": "FORD_EXPEDITION_MK4",
+    "make": "Ford",
+    "name": "Ford Expedition 2022-24"
+  },
+  {
+    "platform": "FORD_EXPLORER_MK6",
+    "make": "Ford",
+    "name": "Ford Explorer 2020-24"
+  },
+  {
+    "platform": "FORD_EXPLORER_MK6",
+    "make": "Ford",
+    "name": "Ford Explorer Hybrid 2020-24"
+  },
+  {
+    "platform": "FORD_F_150_MK14",
+    "make": "Ford",
+    "name": "Ford F-150 2021-23"
+  },
+  {
+    "platform": "FORD_F_150_MK14",
+    "make": "Ford",
+    "name": "Ford F-150 Hybrid 2021-23"
+  },
+  {
+    "platform": "FORD_FOCUS_MK4",
+    "make": "Ford",
+    "name": "Ford Focus 2018"
+  },
+  {
+    "platform": "FORD_FOCUS_MK4",
+    "make": "Ford",
+    "name": "Ford Focus Hybrid 2018"
+  },
+  {
+    "platform": "FORD_ESCAPE_MK4",
+    "make": "Ford",
+    "name": "Ford Kuga 2020-23"
+  },
+  {
+    "platform": "FORD_ESCAPE_MK4",
+    "make": "Ford",
+    "name": "Ford Kuga Hybrid 2020-23"
+  },
+  {
+    "platform": "FORD_ESCAPE_MK4_5",
+    "make": "Ford",
+    "name": "Ford Kuga Hybrid 2024"
+  },
+  {
+    "platform": "FORD_ESCAPE_MK4",
+    "make": "Ford",
+    "name": "Ford Kuga Plug-in Hybrid 2020-23"
+  },
+  {
+    "platform": "FORD_ESCAPE_MK4_5",
+    "make": "Ford",
+    "name": "Ford Kuga Plug-in Hybrid 2024"
+  },
+  {
+    "platform": "FORD_MAVERICK_MK1",
+    "make": "Ford",
+    "name": "Ford Maverick 2022"
+  },
+  {
+    "platform": "FORD_MAVERICK_MK1",
+    "make": "Ford",
+    "name": "Ford Maverick 2023-24"
+  },
+  {
+    "platform": "FORD_MAVERICK_MK1",
+    "make": "Ford",
+    "name": "Ford Maverick Hybrid 2022"
+  },
+  {
+    "platform": "FORD_MAVERICK_MK1",
+    "make": "Ford",
+    "name": "Ford Maverick Hybrid 2023-24"
+  },
+  {
+    "platform": "FORD_MUSTANG_MACH_E_MK1",
+    "make": "Ford",
+    "name": "Ford Mustang Mach-E 2021-24"
+  },
+  {
+    "platform": "FORD_RANGER_MK2",
+    "make": "Ford",
+    "name": "Ford Ranger 2024"
+  },
+  {
+    "platform": "GMC_ACADIA",
+    "make": "GMC",
+    "name": "GMC Acadia 2018"
+  },
+  {
+    "platform": "CHEVROLET_SILVERADO",
+    "make": "GMC",
+    "name": "GMC Sierra 1500 2020-21"
+  },
+  {
+    "platform": "GMC_YUKON",
+    "make": "GMC",
+    "name": "GMC Yukon 2019-20"
+  },
+  {
+    "platform": "GMC_YUKON_CC",
+    "make": "GMC",
+    "name": "GMC Yukon No ACC"
+  },
+  {
+    "platform": "GENESIS_EQ900",
+    "make": "Genesis",
+    "name": "Genesis EQ900 2017"
+  },
+  {
+    "platform": "GENESIS_EQ900_L",
+    "make": "Genesis",
+    "name": "Genesis EQ900 LIMOUSINE"
+  },
+  {
+    "platform": "GENESIS_G70",
+    "make": "Genesis",
+    "name": "Genesis G70 2018"
+  },
+  {
+    "platform": "GENESIS_G70_2020",
+    "make": "Genesis",
+    "name": "Genesis G70 2019-21"
+  },
+  {
+    "platform": "GENESIS_G70_2020",
+    "make": "Genesis",
+    "name": "Genesis G70 2022-23"
+  },
+  {
+    "platform": "GENESIS_G80_2ND_GEN_FL",
+    "make": "Genesis",
+    "name": "Genesis G80 (2.5T Advanced Trim, with HDA II) 2024"
+  },
+  {
+    "platform": "HYUNDAI_GENESIS",
+    "make": "Genesis",
+    "name": "Genesis G80 2017"
+  },
+  {
+    "platform": "GENESIS_G80",
+    "make": "Genesis",
+    "name": "Genesis G80 2018-19"
+  },
+  {
+    "platform": "GENESIS_G90",
+    "make": "Genesis",
+    "name": "Genesis G90 2017-20"
+  },
+  {
+    "platform": "GENESIS_G90_2019",
+    "make": "Genesis",
+    "name": "Genesis G90 2019"
+  },
+  {
+    "platform": "GENESIS_GV60_EV_1ST_GEN",
+    "make": "Genesis",
+    "name": "Genesis GV60 (Advanced Trim) 2023"
+  },
+  {
+    "platform": "GENESIS_GV60_EV_1ST_GEN",
+    "make": "Genesis",
+    "name": "Genesis GV60 (Performance Trim) 2022-23"
+  },
+  {
+    "platform": "GENESIS_GV70_1ST_GEN",
+    "make": "Genesis",
+    "name": "Genesis GV70 (2.5T Trim, without HDA II) 2022-24"
+  },
+  {
+    "platform": "GENESIS_GV70_1ST_GEN",
+    "make": "Genesis",
+    "name": "Genesis GV70 (3.5T Trim, without HDA II) 2022-23"
+  },
+  {
+    "platform": "GENESIS_GV70_EV_1ST_GEN",
+    "make": "Genesis",
+    "name": "Genesis GV70 EV 2020-2023"
+  },
+  {
+    "platform": "GENESIS_GV70_ELECTRIFIED_1ST_GEN",
+    "make": "Genesis",
+    "name": "Genesis GV70 Electrified (Australia Only) 2022"
+  },
+  {
+    "platform": "GENESIS_GV70_ELECTRIFIED_1ST_GEN",
+    "make": "Genesis",
+    "name": "Genesis GV70 Electrified (with HDA II) 2023-24"
+  },
+  {
+    "platform": "GENESIS_GV80",
+    "make": "Genesis",
+    "name": "Genesis GV80 2023"
+  },
+  {
+    "platform": "HOLDEN_ASTRA",
+    "make": "Holden",
+    "name": "Holden Astra 2017"
+  },
+  {
+    "platform": "HONDA_ACCORD",
+    "make": "Honda",
+    "name": "Honda Accord 2018-22"
+  },
+  {
+    "platform": "HONDA_ACCORD",
+    "make": "Honda",
+    "name": "Honda Accord Hybrid 2018-22"
+  },
+  {
+    "platform": "HONDA_CRV",
+    "make": "Honda",
+    "name": "Honda CR-V 2015-16"
+  },
+  {
+    "platform": "HONDA_CRV_5G",
+    "make": "Honda",
+    "name": "Honda CR-V 2017-22"
+  },
+  {
+    "platform": "HONDA_CRV_HYBRID",
+    "make": "Honda",
+    "name": "Honda CR-V Hybrid 2017-22"
+  },
+  {
+    "platform": "HONDA_CIVIC",
+    "make": "Honda",
+    "name": "Honda Civic 2016-18"
+  },
+  {
+    "platform": "HONDA_CIVIC_BOSCH",
+    "make": "Honda",
+    "name": "Honda Civic 2019-21"
+  },
+  {
+    "platform": "HONDA_CIVIC_2022",
+    "make": "Honda",
+    "name": "Honda Civic 2022-24"
+  },
+  {
+    "platform": "HONDA_CIVIC_BOSCH",
+    "make": "Honda",
+    "name": "Honda Civic Hatchback 2017-21"
+  },
+  {
+    "platform": "HONDA_CIVIC_2022",
+    "make": "Honda",
+    "name": "Honda Civic Hatchback 2022-24"
+  },
+  {
+    "platform": "HONDA_CIVIC_2022",
+    "make": "Honda",
+    "name": "Honda Civic Hatchback Hybrid 2023 (Europe only)"
+  },
+  {
+    "platform": "HONDA_CIVIC_2022",
+    "make": "Honda",
+    "name": "Honda Civic Hatchback Hybrid 2025"
+  },
+  {
+    "platform": "HONDA_FIT",
+    "make": "Honda",
+    "name": "Honda Fit 2018-20"
+  },
+  {
+    "platform": "HONDA_FREED",
+    "make": "Honda",
+    "name": "Honda Freed 2020"
+  },
+  {
+    "platform": "HONDA_HRV",
+    "make": "Honda",
+    "name": "Honda HR-V 2019-22"
+  },
+  {
+    "platform": "HONDA_HRV_3G",
+    "make": "Honda",
+    "name": "Honda HR-V 2023"
+  },
+  {
+    "platform": "HONDA_INSIGHT",
+    "make": "Honda",
+    "name": "Honda Insight 2019-22"
+  },
+  {
+    "platform": "HONDA_ACCORD",
+    "make": "Honda",
+    "name": "Honda Inspire 2018"
+  },
+  {
+    "platform": "HONDA_ODYSSEY",
+    "make": "Honda",
+    "name": "Honda Odyssey 2018-20"
+  },
+  {
+    "platform": "HONDA_PILOT",
+    "make": "Honda",
+    "name": "Honda Passport 2019-25"
+  },
+  {
+    "platform": "HONDA_PILOT",
+    "make": "Honda",
+    "name": "Honda Pilot 2016-22"
+  },
+  {
+    "platform": "HONDA_RIDGELINE",
+    "make": "Honda",
+    "name": "Honda Ridgeline 2017-25"
+  },
+  {
+    "platform": "HONDA_E",
+    "make": "Honda",
+    "name": "Honda e 2020"
+  },
+  {
+    "platform": "HYUNDAI_AZERA_6TH_GEN",
+    "make": "Hyundai",
+    "name": "Hyundai Azera 2022"
+  },
+  {
+    "platform": "HYUNDAI_AZERA_7TH_GEN",
+    "make": "Hyundai",
+    "name": "Hyundai Azera 2023-2024"
+  },
+  {
+    "platform": "HYUNDAI_AZERA_HEV_6TH_GEN",
+    "make": "Hyundai",
+    "name": "Hyundai Azera Hybrid 2019"
+  },
+  {
+    "platform": "HYUNDAI_AZERA_HEV_6TH_GEN",
+    "make": "Hyundai",
+    "name": "Hyundai Azera Hybrid 2020"
+  },
+  {
+    "platform": "HYUNDAI_CASPER",
+    "make": "Hyundai",
+    "name": "Hyundai Casper 2023"
+  },
+  {
+    "platform": "HYUNDAI_CASPER_EV",
+    "make": "Hyundai",
+    "name": "Hyundai Casper EV 2024"
+  },
+  {
+    "platform": "HYUNDAI_CUSTIN_1ST_GEN",
+    "make": "Hyundai",
+    "name": "Hyundai Custin 2023"
+  },
+  {
+    "platform": "HYUNDAI_ELANTRA",
+    "make": "Hyundai",
+    "name": "Hyundai Elantra 2017-18"
+  },
+  {
+    "platform": "HYUNDAI_ELANTRA",
+    "make": "Hyundai",
+    "name": "Hyundai Elantra 2019"
+  },
+  {
+    "platform": "HYUNDAI_ELANTRA_2021",
+    "make": "Hyundai",
+    "name": "Hyundai Elantra 2021-23"
+  },
+  {
+    "platform": "HYUNDAI_ELANTRA_GT_I30",
+    "make": "Hyundai",
+    "name": "Hyundai Elantra GT 2017-20"
+  },
+  {
+    "platform": "HYUNDAI_ELANTRA_HEV_2021",
+    "make": "Hyundai",
+    "name": "Hyundai Elantra Hybrid 2021-23"
+  },
+  {
+    "platform": "HYUNDAI_GENESIS",
+    "make": "Hyundai",
+    "name": "Hyundai Genesis 2015-16"
+  },
+  {
+    "platform": "HYUNDAI_GRANDEUR_IG",
+    "make": "Hyundai",
+    "name": "Hyundai Grandeur 2018-19"
+  },
+  {
+    "platform": "HYUNDAI_GRANDEUR_IG_HEV",
+    "make": "Hyundai",
+    "name": "Hyundai Grandeur HEV 2018-19"
+  },
+  {
+    "platform": "HYUNDAI_IONIQ_5_PE",
+    "make": "Hyundai",
+    "name": "Hyundai IONIQ 5 PE (NE1)"
+  },
+  {
+    "platform": "HYUNDAI_IONIQ_5",
+    "make": "Hyundai",
+    "name": "Hyundai Ioniq 5 (Southeast Asia and Europe only) 2022-24"
+  },
+  {
+    "platform": "HYUNDAI_IONIQ_5",
+    "make": "Hyundai",
+    "name": "Hyundai Ioniq 5 (with HDA II) 2022-24"
+  },
+  {
+    "platform": "HYUNDAI_IONIQ_5",
+    "make": "Hyundai",
+    "name": "Hyundai Ioniq 5 (without HDA II) 2022-24"
+  },
+  {
+    "platform": "HYUNDAI_IONIQ_5_N",
+    "make": "Hyundai",
+    "name": "Hyundai Ioniq 5 N (with HDA II) 2024"
+  },
+  {
+    "platform": "HYUNDAI_IONIQ_5_PE",
+    "make": "Hyundai",
+    "name": "Hyundai Ioniq 5 PE (with HDA II) 2024"
+  },
+  {
+    "platform": "HYUNDAI_IONIQ_6",
+    "make": "Hyundai",
+    "name": "Hyundai Ioniq 6 (with HDA II) 2023-24"
+  },
+  {
+    "platform": "HYUNDAI_IONIQ_9",
+    "make": "Hyundai",
+    "name": "Hyundai Ioniq 9"
+  },
+  {
+    "platform": "HYUNDAI_IONIQ_EV_LTD",
+    "make": "Hyundai",
+    "name": "Hyundai Ioniq Electric 2019"
+  },
+  {
+    "platform": "HYUNDAI_IONIQ_EV_2020",
+    "make": "Hyundai",
+    "name": "Hyundai Ioniq Electric 2020"
+  },
+  {
+    "platform": "HYUNDAI_IONIQ",
+    "make": "Hyundai",
+    "name": "Hyundai Ioniq Hybrid 2017-19"
+  },
+  {
+    "platform": "HYUNDAI_IONIQ_HEV_2022",
+    "make": "Hyundai",
+    "name": "Hyundai Ioniq Hybrid 2020-22"
+  },
+  {
+    "platform": "HYUNDAI_IONIQ_PHEV_2019",
+    "make": "Hyundai",
+    "name": "Hyundai Ioniq Plug-in Hybrid 2019"
+  },
+  {
+    "platform": "HYUNDAI_IONIQ_PHEV",
+    "make": "Hyundai",
+    "name": "Hyundai Ioniq Plug-in Hybrid 2020-22"
+  },
+  {
+    "platform": "HYUNDAI_KONA",
+    "make": "Hyundai",
+    "name": "Hyundai Kona 2020"
+  },
+  {
+    "platform": "HYUNDAI_KONA_2022",
+    "make": "Hyundai",
+    "name": "Hyundai Kona 2022"
+  },
+  {
+    "platform": "HYUNDAI_KONA_EV_2ND_GEN",
+    "make": "Hyundai",
+    "name": "Hyundai Kona Electric (with HDA II, Korea only) 2023"
+  },
+  {
+    "platform": "HYUNDAI_KONA_EV",
+    "make": "Hyundai",
+    "name": "Hyundai Kona Electric 2018-21"
+  },
+  {
+    "platform": "HYUNDAI_KONA_EV_2022",
+    "make": "Hyundai",
+    "name": "Hyundai Kona Electric 2022-23"
+  },
+  {
+    "platform": "HYUNDAI_KONA_HEV",
+    "make": "Hyundai",
+    "name": "Hyundai Kona Hybrid 2020"
+  },
+  {
+    "platform": "HYUNDAI_KONA_HEV_2ND_GEN",
+    "make": "Hyundai",
+    "name": "Hyundai Kona Hybrid 2024"
+  },
+  {
+    "platform": "HYUNDAI_NEXO",
+    "make": "Hyundai",
+    "name": "Hyundai Nexo"
+  },
+  {
+    "platform": "HYUNDAI_NEXO_1ST_GEN",
+    "make": "Hyundai",
+    "name": "Hyundai Nexo 2021"
+  },
+  {
+    "platform": "HYUNDAI_PALISADE",
+    "make": "Hyundai",
+    "name": "Hyundai Palisade 2020-22"
+  },
+  {
+    "platform": "HYUNDAI_PORTER_II_EV",
+    "make": "Hyundai",
+    "name": "Hyundai Porter II EV 2024"
+  },
+  {
+    "platform": "HYUNDAI_SANTAFE_MX5",
+    "make": "Hyundai",
+    "name": "Hyundai SANTAFE (MX5)"
+  },
+  {
+    "platform": "HYUNDAI_SANTAFE_MX5_HEV",
+    "make": "Hyundai",
+    "name": "Hyundai SANTAFE HYBRID (MX5)"
+  },
+  {
+    "platform": "HYUNDAI_SANTA_CRUZ_1ST_GEN",
+    "make": "Hyundai",
+    "name": "Hyundai Santa Cruz 2022-24"
+  },
+  {
+    "platform": "HYUNDAI_SANTA_FE",
+    "make": "Hyundai",
+    "name": "Hyundai Santa Fe 2019-20"
+  },
+  {
+    "platform": "HYUNDAI_SANTA_FE_2022",
+    "make": "Hyundai",
+    "name": "Hyundai Santa Fe 2021-23"
+  },
+  {
+    "platform": "HYUNDAI_SANTA_FE_HEV_2022",
+    "make": "Hyundai",
+    "name": "Hyundai Santa Fe Hybrid 2022-23"
+  },
+  {
+    "platform": "HYUNDAI_SANTA_FE_PHEV_2022",
+    "make": "Hyundai",
+    "name": "Hyundai Santa Fe Plug-in Hybrid 2022-23"
+  },
+  {
+    "platform": "HYUNDAI_SONATA_LF",
+    "make": "Hyundai",
+    "name": "Hyundai Sonata 2018-19"
+  },
+  {
+    "platform": "HYUNDAI_SONATA",
+    "make": "Hyundai",
+    "name": "Hyundai Sonata 2020-23"
+  },
+  {
+    "platform": "HYUNDAI_SONATA_2024",
+    "make": "Hyundai",
+    "name": "Hyundai Sonata 2024-25"
+  },
+  {
+    "platform": "HYUNDAI_SONATA_HYBRID",
+    "make": "Hyundai",
+    "name": "Hyundai Sonata Hybrid 2020-23"
+  },
+  {
+    "platform": "HYUNDAI_STARIA_4TH_GEN",
+    "make": "Hyundai",
+    "name": "Hyundai Staria 2023"
+  },
+  {
+    "platform": "HYUNDAI_TUCSON",
+    "make": "Hyundai",
+    "name": "Hyundai Tucson 2021"
+  },
+  {
+    "platform": "HYUNDAI_TUCSON_4TH_GEN",
+    "make": "Hyundai",
+    "name": "Hyundai Tucson 2022"
+  },
+  {
+    "platform": "HYUNDAI_TUCSON_4TH_GEN",
+    "make": "Hyundai",
+    "name": "Hyundai Tucson 2023-24"
+  },
+  {
+    "platform": "HYUNDAI_TUCSON",
+    "make": "Hyundai",
+    "name": "Hyundai Tucson Diesel 2019"
+  },
+  {
+    "platform": "HYUNDAI_TUCSON_4TH_GEN",
+    "make": "Hyundai",
+    "name": "Hyundai Tucson Hybrid 2022-24"
+  },
+  {
+    "platform": "HYUNDAI_TUCSON_4TH_GEN",
+    "make": "Hyundai",
+    "name": "Hyundai Tucson Plug-in Hybrid 2024"
+  },
+  {
+    "platform": "HYUNDAI_VELOSTER",
+    "make": "Hyundai",
+    "name": "Hyundai Veloster 2019-20"
+  },
+  {
+    "platform": "HYUNDAI_ELANTRA_GT_I30",
+    "make": "Hyundai",
+    "name": "Hyundai i30 2017-19"
+  },
+  {
+    "platform": "JEEP_GRAND_CHEROKEE",
+    "make": "Jeep",
+    "name": "Jeep Grand Cherokee 2016-18"
+  },
+  {
+    "platform": "JEEP_GRAND_CHEROKEE_2019",
+    "make": "Jeep",
+    "name": "Jeep Grand Cherokee 2019-21"
+  },
+  {
+    "platform": "KIA_EV3",
+    "make": "KIA",
+    "name": "KIA EV3 (SV1)"
+  },
+  {
+    "platform": "KIA_K5_DL3_24",
+    "make": "KIA",
+    "name": "KIA K5 2024 (DL3)"
+  },
+  {
+    "platform": "KIA_K5_DL3_24_HEV",
+    "make": "KIA",
+    "name": "KIA K5 HYBRID 2024 (DL3)"
+  },
+  {
+    "platform": "KIA_CARNIVAL_4TH_GEN",
+    "make": "Kia",
+    "name": "Kia Carnival (China only) 2023"
+  },
+  {
+    "platform": "KIA_CARNIVAL_4TH_GEN",
+    "make": "Kia",
+    "name": "Kia Carnival 2022-24"
+  },
+  {
+    "platform": "KIA_CEED",
+    "make": "Kia",
+    "name": "Kia Ceed 2019-21"
+  },
+  {
+    "platform": "KIA_EV6",
+    "make": "Kia",
+    "name": "Kia EV6 (Southeast Asia only) 2022-24"
+  },
+  {
+    "platform": "KIA_EV6",
+    "make": "Kia",
+    "name": "Kia EV6 (with HDA II) 2022-24"
+  },
+  {
+    "platform": "KIA_EV6",
+    "make": "Kia",
+    "name": "Kia EV6 (without HDA II) 2022-24"
+  },
+  {
+    "platform": "KIA_EV6_PE",
+    "make": "Kia",
+    "name": "Kia EV6 PE (CV1)"
+  },
+  {
+    "platform": "KIA_EV6_PE",
+    "make": "Kia",
+    "name": "Kia EV6 PE (with HDA II) 2025"
+  },
+  {
+    "platform": "KIA_EV9",
+    "make": "Kia",
+    "name": "Kia EV9 (MV)"
+  },
+  {
+    "platform": "KIA_FORTE",
+    "make": "Kia",
+    "name": "Kia Forte 2019-21"
+  },
+  {
+    "platform": "KIA_FORTE",
+    "make": "Kia",
+    "name": "Kia Forte 2022-23"
+  },
+  {
+    "platform": "KIA_K5",
+    "make": "Kia",
+    "name": "Kia K5 2019 & 2016"
+  },
+  {
+    "platform": "KIA_K5_2021",
+    "make": "Kia",
+    "name": "Kia K5 2021-24"
+  },
+  {
+    "platform": "KIA_K5_DL3_24",
+    "make": "Kia",
+    "name": "Kia K5 2024"
+  },
+  {
+    "platform": "KIA_K5_HEV",
+    "make": "Kia",
+    "name": "Kia K5 Hybrid 2017"
+  },
+  {
+    "platform": "KIA_K5_HEV_2020",
+    "make": "Kia",
+    "name": "Kia K5 Hybrid 2020-22"
+  },
+  {
+    "platform": "KIA_K5_HEV_2022",
+    "make": "Kia",
+    "name": "Kia K5 Hybrid 2022"
+  },
+  {
+    "platform": "KIA_K5_DL3_24_HEV",
+    "make": "Kia",
+    "name": "Kia K5 Hybrid 2024"
+  },
+  {
+    "platform": "KIA_K7",
+    "make": "Kia",
+    "name": "Kia K7 2016-2019"
+  },
+  {
+    "platform": "KIA_K7_HEV",
+    "make": "Kia",
+    "name": "Kia K7 Hybrid 2016-2019"
+  },
+  {
+    "platform": "KIA_K8_HEV_1ST_GEN",
+    "make": "Kia",
+    "name": "Kia K8 Hybrid (with HDA II) 2023"
+  },
+  {
+    "platform": "KIA_K9",
+    "make": "Kia",
+    "name": "Kia K9 2016-2019"
+  },
+  {
+    "platform": "KIA_MOHAVE",
+    "make": "Kia",
+    "name": "Kia Mohave 2019"
+  },
+  {
+    "platform": "KIA_NIRO_EV",
+    "make": "Kia",
+    "name": "Kia Niro EV 2019"
+  },
+  {
+    "platform": "KIA_NIRO_EV",
+    "make": "Kia",
+    "name": "Kia Niro EV 2020"
+  },
+  {
+    "platform": "KIA_NIRO_EV",
+    "make": "Kia",
+    "name": "Kia Niro EV 2021"
+  },
+  {
+    "platform": "KIA_NIRO_EV",
+    "make": "Kia",
+    "name": "Kia Niro EV 2022"
+  },
+  {
+    "platform": "KIA_NIRO_EV_2ND_GEN",
+    "make": "Kia",
+    "name": "Kia Niro EV 2023"
+  },
+  {
+    "platform": "KIA_NIRO_PHEV",
+    "make": "Kia",
+    "name": "Kia Niro Hybrid 2018"
+  },
+  {
+    "platform": "KIA_NIRO_HEV_2021",
+    "make": "Kia",
+    "name": "Kia Niro Hybrid 2021"
+  },
+  {
+    "platform": "KIA_NIRO_HEV_2021",
+    "make": "Kia",
+    "name": "Kia Niro Hybrid 2022"
+  },
+  {
+    "platform": "KIA_NIRO_HEV_2ND_GEN",
+    "make": "Kia",
+    "name": "Kia Niro Hybrid 2023"
+  },
+  {
+    "platform": "KIA_NIRO_PHEV",
+    "make": "Kia",
+    "name": "Kia Niro Plug-in Hybrid 2018-19"
+  },
+  {
+    "platform": "KIA_NIRO_PHEV",
+    "make": "Kia",
+    "name": "Kia Niro Plug-in Hybrid 2020"
+  },
+  {
+    "platform": "KIA_NIRO_PHEV_2022",
+    "make": "Kia",
+    "name": "Kia Niro Plug-in Hybrid 2021"
+  },
+  {
+    "platform": "KIA_NIRO_PHEV_2022",
+    "make": "Kia",
+    "name": "Kia Niro Plug-in Hybrid 2022"
+  },
+  {
+    "platform": "KIA_OPTIMA_G4",
+    "make": "Kia",
+    "name": "Kia Optima 2017"
+  },
+  {
+    "platform": "KIA_OPTIMA_G4_FL",
+    "make": "Kia",
+    "name": "Kia Optima 2019-20"
+  },
+  {
+    "platform": "KIA_OPTIMA_H",
+    "make": "Kia",
+    "name": "Kia Optima Hybrid 2017"
+  },
+  {
+    "platform": "KIA_OPTIMA_H_G4_FL",
+    "make": "Kia",
+    "name": "Kia Optima Hybrid 2019"
+  },
+  {
+    "platform": "KIA_SELTOS",
+    "make": "Kia",
+    "name": "Kia Seltos 2021"
+  },
+  {
+    "platform": "KIA_SORENTO",
+    "make": "Kia",
+    "name": "Kia Sorento 2018"
+  },
+  {
+    "platform": "KIA_SORENTO",
+    "make": "Kia",
+    "name": "Kia Sorento 2019"
+  },
+  {
+    "platform": "KIA_SORENTO_4TH_GEN",
+    "make": "Kia",
+    "name": "Kia Sorento 2021-23"
+  },
+  {
+    "platform": "KIA_SORENTO_HEV_4TH_GEN",
+    "make": "Kia",
+    "name": "Kia Sorento Hybrid 2021-23"
+  },
+  {
+    "platform": "KIA_SORENTO_HEV_4TH_GEN",
+    "make": "Kia",
+    "name": "Kia Sorento Plug-in Hybrid 2022-23"
+  },
+  {
+    "platform": "KIA_EV_SK3",
+    "make": "Kia",
+    "name": "Kia Soul EV 2019"
+  },
+  {
+    "platform": "KIA_SPORTAGE_5TH_GEN",
+    "make": "Kia",
+    "name": "Kia Sportage 2023-24"
+  },
+  {
+    "platform": "KIA_SPORTAGE_5TH_GEN",
+    "make": "Kia",
+    "name": "Kia Sportage Hybrid 2023"
+  },
+  {
+    "platform": "KIA_STINGER",
+    "make": "Kia",
+    "name": "Kia Stinger 2018-20"
+  },
+  {
+    "platform": "KIA_STINGER_2022",
+    "make": "Kia",
+    "name": "Kia Stinger 2022-23"
+  },
+  {
+    "platform": "HYUNDAI_PALISADE",
+    "make": "Kia",
+    "name": "Kia Telluride 2020-22"
+  },
+  {
+    "platform": "LEXUS_CTH",
+    "make": "Lexus",
+    "name": "Lexus CT Hybrid 2017-18"
+  },
+  {
+    "platform": "LEXUS_ES",
+    "make": "Lexus",
+    "name": "Lexus ES 2017-18"
+  },
+  {
+    "platform": "LEXUS_ES_TSS2",
+    "make": "Lexus",
+    "name": "Lexus ES 2019-24"
+  },
+  {
+    "platform": "LEXUS_ES",
+    "make": "Lexus",
+    "name": "Lexus ES Hybrid 2017-18"
+  },
+  {
+    "platform": "LEXUS_ES_TSS2",
+    "make": "Lexus",
+    "name": "Lexus ES Hybrid 2019-25"
+  },
+  {
+    "platform": "LEXUS_GS_F",
+    "make": "Lexus",
+    "name": "Lexus GS F 2016"
+  },
+  {
+    "platform": "LEXUS_IS",
+    "make": "Lexus",
+    "name": "Lexus IS 2017-19"
+  },
+  {
+    "platform": "LEXUS_IS_TSS2",
+    "make": "Lexus",
+    "name": "Lexus IS 2022-23"
+  },
+  {
+    "platform": "LEXUS_LC_TSS2",
+    "make": "Lexus",
+    "name": "Lexus LC 2024"
+  },
+  {
+    "platform": "LEXUS_NX",
+    "make": "Lexus",
+    "name": "Lexus NX 2018-19"
+  },
+  {
+    "platform": "LEXUS_NX_TSS2",
+    "make": "Lexus",
+    "name": "Lexus NX 2020-21"
+  },
+  {
+    "platform": "LEXUS_NX",
+    "make": "Lexus",
+    "name": "Lexus NX Hybrid 2018-19"
+  },
+  {
+    "platform": "LEXUS_NX_TSS2",
+    "make": "Lexus",
+    "name": "Lexus NX Hybrid 2020-21"
+  },
+  {
+    "platform": "LEXUS_RC",
+    "make": "Lexus",
+    "name": "Lexus RC 2018-20"
+  },
+  {
+    "platform": "LEXUS_RX",
+    "make": "Lexus",
+    "name": "Lexus RX 2016"
+  },
+  {
+    "platform": "LEXUS_RX",
+    "make": "Lexus",
+    "name": "Lexus RX 2017-19"
+  },
+  {
+    "platform": "LEXUS_RX_TSS2",
+    "make": "Lexus",
+    "name": "Lexus RX 2020-22"
+  },
+  {
+    "platform": "LEXUS_RX",
+    "make": "Lexus",
+    "name": "Lexus RX Hybrid 2016"
+  },
+  {
+    "platform": "LEXUS_RX",
+    "make": "Lexus",
+    "name": "Lexus RX Hybrid 2017-19"
+  },
+  {
+    "platform": "LEXUS_RX_TSS2",
+    "make": "Lexus",
+    "name": "Lexus RX Hybrid 2020-22"
+  },
+  {
+    "platform": "TOYOTA_COROLLA_TSS2",
+    "make": "Lexus",
+    "name": "Lexus UX Hybrid 2019-24"
+  },
+  {
+    "platform": "FORD_EXPLORER_MK6",
+    "make": "Lincoln",
+    "name": "Lincoln Aviator 2020-24"
+  },
+  {
+    "platform": "FORD_EXPLORER_MK6",
+    "make": "Lincoln",
+    "name": "Lincoln Aviator Plug-in Hybrid 2020-24"
+  },
+  {
+    "platform": "VOLKSWAGEN_CRAFTER_MK2",
+    "make": "MAN",
+    "name": "MAN TGE 2017-24"
+  },
+  {
+    "platform": "VOLKSWAGEN_CRAFTER_MK2",
+    "make": "MAN",
+    "name": "MAN eTGE 2020-24"
+  },
+  {
+    "platform": "MAZDA_3",
+    "make": "Mazda",
+    "name": "Mazda 3 2017-18"
+  },
+  {
+    "platform": "MAZDA_6",
+    "make": "Mazda",
+    "name": "Mazda 6 2017-20"
+  },
+  {
+    "platform": "MAZDA_CX5",
+    "make": "Mazda",
+    "name": "Mazda CX-5 2017-21"
+  },
+  {
+    "platform": "MAZDA_CX5_2022",
+    "make": "Mazda",
+    "name": "Mazda CX-5 2022-25"
+  },
+  {
+    "platform": "MAZDA_CX9",
+    "make": "Mazda",
+    "name": "Mazda CX-9 2016-20"
+  },
+  {
+    "platform": "MAZDA_CX9_2021",
+    "make": "Mazda",
+    "name": "Mazda CX-9 2021-23"
+  },
+  {
+    "platform": "NISSAN_ALTIMA",
+    "make": "Nissan",
+    "name": "Nissan Altima 2019-20"
+  },
+  {
+    "platform": "NISSAN_LEAF",
+    "make": "Nissan",
+    "name": "Nissan Leaf 2018-23"
+  },
+  {
+    "platform": "NISSAN_ROGUE",
+    "make": "Nissan",
+    "name": "Nissan Rogue 2018-20"
+  },
+  {
+    "platform": "NISSAN_XTRAIL",
+    "make": "Nissan",
+    "name": "Nissan X-Trail 2017"
+  },
+  {
+    "platform": "RAM_1500_5TH_GEN",
+    "make": "Ram",
+    "name": "Ram 1500 2019-24"
+  },
+  {
+    "platform": "RAM_HD_5TH_GEN",
+    "make": "Ram",
+    "name": "Ram 2500 2020-24"
+  },
+  {
+    "platform": "RAM_HD_5TH_GEN",
+    "make": "Ram",
+    "name": "Ram 3500 2019-22"
+  },
+  {
+    "platform": "RIVIAN_R1_GEN1",
+    "make": "Rivian",
+    "name": "Rivian R1S 2022-24"
+  },
+  {
+    "platform": "RIVIAN_R1_GEN1",
+    "make": "Rivian",
+    "name": "Rivian R1T 2022-24"
+  },
+  {
+    "platform": "VOLKSWAGEN_SHARAN_MK2",
+    "make": "SEAT",
+    "name": "SEAT Alhambra 2018-20"
+  },
+  {
+    "platform": "SEAT_ATECA_MK1",
+    "make": "SEAT",
+    "name": "SEAT Ateca 2016-23"
+  },
+  {
+    "platform": "SEAT_ATECA_MK1",
+    "make": "SEAT",
+    "name": "SEAT Leon 2014-20"
+  },
+  {
+    "platform": "SUBARU_ASCENT",
+    "make": "Subaru",
+    "name": "Subaru Ascent 2019-21"
+  },
+  {
+    "platform": "SUBARU_ASCENT_2023",
+    "make": "Subaru",
+    "name": "Subaru Ascent 2023"
+  },
+  {
+    "platform": "SUBARU_IMPREZA",
+    "make": "Subaru",
+    "name": "Subaru Crosstrek 2018-19"
+  },
+  {
+    "platform": "SUBARU_IMPREZA_2020",
+    "make": "Subaru",
+    "name": "Subaru Crosstrek 2020-23"
+  },
+  {
+    "platform": "SUBARU_CROSSTREK_HYBRID",
+    "make": "Subaru",
+    "name": "Subaru Crosstrek Hybrid 2020"
+  },
+  {
+    "platform": "SUBARU_FORESTER_PREGLOBAL",
+    "make": "Subaru",
+    "name": "Subaru Forester 2017-18"
+  },
+  {
+    "platform": "SUBARU_FORESTER",
+    "make": "Subaru",
+    "name": "Subaru Forester 2019-21"
+  },
+  {
+    "platform": "SUBARU_FORESTER_2022",
+    "make": "Subaru",
+    "name": "Subaru Forester 2022-24"
+  },
+  {
+    "platform": "SUBARU_FORESTER_HYBRID",
+    "make": "Subaru",
+    "name": "Subaru Forester Hybrid 2020"
+  },
+  {
+    "platform": "SUBARU_IMPREZA",
+    "make": "Subaru",
+    "name": "Subaru Impreza 2017-19"
+  },
+  {
+    "platform": "SUBARU_IMPREZA_2020",
+    "make": "Subaru",
+    "name": "Subaru Impreza 2020-22"
+  },
+  {
+    "platform": "SUBARU_LEGACY_PREGLOBAL",
+    "make": "Subaru",
+    "name": "Subaru Legacy 2015-18"
+  },
+  {
+    "platform": "SUBARU_LEGACY",
+    "make": "Subaru",
+    "name": "Subaru Legacy 2020-22"
+  },
+  {
+    "platform": "SUBARU_OUTBACK_PREGLOBAL",
+    "make": "Subaru",
+    "name": "Subaru Outback 2015-17"
+  },
+  {
+    "platform": "SUBARU_OUTBACK_PREGLOBAL_2018",
+    "make": "Subaru",
+    "name": "Subaru Outback 2018-19"
+  },
+  {
+    "platform": "SUBARU_OUTBACK",
+    "make": "Subaru",
+    "name": "Subaru Outback 2020-22"
+  },
+  {
+    "platform": "SUBARU_OUTBACK_2023",
+    "make": "Subaru",
+    "name": "Subaru Outback 2023"
+  },
+  {
+    "platform": "SUBARU_IMPREZA",
+    "make": "Subaru",
+    "name": "Subaru XV 2018-19"
+  },
+  {
+    "platform": "SUBARU_IMPREZA_2020",
+    "make": "Subaru",
+    "name": "Subaru XV 2020-21"
+  },
+  {
+    "platform": "TESLA_MODEL_3",
+    "make": "Tesla",
+    "name": "Tesla Model 3 (with HW3) 2019-23"
+  },
+  {
+    "platform": "TESLA_MODEL_3",
+    "make": "Tesla",
+    "name": "Tesla Model 3 (with HW4) 2024-25"
+  },
+  {
+    "platform": "TESLA_MODEL_Y",
+    "make": "Tesla",
+    "name": "Tesla Model Y (with HW3) 2020-23"
+  },
+  {
+    "platform": "TESLA_MODEL_Y",
+    "make": "Tesla",
+    "name": "Tesla Model Y (with HW4) 2024"
+  },
+  {
+    "platform": "TOYOTA_ALPHARD_TSS2",
+    "make": "Toyota",
+    "name": "Toyota Alphard 2019-20"
+  },
+  {
+    "platform": "TOYOTA_ALPHARD_TSS2",
+    "make": "Toyota",
+    "name": "Toyota Alphard Hybrid 2021"
+  },
+  {
+    "platform": "TOYOTA_AVALON",
+    "make": "Toyota",
+    "name": "Toyota Avalon 2016"
+  },
+  {
+    "platform": "TOYOTA_AVALON",
+    "make": "Toyota",
+    "name": "Toyota Avalon 2017-18"
+  },
+  {
+    "platform": "TOYOTA_AVALON_2019",
+    "make": "Toyota",
+    "name": "Toyota Avalon 2019-21"
+  },
+  {
+    "platform": "TOYOTA_AVALON_TSS2",
+    "make": "Toyota",
+    "name": "Toyota Avalon 2022"
+  },
+  {
+    "platform": "TOYOTA_AVALON_2019",
+    "make": "Toyota",
+    "name": "Toyota Avalon Hybrid 2019-21"
+  },
+  {
+    "platform": "TOYOTA_AVALON_TSS2",
+    "make": "Toyota",
+    "name": "Toyota Avalon Hybrid 2022"
+  },
+  {
+    "platform": "TOYOTA_CHR",
+    "make": "Toyota",
+    "name": "Toyota C-HR 2017-20"
+  },
+  {
+    "platform": "TOYOTA_CHR_TSS2",
+    "make": "Toyota",
+    "name": "Toyota C-HR 2021"
+  },
+  {
+    "platform": "TOYOTA_CHR",
+    "make": "Toyota",
+    "name": "Toyota C-HR Hybrid 2017-20"
+  },
+  {
+    "platform": "TOYOTA_CHR_TSS2",
+    "make": "Toyota",
+    "name": "Toyota C-HR Hybrid 2021-22"
+  },
+  {
+    "platform": "TOYOTA_CAMRY",
+    "make": "Toyota",
+    "name": "Toyota Camry 2018-20"
+  },
+  {
+    "platform": "TOYOTA_CAMRY_TSS2",
+    "make": "Toyota",
+    "name": "Toyota Camry 2021-24"
+  },
+  {
+    "platform": "TOYOTA_CAMRY",
+    "make": "Toyota",
+    "name": "Toyota Camry Hybrid 2018-20"
+  },
+  {
+    "platform": "TOYOTA_CAMRY_TSS2",
+    "make": "Toyota",
+    "name": "Toyota Camry Hybrid 2021-24"
+  },
+  {
+    "platform": "TOYOTA_COROLLA",
+    "make": "Toyota",
+    "name": "Toyota Corolla 2017-19"
+  },
+  {
+    "platform": "TOYOTA_COROLLA_TSS2",
+    "make": "Toyota",
+    "name": "Toyota Corolla 2020-22"
+  },
+  {
+    "platform": "TOYOTA_COROLLA_TSS2",
+    "make": "Toyota",
+    "name": "Toyota Corolla Cross (Non-US only) 2020-23"
+  },
+  {
+    "platform": "TOYOTA_COROLLA_TSS2",
+    "make": "Toyota",
+    "name": "Toyota Corolla Cross Hybrid (Non-US only) 2020-22"
+  },
+  {
+    "platform": "TOYOTA_COROLLA_TSS2",
+    "make": "Toyota",
+    "name": "Toyota Corolla Hatchback 2019-22"
+  },
+  {
+    "platform": "TOYOTA_COROLLA_TSS2",
+    "make": "Toyota",
+    "name": "Toyota Corolla Hybrid (South America only) 2020-23"
+  },
+  {
+    "platform": "TOYOTA_COROLLA_TSS2",
+    "make": "Toyota",
+    "name": "Toyota Corolla Hybrid 2020-22"
+  },
+  {
+    "platform": "TOYOTA_HIGHLANDER",
+    "make": "Toyota",
+    "name": "Toyota Highlander 2017-19"
+  },
+  {
+    "platform": "TOYOTA_HIGHLANDER_TSS2",
+    "make": "Toyota",
+    "name": "Toyota Highlander 2020-23"
+  },
+  {
+    "platform": "TOYOTA_HIGHLANDER",
+    "make": "Toyota",
+    "name": "Toyota Highlander Hybrid 2017-19"
+  },
+  {
+    "platform": "TOYOTA_HIGHLANDER_TSS2",
+    "make": "Toyota",
+    "name": "Toyota Highlander Hybrid 2020-23"
+  },
+  {
+    "platform": "TOYOTA_MIRAI",
+    "make": "Toyota",
+    "name": "Toyota Mirai 2021"
+  },
+  {
+    "platform": "TOYOTA_PRIUS",
+    "make": "Toyota",
+    "name": "Toyota Prius 2016"
+  },
+  {
+    "platform": "TOYOTA_PRIUS",
+    "make": "Toyota",
+    "name": "Toyota Prius 2017-20"
+  },
+  {
+    "platform": "TOYOTA_PRIUS_TSS2",
+    "make": "Toyota",
+    "name": "Toyota Prius 2021-22"
+  },
+  {
+    "platform": "TOYOTA_PRIUS",
+    "make": "Toyota",
+    "name": "Toyota Prius Prime 2017-20"
+  },
+  {
+    "platform": "TOYOTA_PRIUS_TSS2",
+    "make": "Toyota",
+    "name": "Toyota Prius Prime 2021-22"
+  },
+  {
+    "platform": "TOYOTA_PRIUS_V",
+    "make": "Toyota",
+    "name": "Toyota Prius v 2017"
+  },
+  {
+    "platform": "TOYOTA_RAV4",
+    "make": "Toyota",
+    "name": "Toyota RAV4 2016"
+  },
+  {
+    "platform": "TOYOTA_RAV4",
+    "make": "Toyota",
+    "name": "Toyota RAV4 2017-18"
+  },
+  {
+    "platform": "TOYOTA_RAV4_TSS2",
+    "make": "Toyota",
+    "name": "Toyota RAV4 2019-21"
+  },
+  {
+    "platform": "TOYOTA_RAV4_TSS2_2022",
+    "make": "Toyota",
+    "name": "Toyota RAV4 2022"
+  },
+  {
+    "platform": "TOYOTA_RAV4_TSS2_2023",
+    "make": "Toyota",
+    "name": "Toyota RAV4 2023-25"
+  },
+  {
+    "platform": "TOYOTA_RAV4H",
+    "make": "Toyota",
+    "name": "Toyota RAV4 Hybrid 2016"
+  },
+  {
+    "platform": "TOYOTA_RAV4H",
+    "make": "Toyota",
+    "name": "Toyota RAV4 Hybrid 2017-18"
+  },
+  {
+    "platform": "TOYOTA_RAV4_TSS2",
+    "make": "Toyota",
+    "name": "Toyota RAV4 Hybrid 2019-21"
+  },
+  {
+    "platform": "TOYOTA_RAV4_TSS2_2022",
+    "make": "Toyota",
+    "name": "Toyota RAV4 Hybrid 2022"
+  },
+  {
+    "platform": "TOYOTA_RAV4_TSS2_2023",
+    "make": "Toyota",
+    "name": "Toyota RAV4 Hybrid 2023-25"
+  },
+  {
+    "platform": "TOYOTA_SIENNA",
+    "make": "Toyota",
+    "name": "Toyota Sienna 2018-20"
+  },
+  {
+    "platform": "VOLKSWAGEN_ARTEON_MK1",
+    "make": "Volkswagen",
+    "name": "Volkswagen Arteon 2018-23"
+  },
+  {
+    "platform": "VOLKSWAGEN_ARTEON_MK1",
+    "make": "Volkswagen",
+    "name": "Volkswagen Arteon R 2020-23"
+  },
+  {
+    "platform": "VOLKSWAGEN_ARTEON_MK1",
+    "make": "Volkswagen",
+    "name": "Volkswagen Arteon Shooting Brake 2020-23"
+  },
+  {
+    "platform": "VOLKSWAGEN_ARTEON_MK1",
+    "make": "Volkswagen",
+    "name": "Volkswagen Arteon eHybrid 2020-23"
+  },
+  {
+    "platform": "VOLKSWAGEN_ATLAS_MK1",
+    "make": "Volkswagen",
+    "name": "Volkswagen Atlas 2018-23"
+  },
+  {
+    "platform": "VOLKSWAGEN_ATLAS_MK1",
+    "make": "Volkswagen",
+    "name": "Volkswagen Atlas Cross Sport 2020-22"
+  },
+  {
+    "platform": "VOLKSWAGEN_ARTEON_MK1",
+    "make": "Volkswagen",
+    "name": "Volkswagen CC 2018-22"
+  },
+  {
+    "platform": "VOLKSWAGEN_CADDY_MK3",
+    "make": "Volkswagen",
+    "name": "Volkswagen Caddy 2019"
+  },
+  {
+    "platform": "VOLKSWAGEN_CADDY_MK3",
+    "make": "Volkswagen",
+    "name": "Volkswagen Caddy Maxi 2019"
+  },
+  {
+    "platform": "VOLKSWAGEN_TRANSPORTER_T61",
+    "make": "Volkswagen",
+    "name": "Volkswagen California 2021-23"
+  },
+  {
+    "platform": "VOLKSWAGEN_TRANSPORTER_T61",
+    "make": "Volkswagen",
+    "name": "Volkswagen Caravelle 2020"
+  },
+  {
+    "platform": "VOLKSWAGEN_CRAFTER_MK2",
+    "make": "Volkswagen",
+    "name": "Volkswagen Crafter 2017-24"
+  },
+  {
+    "platform": "VOLKSWAGEN_GOLF_MK7",
+    "make": "Volkswagen",
+    "name": "Volkswagen Golf 2015-20"
+  },
+  {
+    "platform": "VOLKSWAGEN_GOLF_MK7",
+    "make": "Volkswagen",
+    "name": "Volkswagen Golf Alltrack 2015-19"
+  },
+  {
+    "platform": "VOLKSWAGEN_GOLF_MK7",
+    "make": "Volkswagen",
+    "name": "Volkswagen Golf GTD 2015-20"
+  },
+  {
+    "platform": "VOLKSWAGEN_GOLF_MK7",
+    "make": "Volkswagen",
+    "name": "Volkswagen Golf GTE 2015-20"
+  },
+  {
+    "platform": "VOLKSWAGEN_GOLF_MK7",
+    "make": "Volkswagen",
+    "name": "Volkswagen Golf GTI 2015-21"
+  },
+  {
+    "platform": "VOLKSWAGEN_GOLF_MK7",
+    "make": "Volkswagen",
+    "name": "Volkswagen Golf R 2015-19"
+  },
+  {
+    "platform": "VOLKSWAGEN_GOLF_MK7",
+    "make": "Volkswagen",
+    "name": "Volkswagen Golf SportsVan 2015-20"
+  },
+  {
+    "platform": "VOLKSWAGEN_CRAFTER_MK2",
+    "make": "Volkswagen",
+    "name": "Volkswagen Grand California 2019-24"
+  },
+  {
+    "platform": "VOLKSWAGEN_JETTA_MK6",
+    "make": "Volkswagen",
+    "name": "Volkswagen Jetta 2015-18"
+  },
+  {
+    "platform": "VOLKSWAGEN_JETTA_MK7",
+    "make": "Volkswagen",
+    "name": "Volkswagen Jetta 2018-23"
+  },
+  {
+    "platform": "VOLKSWAGEN_JETTA_MK7",
+    "make": "Volkswagen",
+    "name": "Volkswagen Jetta GLI 2021-23"
+  },
+  {
+    "platform": "VOLKSWAGEN_PASSAT_MK8",
+    "make": "Volkswagen",
+    "name": "Volkswagen Passat 2015-22"
+  },
+  {
+    "platform": "VOLKSWAGEN_PASSAT_MK8",
+    "make": "Volkswagen",
+    "name": "Volkswagen Passat Alltrack 2015-22"
+  },
+  {
+    "platform": "VOLKSWAGEN_PASSAT_MK8",
+    "make": "Volkswagen",
+    "name": "Volkswagen Passat GTE 2015-22"
+  },
+  {
+    "platform": "VOLKSWAGEN_PASSAT_NMS",
+    "make": "Volkswagen",
+    "name": "Volkswagen Passat NMS 2017-22"
+  },
+  {
+    "platform": "VOLKSWAGEN_POLO_MK6",
+    "make": "Volkswagen",
+    "name": "Volkswagen Polo 2018-23"
+  },
+  {
+    "platform": "VOLKSWAGEN_POLO_MK6",
+    "make": "Volkswagen",
+    "name": "Volkswagen Polo GTI 2018-23"
+  },
+  {
+    "platform": "VOLKSWAGEN_SHARAN_MK2",
+    "make": "Volkswagen",
+    "name": "Volkswagen Sharan 2018-22"
+  },
+  {
+    "platform": "VOLKSWAGEN_TCROSS_MK1",
+    "make": "Volkswagen",
+    "name": "Volkswagen T-Cross 2021"
+  },
+  {
+    "platform": "VOLKSWAGEN_TROC_MK1",
+    "make": "Volkswagen",
+    "name": "Volkswagen T-Roc 2018-23"
+  },
+  {
+    "platform": "VOLKSWAGEN_TAOS_MK1",
+    "make": "Volkswagen",
+    "name": "Volkswagen Taos 2022-23"
+  },
+  {
+    "platform": "VOLKSWAGEN_ATLAS_MK1",
+    "make": "Volkswagen",
+    "name": "Volkswagen Teramont 2018-22"
+  },
+  {
+    "platform": "VOLKSWAGEN_ATLAS_MK1",
+    "make": "Volkswagen",
+    "name": "Volkswagen Teramont Cross Sport 2021-22"
+  },
+  {
+    "platform": "VOLKSWAGEN_ATLAS_MK1",
+    "make": "Volkswagen",
+    "name": "Volkswagen Teramont X 2021-22"
+  },
+  {
+    "platform": "VOLKSWAGEN_TIGUAN_MK2",
+    "make": "Volkswagen",
+    "name": "Volkswagen Tiguan 2018-23"
+  },
+  {
+    "platform": "VOLKSWAGEN_TIGUAN_MK2",
+    "make": "Volkswagen",
+    "name": "Volkswagen Tiguan eHybrid 2021-23"
+  },
+  {
+    "platform": "VOLKSWAGEN_TOURAN_MK2",
+    "make": "Volkswagen",
+    "name": "Volkswagen Touran 2016-23"
+  },
+  {
+    "platform": "VOLKSWAGEN_CRAFTER_MK2",
+    "make": "Volkswagen",
+    "name": "Volkswagen e-Crafter 2018-24"
+  },
+  {
+    "platform": "VOLKSWAGEN_GOLF_MK7",
+    "make": "Volkswagen",
+    "name": "Volkswagen e-Golf 2014-20"
+  },
+  {
+    "platform": "COMMA_BODY",
+    "make": "comma",
+    "name": "comma body"
+  },
+  {
+    "platform": "SKODA_FABIA_MK4",
+    "make": "Škoda",
+    "name": "Škoda Fabia 2022-23"
+  },
+  {
+    "platform": "SKODA_KAMIQ_MK1",
+    "make": "Škoda",
+    "name": "Škoda Kamiq 2021-23"
+  },
+  {
+    "platform": "SKODA_KAROQ_MK1",
+    "make": "Škoda",
+    "name": "Škoda Karoq 2019-23"
+  },
+  {
+    "platform": "SKODA_KODIAQ_MK1",
+    "make": "Škoda",
+    "name": "Škoda Kodiaq 2017-23"
+  },
+  {
+    "platform": "SKODA_OCTAVIA_MK3",
+    "make": "Škoda",
+    "name": "Škoda Octavia 2015-19"
+  },
+  {
+    "platform": "SKODA_OCTAVIA_MK3",
+    "make": "Škoda",
+    "name": "Škoda Octavia RS 2016"
+  },
+  {
+    "platform": "SKODA_OCTAVIA_MK3",
+    "make": "Škoda",
+    "name": "Škoda Octavia Scout 2017-19"
+  },
+  {
+    "platform": "SKODA_KAMIQ_MK1",
+    "make": "Škoda",
+    "name": "Škoda Scala 2020-23"
+  },
+  {
+    "platform": "SKODA_SUPERB_MK3",
+    "make": "Škoda",
+    "name": "Škoda Superb 2015-22"
+  }
+]
