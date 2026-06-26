@@ -2466,7 +2466,7 @@ public:
 #endif
         if (active_carrot >= 2) {
             ui_fill_rect(s->vg, { dx - 55, dy - 38, 110, 48 }, COLOR_GREEN, 15, 2);
-            ui_draw_text(s, dx, dy, "APN", 40, COLOR_WHITE, BOLD);
+            ui_draw_text(s, dx, dy, "NDA", 40, COLOR_WHITE, BOLD);
         }
         else if (active_carrot >= 1) {
             ui_fill_rect(s->vg, { dx - 55, dy - 38, 110, 48 }, COLOR_BLUE_ALPHA(210), 15, 2);
