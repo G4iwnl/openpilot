@@ -384,7 +384,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   EventName.longitudinalManeuver: {
     ET.WARNING: longitudinal_maneuver_alert,
     ET.PERMANENT: NormalPermanentAlert("롱컨 모드",
-                                       "전방 도로에 장애물이 없는지 확인하세요"),
+                                       "전방을 주시하세요"),
   },
 
   EventName.selfdriveInitializing: {
@@ -553,7 +553,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   EventName.preLaneChangeLeft: {
     ET.WARNING: Alert(
       "차선 변경",
-      "",
+      "사각지대 확인",
       AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
   },
@@ -561,7 +561,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   EventName.preLaneChangeRight: {
     ET.WARNING: Alert(
       "차선 변경",
-      "",
+      "사각지대 확인",
       AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
   },
@@ -576,8 +576,8 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.laneChange: {
     ET.WARNING: Alert(
-      "차선 변경 준비",
-      "",
+      "차선 변경",
+      "사각지대 확인",
       AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
   },
@@ -928,7 +928,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   EventName.reverseGear: {
     ET.PERMANENT: Alert(
       "후진 중",
-      "",
+      "후방 차량 확인",
       AlertStatus.normal, AlertSize.full,
       Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .2, creation_delay=0.5),
     ET.USER_DISABLE: SoftDisableAlert("후진 중"),
@@ -1027,7 +1027,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   EventName.turningLeft: {
     ET.WARNING: Alert(
       "좌회전 합니다",
-      "",
+      "옆차량 주의",
       AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
   },
@@ -1035,7 +1035,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   EventName.turningRight: {
     ET.WARNING: Alert(
       "우회전 합니다",
-      "",
+      "보행자 확인",
       AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
   },
