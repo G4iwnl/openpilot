@@ -711,17 +711,16 @@ class CarState(CarStateBase):
 
     self.update_speed_limit(ret, speed_limit_cam)
 
-    paddle_button = self.paddle_button_prev
-    if self.cruise_btns_msg_canfd == "CRUISE_BUTTONS":
-      paddle_button = 1 if cp.vl["CRUISE_BUTTONS"]["LEFT_PADDLE"] == 1 else 2 if cp.vl["CRUISE_BUTTONS"]["RIGHT_PADDLE"] == 1 else 0
-    elif self.gear_msg_canfd == "GEAR":
-      paddle_button = 1 if cp.vl["GEAR"]["LEFT_PADDLE"] == 1 else 2 if cp.vl["GEAR"]["RIGHT_PADDLE"] == 1 else 0
-
-    ret.buttonEvents = [*create_button_events(self.cruise_buttons[-1], prev_cruise_buttons, BUTTONS_DICT),
-                        *create_button_events(paddle_button, self.paddle_button_prev, {1: ButtonType.paddleLeft, 2: ButtonType.paddleRight}),
-                        *create_button_events(self.main_buttons[-1], prev_main_buttons, {1: ButtonType.mainCruise})]
-
-    self.paddle_button_prev = paddle_button
+    # 패들 쉬프트 이벤트 제거 - 빨간불 번쩍임 방지 #문제시 715~719 원복 
+    #paddle_button = self.paddle_button_prev
+    #if self.cruise_btns_msg_canfd == "CRUISE_BUTTONS":
+    #  paddle_button = 1 if cp.vl["CRUISE_BUTTONS"]["LEFT_PADDLE"] == 1 else 2 if cp.vl["CRUISE_BUTTONS"]["RIGHT_PADDLE"] == 1 else 0
+    #elif self.gear_msg_canfd == "GEAR":
+    #  paddle_button = 1 if cp.vl["GEAR"]["LEFT_PADDLE"] == 1 else 2 if cp.vl["GEAR"]["RIGHT_PADDLE"] == 1 else 0
+    ret.buttonEvents = [*create_button_events(self.cruise_buttons[-1], prev_cruise_buttons, BUTTONS_DICT), # 문제시 삭제
+                        #*create_button_events(paddle_button, self.paddle_button_prev, {1: ButtonType.paddleLeft, 2: ButtonType.paddleRight}), #문제시 원복
+                        *create_button_events(self.main_buttons[-1], prev_main_buttons, {1: ButtonType.mainCruise})] # 문제시 삭제
+    #self.paddle_button_prev = paddle_button # 문제시 원복
     return ret
 
   def get_can_parsers_canfd(self, CP):
