@@ -2,15 +2,15 @@
 
 [한국어](../ko/carrot-web.md)
 
-Carrot Web is a local web interface for viewing and managing carrotpilot from a phone, tablet, or PC connected to the same network as the device. It provides driving status, settings, logs, updates, and diagnostic tools.
+Carrot Web is a local web interface for viewing and managing g4Pilot from a phone, tablet, or PC connected to the same network as the device. It provides driving status, settings, logs, updates, and diagnostic tools.
 
 > [!WARNING]
 > Do not operate Carrot Web while driving. Change settings, select logs, enter terminal commands, and run tools only after parking safely.
 
 ## Connecting
 
-1. Connect the carrotpilot device and your browser device to the same Wi-Fi network or hotspot.
-2. Find the carrotpilot device IP address.
+1. Connect the g4Pilot device and your browser device to the same Wi-Fi network or hotspot.
+2. Find the g4Pilot device IP address.
 3. Open `http://device-IP:7000` in the browser.
 
 Example: `http://192.168.0.25:7000`
@@ -26,7 +26,7 @@ Navigation may appear as a left rail on a wide display or a bottom bar on a port
 | Page | Main purpose |
 |---|---|
 | Drive | Live road video, HUD and driving data, screen-recording control, and recorded-log replay |
-| Settings | carrotpilot and device settings, search, favorites, profiles, and change history |
+| Settings | g4Pilot and device settings, search, favorites, profiles, and change history |
 | Tools | Vehicle and language selection, web layout, Git management, backup/restore, and system actions |
 | Logs | Dashcam routes, playback, analysis and upload, plus screen-recording playback and download |
 | Terminal | Device terminal and time-limited remote-support sessions |
@@ -85,7 +85,7 @@ Recorded replay may stop automatically when real driving begins.
 
 ## Settings page
 
-The Settings page is divided into `Device` and `carrotpilot` tabs.
+The Settings page is divided into `Device` and `g4Pilot` tabs.
 
 - Select a group, then an item, to change its value.
 - Search by setting name or description.

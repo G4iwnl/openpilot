@@ -1520,7 +1520,7 @@ function mountSettingSearchOverlay() {
 
 function rebuildSettingSearchEntries() {
   settingSearchEntries = getSettingDerivedModel().buildSearchEntries({
-    carrot: getUIText("setting_search_source_carrot", "CarrotPilot"),
+    carrot: getUIText("setting_search_source_carrot", "g4Pilot"),
     profile: getUIText("setting_search_source_profile", "Profile"),
   });
   return settingSearchEntries;
@@ -1930,7 +1930,7 @@ function renderSettingSearchResults(query = "") {
   const sections = [
     {
       key: "carrot",
-      title: getUIText("setting_search_source_carrot", "CarrotPilot"),
+      title: getUIText("setting_search_source_carrot", "g4Pilot"),
       entries: matches.filter((entry) => entry.source === "carrot"),
     },
     {

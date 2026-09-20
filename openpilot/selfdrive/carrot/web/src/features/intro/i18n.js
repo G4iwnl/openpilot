@@ -94,7 +94,7 @@ globalThis.CarrotIntroI18n = {
     p1d: "On ADAS or radar · corner radar too",
 
     p2: "Camera long",
-    p2d: "On the camera only · CarrotPilot drives accel",
+    p2d: "On the camera only · g4Pilot drives accel",
 
     p3: "Stock",
     p3d: "Stock SCC drives accel · steering only",

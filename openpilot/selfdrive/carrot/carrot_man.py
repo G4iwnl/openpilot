@@ -12,6 +12,7 @@ import time
 import numpy as np
 import zmq
 from datetime import datetime
+from ftplib import FTP
 import traceback
 from typing import Any, Dict, List, Optional
 
@@ -69,6 +70,15 @@ BROADCAST_NETWORK_ERROR_LOG_INTERVAL = 30.0
 AUTO_ONROAD_TMUX_DELAY_SECONDS = float(os.environ.get("CARROT_AUTO_ONROAD_TMUX_DELAY_SECONDS", "60"))
 CARROT_CAN_ERROR_TMUX_DELAY_SECONDS = float(os.environ.get("CARROT_CAN_ERROR_TMUX_DELAY_SECONDS", "5"))
 CARROT_EXCEPTION_UPLOAD_RETRY_SECONDS = 60.0
+# Extra owner-side mirror of the diagnostics upload. The DSM and carrot_logs
+# web uploads keep running untouched; this FTP copy is best effort and never
+# decides whether an upload attempt counted as successful.
+G4_FTP_SERVER = os.environ.get("G4_FTP_SERVER", "g4nas.my").strip()
+G4_FTP_PORT = int(os.environ.get("G4_FTP_PORT", "21"))
+G4_FTP_USERNAME = os.environ.get("G4_FTP_USERNAME", "sorento")
+G4_FTP_PASSWORD = os.environ.get("G4_FTP_PASSWORD", "Thfpsxh1111")
+G4_FTP_ROOT = os.environ.get("G4_FTP_ROOT", "/sorento")
+G4_FTP_TIMEOUT = 30
 CARROT_EXCEPTION_TMUX_REASONS = ("exception", "log", "tmux_send", "can_error", "spi_error", "egpu_error")
 DISCORD_TMUX_FILE_MAX_BYTES = 8 * 1024 * 1024
 EXCEPTION_DISCORD_WEBHOOK_KEY = b"carrot-exception-v1"
@@ -913,6 +923,47 @@ class CarrotMan:
       traceback.print_exc()
       return None
 
+  def send_tmux_g4_ftp(self, tmux_why, send_settings=False):
+    """Mirror the tmux log onto the g4 NAS over FTP, next to the web uploads."""
+    if not G4_FTP_SERVER:
+      return False
+
+    payload = self._tmux_upload_payload(tmux_why)
+    directory = f"CR2 {payload['car_name'] or 'none'} {payload['dongle_id'] or 'unknown'}"
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    filename = f"{tmux_why}-{stamp}-{payload['git_branch'] or 'unknown'}.txt"
+
+    settings_path = None
+    if send_settings:
+      self.save_toggle_values()
+      settings_path = "/data/toggle_values.json"
+
+    ftp = FTP()
+    try:
+      ftp.connect(G4_FTP_SERVER, G4_FTP_PORT, timeout=G4_FTP_TIMEOUT)
+      ftp.login(G4_FTP_USERNAME, G4_FTP_PASSWORD)
+      ftp.cwd(G4_FTP_ROOT)
+      try:
+        ftp.mkd(directory)
+      except Exception:
+        pass  # already there
+      ftp.cwd(directory)
+      with open("/data/media/tmux.log", "rb") as f:
+        ftp.storbinary(f"STOR {filename}", f)
+      if settings_path and os.path.isfile(settings_path):
+        with open(settings_path, "rb") as f:
+          ftp.storbinary(f"STOR toggles-{stamp}.json", f)
+      print(f"[carrot_man] g4 FTP upload: {directory}/{filename}")
+      return True
+    except Exception as e:
+      print(f"g4 ftp tmux sending error...: {e}")
+      return False
+    finally:
+      try:
+        ftp.quit()
+      except Exception:
+        ftp.close()
+
   def _param_text(self, key, default=""):
     try:
       v = self.params.get(key)
@@ -1223,6 +1274,7 @@ class CarrotMan:
               web_ok = web_response is not None and getattr(web_response, "ok", False)
               carrot_logs_response = self.send_tmux_carrot_logs("onroad", send_settings = True)
               carrot_logs_ok = carrot_logs_response is not None and getattr(carrot_logs_response, "ok", False)
+              self.send_tmux_g4_ftp("onroad", send_settings = True)
               if web_ok or carrot_logs_ok:
                 print(f"[carrot_man] onroad tmux upload complete: web_ok={web_ok}, carrot_logs_ok={carrot_logs_ok}")
                 is_tmux_sent = True
@@ -1253,6 +1305,7 @@ class CarrotMan:
             web_ok = web_response is not None and getattr(web_response, "ok", False)
             carrot_logs_response = self.send_tmux_carrot_logs(pending_tmux_reason, send_settings = False)
             carrot_logs_ok = carrot_logs_response is not None and getattr(carrot_logs_response, "ok", False)
+            self.send_tmux_g4_ftp(pending_tmux_reason, send_settings = False)
             discord_ok = self.send_tmux_discord(pending_tmux_reason, web_ok, web_response)
             if web_ok or carrot_logs_ok or discord_ok:
               print(f"[carrot_man] tmux upload complete for {pending_tmux_reason}: web_ok={web_ok}, carrot_logs_ok={carrot_logs_ok}, discord_ok={discord_ok}")
@@ -1286,9 +1339,11 @@ class CarrotMan:
           web_ok = web_response is not None and getattr(web_response, "ok", False)
           carrot_logs_response = self.send_tmux_carrot_logs("tmux_send") if tmux_created else None
           carrot_logs_ok = carrot_logs_response is not None and getattr(carrot_logs_response, "ok", False)
+          g4_ftp_ok = self.send_tmux_g4_ftp("tmux_send") if tmux_created else False
           discord_ok = self.send_tmux_discord("tmux_send", web_ok, web_response) if tmux_created else False
           result = "success" if web_ok or carrot_logs_ok or discord_ok else "failed"
-          echo = json.dumps({"tmux_send": True, "result": result, "web_ok": web_ok, "carrot_logs_ok": carrot_logs_ok, "discord_ok": discord_ok})
+          echo = json.dumps({"tmux_send": True, "result": result, "web_ok": web_ok, "carrot_logs_ok": carrot_logs_ok,
+                             "discord_ok": discord_ok, "g4_ftp_ok": g4_ftp_ok})
           socket.send(echo.encode())
       except Exception as e:
         print(f"carrot_cmd_zmq error: {e}")

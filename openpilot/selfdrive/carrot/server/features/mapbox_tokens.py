@@ -79,7 +79,7 @@ def _validate_public_token_online(token: str) -> dict:
     "geometries": "geojson",
   })
   url = f"https://api.mapbox.com/directions/v5/mapbox/driving-traffic/{coords}?{query}"
-  request = urllib.request.Request(url, headers={"User-Agent": "CarrotPilot Mapbox token check"})
+  request = urllib.request.Request(url, headers={"User-Agent": "g4Pilot Mapbox token check"})
 
   try:
     with urllib.request.urlopen(request, timeout=8) as response:

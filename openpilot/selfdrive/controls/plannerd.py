@@ -40,6 +40,7 @@ def main():
     CP.brand,
     CP.radarUnavailable,
     params.get_int("EnableRadarTracks"),
+    params.get_bool("VisionOnly"),
   )
   live_tracks_longitudinal = CP.brand == "hyundai" and radar_track_mode >= 1
 

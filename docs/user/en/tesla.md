@@ -1,10 +1,10 @@
 # Tesla Vehicle Integration
 
-On supported Tesla Model 3 and Model Y vehicles, carrotpilot reads vehicle speed, steering state, accelerator input, and brake input from CAN. The harness must match the model year and vehicle hardware. Control is not allowed when a required CAN message is invalid.
+On supported Tesla Model 3 and Model Y vehicles, g4Pilot reads vehicle speed, steering state, accelerator input, and brake input from CAN. The harness must match the model year and vehicle hardware. Control is not allowed when a required CAN message is invalid.
 
 ## Brake-input compatibility
 
-Some older vehicles transmit the `0x39D` iBooster status message, but this message is absent on some vehicles, including the refreshed Model Y. carrotpilot uses the driver-brake state in `0x145 ESP_status`, which is common across the supported vehicles.
+Some older vehicles transmit the `0x39D` iBooster status message, but this message is absent on some vehicles, including the refreshed Model Y. g4Pilot uses the driver-brake state in `0x145 ESP_status`, which is common across the supported vehicles.
 
 The same signal is used by both layers:
 
@@ -18,7 +18,7 @@ The former behavior could repeatedly report `0x39D IBST_status not valid` and ma
 <a id="automatic-cruise-speed"></a>
 ## Automatic cruise set speed
 
-On supported Tesla vehicles with the additional vehicle CAN bus connected and detected, enabling **alpha longitudinal** (`AlphaLongitudinalEnabled`) also enables automatic cruise set-speed adjustment. While cruise and carrotpilot are engaged, the set speed follows the speed limit reported by the vehicle's DAS. This feature has no separate Carrot Web toggle; vehicles using stock longitudinal control do not use it.
+On supported Tesla vehicles with the additional vehicle CAN bus connected and detected, enabling **alpha longitudinal** (`AlphaLongitudinalEnabled`) also enables automatic cruise set-speed adjustment. While cruise and g4Pilot are engaged, the set speed follows the speed limit reported by the vehicle's DAS. This feature has no separate Carrot Web toggle; vehicles using stock longitudinal control do not use it.
 
 The controller waits for a stable limit, then adjusts the set speed one displayed unit at a time: 1 km/h or 1 mph. It waits at least 0.5 seconds between adjustments and checks that the vehicle has responded before sending another one. Missing or stale limit data, braking, cancellation, or disengagement stops automatic output.
 

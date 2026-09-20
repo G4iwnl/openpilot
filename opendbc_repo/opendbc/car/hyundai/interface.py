@@ -194,6 +194,10 @@ class CarInterface(CarInterfaceBase):
 
     # carrot, if camera_scc enabled, enable openpilotLongitudinalControl
     enable_radar_tracks = params.get_int("EnableRadarTracks")
+    # VisionOnly drives on the model alone, which is the same longitudinal
+    # source as the -2 (VOACC) radar mode.
+    if params.get_bool("VisionOnly"):
+      enable_radar_tracks = -2
     if ret.flags & HyundaiFlags.CAMERA_SCC.value or enable_radar_tracks > 0 or enable_radar_tracks == -2:
       ret.radarUnavailable = False
       ret.openpilotLongitudinalControl = True if camera_scc < 3 else False

@@ -456,7 +456,7 @@ class WikiSettingsGeneratorTest(unittest.TestCase):
       wiki = root / "wiki"
       wiki.mkdir()
       original_sidebar = (
-        "## carrotpilot Wiki\n\n"
+        "## g4Pilot Wiki\n\n"
         "- [[소개|Home]]\n"
         "- 사용 설명서\n"
         "  - [설정 이해하기](https://example.com/settings.md)\n"
@@ -515,7 +515,7 @@ class WikiSettingsGeneratorTest(unittest.TestCase):
       wiki = root / "wiki"
       wiki.mkdir()
       (wiki / GENERATOR.SIDEBAR_NAME).write_text(
-        "## carrotpilot Wiki\n\n"
+        "## g4Pilot Wiki\n\n"
         "- 사용 설명서\n"
         "  - [설정 이해하기](https://example.com/settings.md)\n"
         "    - [[전체 설정|Settings-Catalog]] <!-- CARROT:SETTINGS-CATALOG -->\n"

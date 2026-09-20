@@ -100,7 +100,7 @@ function bindDevicePersonality(container) {
     }
   }
 
-  // Same commit contract as the CarrotPilot tab: this button cycles the
+  // Same commit contract as the g4Pilot tab: this button cycles the
   // driving personality on a single tap, so a scroll that starts on it must
   // not change anything.
   const gesture = window.CarrotUI?.numericStepper?.createGesture;

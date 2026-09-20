@@ -265,7 +265,7 @@ function renderDeviceGroups(options = {}) {
 
 function applyDeviceItemsStagger(container) {
   if (!container) return;
-  // Stagger the section-block card(s) like the CarrotPilot tab. Falls back to
+  // Stagger the section-block card(s) like the g4Pilot tab. Falls back to
   // direct .setting children if items aren't card-wrapped (defensive).
   const blocks = container.querySelectorAll(".setting-section-block");
   const targets = blocks.length
@@ -299,7 +299,7 @@ async function selectDeviceGroup(groupId, pushHistory = true) {
   renderDeviceGroups({ animateGroups: false });
   syncSettingTabState("device");
   syncDeviceGroupChrome(CURRENT_DEVICE_GROUP);
-  // Same history-based navigation as the CarrotPilot tab: an "items" entry lets
+  // Same history-based navigation as the g4Pilot tab: an "items" entry lets
   // the title back-chevron / device back button return to the device groups
   // screen. Skip in compact-landscape split (it always shows items).
   const splitLandscape =
@@ -311,7 +311,7 @@ async function selectDeviceGroup(groupId, pushHistory = true) {
 }
 
 // Restore the device tab from a popstate without touching history (no push /
-// replace) — mirrors how app.js restores the CarrotPilot tab.
+// replace) — mirrors how app.js restores the g4Pilot tab.
 async function restoreSettingDeviceTab(screen, deviceGroup) {
   if (typeof CURRENT_SETTING_TAB !== "undefined") CURRENT_SETTING_TAB = "device";
   syncSettingTabState("device");
@@ -432,7 +432,7 @@ async function renderDeviceItems(groupId, showItemsScreen = true, options = {}) 
 
   // A drill-in from the groups screen triggers the left/right screen slide.
   // Don't ALSO play the per-item rise (stagger) then — the slide + rise mix is
-  // the jarring combo the user saw. CarrotPilot is slide-only in this case.
+  // the jarring combo the user saw. g4Pilot is slide-only in this case.
   // Detect it before the screen swaps (items screen still hidden = drill-in).
   const screenItemsEl = document.getElementById("settingScreenItems");
   const willSlide = showItemsScreen && !!screenItemsEl &&
@@ -459,7 +459,7 @@ async function renderDeviceItems(groupId, showItemsScreen = true, options = {}) 
     return;
   }
 
-  // Wrap device items in the same card box the CarrotPilot tab uses
+  // Wrap device items in the same card box the g4Pilot tab uses
   // (setting-section-block > setting-group-card > setting-group-card__body) so
   // the device submenu looks identical, not the old flat rows.
   const deviceItemsHtml = renderDeviceGroupItems(groupId, values);
@@ -579,7 +579,7 @@ function syncDeviceGroupChrome(groupId = CURRENT_DEVICE_GROUP) {
     settingTitle.textContent = (UI_STRINGS[LANG].setting || "Setting") + " - " + label;
   }
   // Use the shared title renderer so the device submenu gets the same
-  // "‹ back" chevron as the CarrotPilot tab (the global itemsTitle click
+  // "‹ back" chevron as the g4Pilot tab (the global itemsTitle click
   // handler then drives history.back()).
   if (typeof setSettingItemsTitle === "function") {
     setSettingItemsTitle(label);
@@ -616,7 +616,7 @@ async function switchSettingTab(tab) {
     if (!(typeof isCompactLandscapeMode === "function" && isCompactLandscapeMode()) && typeof showSettingScreen === "function") {
       showSettingScreen("groups", false);
       // Mark the device-groups base entry so back from a device submenu returns
-      // here (not to the CarrotPilot groups). Mirrors the CarrotPilot flow.
+      // here (not to the g4Pilot groups). Mirrors the g4Pilot flow.
       history.replaceState({ page: "setting", tab: "device", screen: "groups" }, "");
     }
     syncDeviceGroupChrome(CURRENT_DEVICE_GROUP);
@@ -633,7 +633,7 @@ async function switchSettingTab(tab) {
         scrollMode: "restore",
       });
       // Device renders its group list with stagger on tab entry. Recreate the
-      // CarrotPilot list after restoring its detail so the split-layout tabs
+      // g4Pilot list after restoring its detail so the split-layout tabs
       // use the same entrance behavior without animating ordinary drill-in.
       if (typeof renderGroups === "function") renderGroups({ animateGroups: true });
       return;
@@ -642,11 +642,11 @@ async function switchSettingTab(tab) {
 
   if (typeof showSettingScreen === "function") {
     showSettingScreen("groups", false);
-    // Match the device tab: re-render the CarrotPilot groups with the stagger
+    // Match the device tab: re-render the g4Pilot groups with the stagger
     // entrance so switching tabs animates both sides consistently (device
-    // re-renders via renderDeviceTab, CarrotPilot didn't → no animation).
+    // re-renders via renderDeviceTab, g4Pilot didn't → no animation).
     if (typeof renderGroups === "function") renderGroups({ animateGroups: true });
-    // Re-sync history to the CarrotPilot groups so back/forward stays in step
+    // Re-sync history to the g4Pilot groups so back/forward stays in step
     // with the visible tab after a tab switch.
     if (!(typeof isCompactLandscapeMode === "function" && isCompactLandscapeMode())) {
       history.replaceState({ page: "setting", screen: "groups", group: null }, "");

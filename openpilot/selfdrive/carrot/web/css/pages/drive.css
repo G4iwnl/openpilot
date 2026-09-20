@@ -448,7 +448,7 @@ body[data-page="carrot"] #driveHudCard.is-vision-hud-suppressed {
   content: "";
   width: 34px;
   height: 34px;
-  background: center / 28px 28px no-repeat url("/assets/img_chffr_wheel.png?v=2604-01");
+  background: center / 28px 28px no-repeat url("/assets/img_chffr_wheel.png?v=g4-2026-01");
   animation: carrot-stage-spin 0.88s linear infinite reverse;
 }
 

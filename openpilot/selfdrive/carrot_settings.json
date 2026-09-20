@@ -633,6 +633,41 @@
           ]
         }
       ]
+    },
+    {
+      "id": "G4",
+      "ko": "g4",
+      "en": "g4",
+      "zh": "g4",
+      "groups": [
+        {
+          "id": "G4_CRUISE",
+          "ko": "크루즈",
+          "en": "Cruise",
+          "zh": "巡航",
+          "params": [
+            "SoftHoldOnly"
+          ]
+        },
+        {
+          "id": "G4_RADAR",
+          "ko": "레이더",
+          "en": "Radar",
+          "zh": "雷达",
+          "params": [
+            "VisionOnly"
+          ]
+        },
+        {
+          "id": "G4_BUTTON",
+          "ko": "버튼",
+          "en": "Buttons",
+          "zh": "按键",
+          "params": [
+            "IgnorePaddleShift"
+          ]
+        }
+      ]
     }
   ],
   "params": [
@@ -4061,6 +4096,60 @@
           "Speed automatic"
         ]
       }
+    },
+    {
+      "group": "g4",
+      "name": "SoftHoldOnly",
+      "title": "소프트홀드만 사용",
+      "descr": "오토크루즈제어를 켠 상태에서 소프트홀드만 남기고 나머지 자동 크루즈 동작(자동 재출발, 가속페달·전방차량·신호 감지에 의한 자동 ON/OFF)을 모두 사용하지 않습니다. 크루즈 버튼과 원격 명령은 그대로 동작합니다.",
+      "egroup": "g4",
+      "etitle": "Soft Hold Only",
+      "edescr": "Keep AutoCruiseControl on for soft hold alone. Every other automatic engage/disengage (auto resume, gas/lead-car/traffic-sign triggers) is disabled. Cruise buttons and remote commands are unaffected.",
+      "cgroup": "g4",
+      "ctitle": "仅使用软驻车",
+      "cdescr": "开启自动巡航控制后仅保留软驻车，停用其余所有自动巡航开关动作（自动起步、油门/前车/信号触发）。巡航按键与远程指令不受影响。",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "unit": 1,
+      "control": "toggle",
+      "risk": "high"
+    },
+    {
+      "group": "g4",
+      "name": "VisionOnly",
+      "title": "비전만 사용(레이더 무시)",
+      "descr": "레이더값을 전혀 사용하지 않고 비전 전방차량만으로 주행합니다. 레이더트랙,SCC레이더설정과 관계없이 VOACC(-2)와 같은 동작이 되며, 레이더 트랙 수신도 하지 않습니다. 변경 후 기기를 재부팅하세요.",
+      "egroup": "g4",
+      "etitle": "Vision Only (ignore radar)",
+      "edescr": "Drive on vision leads alone and ignore every radar value. Forces the same path as EnableRadarTracks -2 (VOACC) regardless of that setting, and stops requesting radar tracks. Reboot the device after changing.",
+      "cgroup": "g4",
+      "ctitle": "仅使用视觉(忽略雷达)",
+      "cdescr": "完全不使用雷达数据，仅依靠视觉前车行驶。无论雷达轨迹设置为何，均等同于 VOACC(-2)，并且不再请求雷达轨迹。更改后请重启设备。",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "unit": 1,
+      "control": "toggle",
+      "risk": "high"
+    },
+    {
+      "group": "g4",
+      "name": "IgnorePaddleShift",
+      "title": "패들시프트 무시",
+      "descr": "패들시프트를 눌러도 무시합니다. 패들시프트모드 설정과 관계없이 패들 입력이 전달되지 않습니다. (CAN-FD 현대·기아·제네시스)",
+      "egroup": "g4",
+      "etitle": "Ignore Paddle Shift",
+      "edescr": "Discard paddle-shifter presses. No paddle input reaches the cruise logic regardless of the PaddleShift Mode setting. (CAN-FD Hyundai/Kia/Genesis)",
+      "cgroup": "g4",
+      "ctitle": "忽略换挡拨片",
+      "cdescr": "忽略换挡拨片操作。无论换挡拨片模式如何设置，拨片输入都不会传递。(CAN-FD 现代/起亚/捷尼赛思)",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "unit": 1,
+      "control": "toggle",
+      "risk": "high"
     }
   ]
 }

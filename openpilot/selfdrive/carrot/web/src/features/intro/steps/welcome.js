@@ -19,7 +19,7 @@ CarrotIntro.register({
     const CYCLE_MS = 1800;
 
     el.innerHTML = `
-      <img class="intro-logo" src="${assetUrl("img_spinner_comma.png")}" alt="CarrotPilot" />
+      <img class="intro-logo" src="${assetUrl("img_spinner_comma.png")}" alt="g4Pilot" />
 
       <div class="intro-cycler" aria-hidden="true">
         ${CarrotIntroLangs.map(([code, , greeting]) =>

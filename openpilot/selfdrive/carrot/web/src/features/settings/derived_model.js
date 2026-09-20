@@ -275,7 +275,7 @@ export function createSettingsDerivedModel(options = {}) {
 
   function buildSearchEntries(sourceLabels = {}) {
     const resolvedLabels = {
-      carrot: sourceLabels.carrot || "CarrotPilot",
+      carrot: sourceLabels.carrot || "g4Pilot",
       profile: sourceLabels.profile || "Profile",
     };
     const entries = [];

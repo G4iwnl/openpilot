@@ -247,6 +247,7 @@ class CarState(CarStateBase):
     self.ACCMode = 0
     self.LFA_ICON = 0
     self.paddle_button_prev = 0
+    self.ignorePaddleShift = self.op_params.get_bool("IgnorePaddleShift")
     self.canfdOemBrakeHoldLatched = False
     self.canfdAvhReleaseGraceFrames = 0
 
@@ -652,6 +653,7 @@ class CarState(CarStateBase):
         self._clear_vehicle_navi_speed_zone()
       elif vehicle_navi_can_control >= 2:
         self._clear_vehicle_navi_route_filtered_events()
+    self.ignorePaddleShift = self.op_params.get_bool("IgnorePaddleShift")
     vehicle_navi_school_zone_control = self.op_params.get_bool("VehicleNaviSchoolZoneControl")
     if vehicle_navi_school_zone_control != self.vehicleNaviSchoolZoneControl:
       self.vehicleNaviSchoolZoneControl = vehicle_navi_school_zone_control
@@ -1290,7 +1292,9 @@ class CarState(CarStateBase):
     self.update_speed_limit(ret, speed_limit_cam, distance_time_changed)
 
     paddle_button = self.paddle_button_prev
-    if self.cruise_btns_msg_canfd == "CRUISE_BUTTONS":
+    if self.ignorePaddleShift:
+      paddle_button = 0
+    elif self.cruise_btns_msg_canfd == "CRUISE_BUTTONS":
       paddle_button = 1 if cp.vl["CRUISE_BUTTONS"]["LEFT_PADDLE"] == 1 else 2 if cp.vl["CRUISE_BUTTONS"]["RIGHT_PADDLE"] == 1 else 0
     elif self.gear_msg_canfd == "GEAR":
       paddle_button = 1 if cp.vl["GEAR"]["LEFT_PADDLE"] == 1 else 2 if cp.vl["GEAR"]["RIGHT_PADDLE"] == 1 else 0

@@ -97,14 +97,15 @@ Ignoring `x0.01`, `x0.001`, `cm`, `km/h`, or `%` can make a value appear one hun
 
 ## Settings map
 
-The current `carrot_settings.json` contains **175 parameters**. Every entry is assigned to one of these menus:
+The current `carrot_settings.json` contains **188 parameters**. Every entry is assigned to one of these menus:
 
 | Category | Count | Groups |
 |---|---:|---|
-| Driving control | 112 | Startup and auto, buttons and presets, steering, speed and deceleration, cruise and following gap |
-| Vehicle and hardware | 14 | Hyundai/Kia, CAN FD/HDA, radar, driver monitoring, vehicle assistance, device hardware |
+| Driving control | 121 | Startup and auto, buttons and presets, steering, speed and deceleration, cruise and following gap |
+| Vehicle and hardware | 15 | Hyundai/Kia, CAN FD/HDA, radar, driver monitoring, vehicle assistance, device hardware |
 | Display | 37 | Information, path, brightness/on-road view, external HUD |
-| System | 12 | Recording/power, network/map, sound, software |
+| System | 12 | Recording/power, camera, network/map, sound, software |
+| g4 | 3 | Cruise, radar, buttons |
 
 ## Driving control
 
@@ -318,6 +319,20 @@ The 12 system settings cover recording, power, network, maps, sound, and softwar
 | Software | `SoftwareMenu` | Carrot Web software-menu availability |
 
 Check storage use for recording and network use, heat, and privacy before enabling live streaming.
+
+## g4
+
+The `g4` tab holds the three settings that only exist in this fork. All three default to `0` (off), so behaviour matches the upstream branch until you turn one on.
+
+| Group | Parameter | Purpose |
+|---|---|---|
+| Cruise | `SoftHoldOnly` | Keep soft hold and drop the rest of auto cruise |
+| Radar | `VisionOnly` | Ignore radar and drive on vision leads alone |
+| Buttons | `IgnorePaddleShift` | Discard paddle-shifter input |
+
+- `SoftHoldOnly`: with `AutoCruiseControl` enabled, keep soft hold and disable every other automatic engage/disengage (auto resume, and the gas-pedal, lead-car, and traffic-sign triggers). Soft hold itself requires `AutoCruiseControl != 0`, so leave auto cruise on. Cruise buttons, paddles, and Bluetooth/remote commands are unaffected.
+- `VisionOnly`: forces the same vision-only path as `EnableRadarTracks` `-2` (VOACC) regardless of that setting, and stops requesting radar tracks. See [Radar](radar.md). Reboot after changing.
+- `IgnorePaddleShift`: discards paddle-shifter input on CAN-FD Hyundai/Kia/Genesis. No paddle event is produced regardless of `PaddleMode`. See [Buttons and presets](buttons-presets.md).
 
 ## Safe adjustment order
 

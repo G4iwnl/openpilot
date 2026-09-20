@@ -198,6 +198,7 @@ class VCruiseCarrot:
     self._soft_hold_count = 0
     self._soft_hold_active = 0
     self.soft_hold_on_cancel = self.params.get_bool("SoftHoldOnCancel")
+    self.soft_hold_only = self.params.get_bool("SoftHoldOnly")
     self._cruise_ready = False
     self._cruise_cancel_state = False
     self._pause_auto_speed_up = False
@@ -269,6 +270,7 @@ class VCruiseCarrot:
     if self.frame % 10 == 0:
       self.autoCruiseControl = self.params.get_int("AutoCruiseControl") * unit_factor
       self.soft_hold_on_cancel = self.params.get_bool("SoftHoldOnCancel")
+      self.soft_hold_only = self.params.get_bool("SoftHoldOnly")
       self.autoGasTokSpeed = self.params.get_int("AutoGasTokSpeed") * unit_factor
       self.autoGasCancelSpeed = self.params.get_int("AutoGasCancelSpeed") * unit_factor
       self.autoGasSyncSpeed = self.params.get_int("AutoGasSyncSpeed")
@@ -773,7 +775,7 @@ class VCruiseCarrot:
     self.nRoadLimitSpeed_last = self.nRoadLimitSpeed
     return v_cruise_kph
 
-  def _cruise_control(self, enable, cancel_timer, reason, allow_cancel_state=False, manual=False):
+  def _cruise_control(self, enable, cancel_timer, reason, allow_cancel_state=False, manual=False, soft_hold=False):
     # Explicit HID button requests bypass automatic-engage preferences only;
     # availability/interlocks below and selfdrived's normal no-entry checks remain.
     if enable > 0 and not self._cruise_available:
@@ -794,7 +796,10 @@ class VCruiseCarrot:
       enable = 0
       self._add_log(reason + " > Canceled")
     else:
-      if not manual and self.autoCruiseControl == 0 and enable != 0:
+      # SoftHoldOnly keeps AutoCruiseControl on for soft hold alone: every
+      # other automatic engage/disengage behaves as if auto cruise were off.
+      auto_cruise_off = self.autoCruiseControl == 0 or (self.soft_hold_only and not soft_hold)
+      if not manual and auto_cruise_off and enable != 0:
         enable = 0
         self._soft_hold_active = 0
         return
@@ -822,7 +827,7 @@ class VCruiseCarrot:
 
   def _engage_soft_hold(self):
     self._soft_hold_active = 2
-    self._cruise_control(1, -1, "Cruise on (soft hold)", allow_cancel_state=self.soft_hold_on_cancel)
+    self._cruise_control(1, -1, "Cruise on (soft hold)", allow_cancel_state=self.soft_hold_on_cancel, soft_hold=True)
 
   def _update_cruise_state(self, CS, CC, v_cruise_kph):
     if not CC.enabled:

@@ -99,6 +99,18 @@ A **long LFA press** temporarily toggles the speed condition used by lane mode, 
 
 Vehicles that do not report paddle events will not respond. Left and right paddles currently use the same mode behavior.
 
+### `IgnorePaddleShift`
+
+Turning on `IgnorePaddleShift` in the `g4` tab stops the CAN-FD Hyundai/Kia/Genesis car state from reading paddle-shifter input at all. No paddle button event is produced regardless of `PaddleMode`, which prevents unintended cruise actions on cars where the paddles are used mainly for regen control. The default is `0` (off).
+
+The Bluetooth remote's `paddleDecel` command takes a separate path and is unaffected.
+
+### `SoftHoldOnly`
+
+Turning on `SoftHoldOnly` in the `g4` tab keeps **soft hold only** out of the auto-cruise feature set while `AutoCruiseControl` stays enabled. Auto resume and the automatic engage/disengage driven by the gas pedal, lead car, and traffic signs are all disabled. Soft hold detection itself requires `AutoCruiseControl != 0`, so leave auto cruise control on.
+
+Driver-initiated input — cruise buttons, paddles, and Bluetooth/remote commands — keeps working.
+
 ### Common long-press behavior
 
 | Button | Long press |

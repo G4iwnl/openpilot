@@ -5,7 +5,7 @@
 > [!NOTE]
 > This is the canonical English user guide maintained with the `carrot-wip` code. When user-visible behavior changes, update this document together with the related code and tests.
 
-A radar fitted to the vehicle does not guarantee that carrotpilot can read the required CAN messages. Results can differ by model year, trim, radar part, firmware, message group, and harness connection even for the same vehicle name.
+A radar fitted to the vehicle does not guarantee that g4Pilot can read the required CAN messages. Results can differ by model year, trim, radar part, firmware, message group, and harness connection even for the same vehicle name.
 
 > [!WARNING]
 > An unverified radar configuration can cause dashboard warnings, CAN faults, incorrect lead selection, or false cut-in detection. Record the original values and test one setting at a time only when the exact vehicle configuration has been validated.
@@ -23,6 +23,12 @@ A radar fitted to the vehicle does not guarantee that carrotpilot can read the r
 | `1` | Match raw front-radar tracks to vision without SCC; use vision if matching fails | Requires vehicle-specific activation and message support |
 | `2` | Match front-radar tracks and low-speed SCC to vision; use vision if matching fails | Test only on an identical validated configuration |
 | `3` | Match front radar to vision first; if it fails, always use SCC, then vision if SCC is absent | Experimental; false detections are possible |
+
+### Vision only (`VisionOnly`)
+
+`VisionOnly` in the `g4` tab forces the same path as `-2` (VOACC vision-only) in the table above, regardless of `EnableRadarTracks`. While it is on, the device stops requesting radar tracks and selects leads from vision alone. No radar value contributes at all, so stopped-vehicle acquisition range and cut-in decisions can differ substantially from any radar mode. Reboot after changing it.
+
+Turning it off restores whatever mode `EnableRadarTracks` holds. Corner radar (`EnableCornerRadar`) is a separate setting and `VisionOnly` does not change it.
 
 On non-CAN FD Hyundai/Kia vehicles, a positive value attempts to enable radar tracks during startup and stores the result in `EnableRadarTracksResult`. Confirm both the activation result and actual incoming tracks; physical radar presence alone is not enough.
 

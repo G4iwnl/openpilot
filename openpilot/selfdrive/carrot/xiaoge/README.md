@@ -4,7 +4,7 @@
 
 ### 概述
 
-Xiaoge Vision 是 CarrotPilot 的本地视觉扩展。它使用 comma3 的 VisionIPC 相机帧运行两个 ONNX
+Xiaoge Vision 是 g4Pilot 的本地视觉扩展。它使用 comma3 的 VisionIPC 相机帧运行两个 ONNX
 模型，并通过一个版本化的 `xiaogeVision` JSON 消息写入 `customReservedRawData0`。`card.py` 接收该
 消息后，将车道线类型和视觉盲区结果安全地合并到 `carState`，供现有 UI 与变道逻辑使用。
 
@@ -84,7 +84,7 @@ PYTHONPATH="$PWD/pydeps:$PWD${PYTHONPATH:+:$PYTHONPATH}" python -m openpilot.sel
 
 ### Overview
 
-Xiaoge Vision is a local CarrotPilot vision extension. It runs two ONNX models on comma3 VisionIPC
+Xiaoge Vision is a local g4Pilot vision extension. It runs two ONNX models on comma3 VisionIPC
 frames and publishes one versioned `xiaogeVision` JSON payload through `customReservedRawData0`.
 `card.py` safely merges the resulting lane-marking types and visual blindspot state into `carState`,
 where the existing UI and lane-change logic consume them.
@@ -177,7 +177,7 @@ directory and are ignored by Git.
 
 ### 개요
 
-Xiaoge Vision은 CarrotPilot용 로컬 비전 확장 기능입니다. comma3 VisionIPC 카메라 프레임에서 두 개의
+Xiaoge Vision은 g4Pilot용 로컬 비전 확장 기능입니다. comma3 VisionIPC 카메라 프레임에서 두 개의
 ONNX 모델을 실행하고, 하나의 버전 관리된 `xiaogeVision` JSON 메시지를
 `customReservedRawData0`으로 발행합니다. `card.py`는 차선 종류와 비전 사각지대 상태를 `carState`에
 안전하게 병합하며, 기존 UI와 차선 변경 로직이 이를 사용합니다.

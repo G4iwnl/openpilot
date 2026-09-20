@@ -110,9 +110,9 @@ def _text(value: Any) -> str:
 
 
 def _car_chosen(params: "Params") -> bool:
-  """Has a real car been picked in CarrotPilot?
+  """Has a real car been picked in g4Pilot?
 
-  CarSelected3 is CarrotPilot's own param and defaults to "MOCK", so anything
+  CarSelected3 is g4Pilot's own param and defaults to "MOCK", so anything
   else means the user went through car selection. The web already treats
   blank / "-" / anything containing "mock" as unset
   (web/js/pages/setting.js isMissingCarSelectionLabel) — same rule here."""
@@ -130,7 +130,7 @@ def _car_fingerprinted(params: "Params") -> bool:
 
 
 def _settings_touched(params: "Params") -> str:
-  """Any CarrotPilot setting moved off the value manager wrote at boot.
+  """Any g4Pilot setting moved off the value manager wrote at boot.
 
   This is the signal that catches an existing user who tuned from the device
   UI and never opened the web — exactly the person whose setup the wizard
@@ -158,7 +158,7 @@ def _settings_touched(params: "Params") -> str:
 
 
 def _web_state_files() -> str:
-  """Files that only exist once the CarrotPilot web app has been used."""
+  """Files that only exist once the g4Pilot web app has been used."""
   for path, label in (
     (CARROT_WEB_SETTINGS_PATH, "web_settings_exists"),
     (CARROT_SETTING_PROFILES_PATH, "setting_profiles_exists"),
@@ -174,10 +174,10 @@ def _looks_already_onboarded() -> str:
   """Evidence this device was in use before the intro existed.
   Returns a short reason, or "" when it looks like a fresh install.
 
-  Every signal here is CarrotPilot-specific on purpose. Generic openpilot
+  Every signal here is g4Pilot-specific on purpose. Generic openpilot
   state (CalibrationParams, CompletedTrainingVersion, DongleId) is NOT used:
   it survives a switch from another fork, and it is also set by a brand new
-  CarrotPilot user who simply drove before opening the web — both would be
+  g4Pilot user who simply drove before opening the web — both would be
   wrongly treated as existing users."""
   hit = _web_state_files()
   if hit:

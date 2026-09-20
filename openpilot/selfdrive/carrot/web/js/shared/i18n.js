@@ -220,7 +220,7 @@ maybeMigrateLegacyWebLanguage();
 function renderUIText() {
   const s = UI_STRINGS[LANG];
   if (!s) return;
-  document.title = "CarrotPilot";
+  document.title = "g4Pilot";
 
   // Nav bar (nested spans — set last child text)
   setNavText("btnHome", s.home);
@@ -228,7 +228,7 @@ function renderUIText() {
   setNavText("btnTools", s.tools);
   setNavText("btnLogs", s.logs);
   setNavText("btnTerminal", s.terminal);
-  setText("carrotTitle", "CarrotPilot");
+  setText("carrotTitle", "g4Pilot");
 
   // Car Select
   setText("carTitle", s.car_select);
@@ -239,7 +239,7 @@ function renderUIText() {
   // Setting
   setText("settingTitleText", s.setting);
   setText("settingTabDeviceLabel", getUIText("setting_tab_device", "Device"));
-  setText("settingTabCarrotLabel", getUIText("setting_tab_carrot", "CarrotPilot"));
+  setText("settingTabCarrotLabel", getUIText("setting_tab_carrot", "g4Pilot"));
   setText("btnBackGroups", s.back);
   setText("groupsTitle", s.groups);
   setText("itemsTitle", s.items);

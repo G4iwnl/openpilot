@@ -100,6 +100,14 @@ A screen recording alone may not contain enough data to determine the control ca
 
 Use the segment menu's `qcamera`, `rlog`, or `qlog` download only when a specialist asks for a particular original file. For a normal analysis request, use `Upload Logs` or `Upload selected`.
 
+## g4 NAS mirror upload
+
+On this branch, sending a tmux diagnostics log still performs the existing DSM and `carrot_logs` uploads, and then puts one more copy of the same `tmux.log` (plus `toggle_values.json` when settings are included) on the owner's NAS over FTP. Dashcam segment uploads are unchanged and keep using their existing path.
+
+- Files land in a `CR2 <car name> <DongleId>` folder, named `<reason>-<timestamp>-<branch>.txt`.
+- The mirror is best effort: a failure never changes the success/failure verdict or retry timing of the existing uploads.
+- Override the target with the `G4_FTP_SERVER`, `G4_FTP_PORT`, `G4_FTP_USERNAME`, `G4_FTP_PASSWORD`, and `G4_FTP_ROOT` environment variables. Leaving `G4_FTP_SERVER` empty disables the mirror.
+
 ## Privacy and sharing
 
 Uploaded data may include road video, location and vehicle-state logs, device identifiers, vehicle name, branch, and commit information. Recheck the selected time and segments before uploading because a public viewer link remains available to anyone while the files remain on the server. Driver-facing `dcamera` files are excluded from the public viewer and analysis API.

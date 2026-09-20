@@ -878,7 +878,7 @@ class ClusterUiRenderer:
         self,
         width: int = DESIGN_WIDTH,
         height: int = DESIGN_HEIGHT,
-        title: str = "carrotpilot cluster",
+        title: str = "g4Pilot cluster",
         target_fps: int = 0,
         theme_mode: str = "auto",
         screen_mode: int = 0,

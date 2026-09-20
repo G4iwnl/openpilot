@@ -404,7 +404,7 @@ def validation_settings_path() -> Path:
   else:
     xdg_config = os.environ.get("XDG_CONFIG_HOME")
     root = Path(xdg_config) if xdg_config else Path.home() / ".config"
-  return root / "carrotpilot" / "radar_validation.json"
+  return root / "g4Pilot" / "radar_validation.json"
 
 
 def _read_validation_settings(path: Path) -> dict[str, Any]:
@@ -5732,7 +5732,7 @@ class SimulatorUI:
     self.paused = paused or screenshot is not None
     self._pause_for_event(self.index - 1, self.index)
     rl.set_config_flags(rl.FLAG_WINDOW_RESIZABLE | rl.FLAG_VSYNC_HINT)
-    rl.init_window(1440, 1080, "carrotpilot radar video validation")
+    rl.init_window(1440, 1080, "g4Pilot radar video validation")
     self._load_font()
     rl.set_target_fps(60)
     local_screenshot: Path | None = None

@@ -279,7 +279,7 @@ class RadarInterface(RadarInterfaceBase):
       self.radar_required_msg_count = RADAR_REQUIRED_MSG_COUNT
 
     self.params = Params()
-    self.radar_tracks = self.params.get_int("EnableRadarTracks") >= 1
+    self.radar_tracks = self.params.get_int("EnableRadarTracks") >= 1 and not self.params.get_bool("VisionOnly")
     self.corner_object_tracks = bool(CP.extFlags & HyundaiExtFlags.CORNER_RADAR_OBJECTS_235.value) and self.params.get_int("EnableCornerRadar") > 0
     self.corner_object_180_tracks = bool(CP.extFlags & HyundaiExtFlags.CORNER_RADAR_OBJECTS_180.value) and self.params.get_int("EnableCornerRadar") > 0
     # The 0x430/0x440 DBC exposes unvalidated range-bin candidates rather than
