@@ -13,6 +13,7 @@ from aiohttp import ClientSession, ClientTimeout
 
 DEFAULT_WEB_UPLOAD_URL = "https://upload.shind0.synology.me"
 DEFAULT_TMUX_WEB_UPLOAD_URL = "https://tmux.carrotpilot.app/upload"
+DEFAULT_G4_WEB_UPLOAD_URL = "https://upload.g4nas.my"
 
 
 def normalize_base_url(value: Any, default: str = "") -> str:
@@ -61,6 +62,21 @@ def tmux_web_target(
     DEFAULT_TMUX_WEB_UPLOAD_URL,
   )
   return direct_url, {}
+
+
+def g4_web_upload_url(settings: Mapping[str, Any] | None = None) -> str:
+  """Return the owner's own upload server, the extra mirror destination.
+
+  This runs the same receiver as the DSM target, so it issues its own
+  short-lived session and needs no stored credentials. It stays independent of
+  the DSM upload settings: pointing those elsewhere must not redirect this copy.
+  """
+  settings = settings or {}
+  return normalize_base_url(
+    os.environ.get("CARROT_G4_WEB_UPLOAD_URL", "").strip()
+    or str(settings.get("g4_upload_url") or "").strip(),
+    DEFAULT_G4_WEB_UPLOAD_URL,
+  )
 
 
 def carrot_logs_web_target() -> tuple[str, dict[str, str]]:

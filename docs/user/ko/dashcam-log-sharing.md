@@ -100,13 +100,16 @@ Carrot Web의 화면 녹화는 HUD, 경고와 화면 변화처럼 사용자가 �
 
 세그먼트 메뉴의 `qcamera`, `rlog`, `qlog` 다운로드는 담당자가 특정 원본 파일을 요청할 때 사용합니다. 일반적인 분석 요청은 `로그 전송` 또는 `선택 전송`을 사용하면 됩니다.
 
-## g4 NAS 미러 업로드
+## g4 업로드 서버 미러
 
-이 브랜치는 tmux 진단 로그를 보낼 때 기존 DSM 업로드와 `carrot_logs` 업로드를 그대로 수행한 뒤, 같은 `tmux.log`(설정을 함께 보내는 경우 `toggle_values.json`)를 소유자의 NAS에도 FTP로 한 벌 더 올립니다. 대시캠 세그먼트 업로드는 바뀌지 않았으며 기존 경로만 사용합니다.
+이 브랜치는 tmux 진단 로그를 보낼 때 기존 DSM 업로드와 `carrot_logs` 업로드를 그대로 수행한 뒤, 같은 `tmux.log`(설정을 함께 보내는 경우 `toggle_values.json`)를 소유자의 업로드 서버 `https://upload.g4nas.my`에 한 벌 더 올립니다. 대시캠 세그먼트 업로드는 바뀌지 않았으며 기존 경로만 사용합니다.
 
-- 저장 위치는 `CR2 <차량명> <DongleId>` 폴더이며 파일 이름은 `<사유>-<시각>-<브랜치>.txt`입니다.
+미러 서버는 DSM 업로드와 같은 수신기(`tools/carrot_upload_server`)를 쓰므로 별도의 토큰이나 비밀번호를 기기에 저장하지 않습니다. 요청할 때마다 DongleId와 접속 IP에 묶인 단기 세션을 서버가 발급합니다.
+
+- 저장 위치는 `<브랜치>/<차량명> <DongleId>/<사유>-<시각>-<브랜치>.txt`로 DSM 서버와 같은 구조입니다.
 - 미러 업로드는 보조 기능이므로 실패해도 기존 업로드의 성공·실패 판정과 재시도에는 영향을 주지 않습니다.
-- 접속 정보는 `G4_FTP_SERVER`, `G4_FTP_PORT`, `G4_FTP_USERNAME`, `G4_FTP_PASSWORD`, `G4_FTP_ROOT` 환경변수로 바꿀 수 있습니다. `G4_FTP_SERVER`를 빈 값으로 두면 미러 업로드를 하지 않습니다.
+- 주소는 `CARROT_G4_WEB_UPLOAD_URL` 환경변수 또는 웹 설정의 `g4_upload_url` 값으로 바꿀 수 있습니다. DSM 업로드 주소(`web_upload_url`)를 바꿔도 이 미러는 따라가지 않습니다.
+- 서버 구축 방법은 [`tools/carrot_upload_server/README.md`](../../../tools/carrot_upload_server/README.md)를 참고하세요.
 
 ## 개인정보와 공유 주의
 

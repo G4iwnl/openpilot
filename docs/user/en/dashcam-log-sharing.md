@@ -100,13 +100,16 @@ A screen recording alone may not contain enough data to determine the control ca
 
 Use the segment menu's `qcamera`, `rlog`, or `qlog` download only when a specialist asks for a particular original file. For a normal analysis request, use `Upload Logs` or `Upload selected`.
 
-## g4 NAS mirror upload
+## g4 upload-server mirror
 
-On this branch, sending a tmux diagnostics log still performs the existing DSM and `carrot_logs` uploads, and then puts one more copy of the same `tmux.log` (plus `toggle_values.json` when settings are included) on the owner's NAS over FTP. Dashcam segment uploads are unchanged and keep using their existing path.
+On this branch, sending a tmux diagnostics log still performs the existing DSM and `carrot_logs` uploads, and then puts one more copy of the same `tmux.log` (plus `toggle_values.json` when settings are included) on the owner's upload server at `https://upload.g4nas.my`. Dashcam segment uploads are unchanged and keep using their existing path.
 
-- Files land in a `CR2 <car name> <DongleId>` folder, named `<reason>-<timestamp>-<branch>.txt`.
+The mirror runs the same receiver as the DSM target (`tools/carrot_upload_server`), so no token or password is stored on the device. The server issues a short-lived session bound to the Dongle ID and source IP on each request.
+
+- Files land at `<branch>/<car name> <DongleId>/<reason>-<timestamp>-<branch>.txt`, the same layout the DSM server uses.
 - The mirror is best effort: a failure never changes the success/failure verdict or retry timing of the existing uploads.
-- Override the target with the `G4_FTP_SERVER`, `G4_FTP_PORT`, `G4_FTP_USERNAME`, `G4_FTP_PASSWORD`, and `G4_FTP_ROOT` environment variables. Leaving `G4_FTP_SERVER` empty disables the mirror.
+- Override the target with the `CARROT_G4_WEB_UPLOAD_URL` environment variable or the `g4_upload_url` web setting. Changing the DSM upload URL (`web_upload_url`) does not redirect this mirror.
+- See [`tools/carrot_upload_server/README.md`](../../../tools/carrot_upload_server/README.md) for how to run the server.
 
 ## Privacy and sharing
 
