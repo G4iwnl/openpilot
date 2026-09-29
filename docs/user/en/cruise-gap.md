@@ -5,7 +5,7 @@
 > [!NOTE]
 > This is the canonical English user guide maintained with the `carrot-wip` code. When user-visible behavior changes, update this document together with the related code and tests.
 
-This page explains all **31 cruise and following-gap settings** from the current implementation, including where each value enters the calculation and the direction of adjustment.
+This page explains all **32 cruise and following-gap settings** from the current `g4-2026` implementation, including where each value enters the calculation and the direction of adjustment.
 
 Change them in **Carrot Web → Settings → Driving control → Cruise and following gap**.
 
@@ -104,6 +104,7 @@ Tune the speed band containing the symptom instead of changing the whole table. 
 | Setting | Stored-value interpretation | Direction when increased or moved toward zero |
 |---|---|---|
 | `StopDistanceCarrot` | `600` → 6.00 m | Increases fixed clearance to a stopped lead |
+| `ComfortBrake` | `240` → 2.40 m/s² | Higher values reduce calculated braking distance and target gap |
 | `VEgoStopping` | `50` → 0.50 m/s | Higher values enter stopping state at a higher planned speed |
 | `AChangeCostStarting` | MPC acceleration-change cost | Higher values smooth initial acceleration changes |
 
@@ -114,6 +115,21 @@ Range 400–1000 cm, step 10 cm. The code divides by 100 and uses it as the fixe
     ego braking distance + time gap × ego speed + StopDistance - lead braking distance
 
 It is therefore not the actual moving following distance. Its direct effect is clearest near zero speed behind a stopped lead. When there is no active `leadOne` but the camera model consistently associates a stationary vehicle with the E2E stop endpoint, the planner first corrects that endpoint toward the inferred vehicle position and then applies this fixed clearance. No SCC/radar object is created. Although the catalog description says “stop position ×0.8,” the running code does not apply 0.8.
+
+### `ComfortBrake`
+
+Range 200–300 in steps of 5; multiply the stored value by `0.01 m/s²`. The default `240` means the target braking-distance calculation assumes a comfortable deceleration of `2.40 m/s²`.
+
+    ego braking distance = ego speed² / (2 × ComfortBrake)
+
+- Lower values lengthen the calculated braking distance, increase the lead target gap, and lower the stop-approach speed cap so braking begins farther away.
+- Higher values shorten the calculated braking distance and target gap, producing a later-braking tendency.
+- Safe mode and traffic-signal stops apply 90% of the configured value for a slightly earlier braking profile.
+
+This is not a hard limit on actual vehicle deceleration or a collision-avoidance guarantee. It is an MPC reference used to build target distance and stop-approach speed; vehicle control, acceleration limits, safety limits, and current conditions can command more or less deceleration. Changes are re-read during driving within about five seconds.
+
+> [!CAUTION]
+> Raising the value can reduce the high-speed target gap and delay braking. Change one step at a time and validate in a controlled environment while prepared to brake directly.
 
 ### Fixed stopping acceleration
 

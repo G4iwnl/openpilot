@@ -334,3 +334,29 @@ def test_stored_mode_change_still_disables_automatic_selection():
   planner._params_update()
   assert planner.myDrivingMode_disable_auto
   assert planner.myDrivingMode == DrivingMode.Eco
+
+
+@pytest.mark.parametrize(('stored', 'expected'), ((200, 2.0), (265, 2.65), (300, 3.0), (999, 3.0)))
+def test_comfort_brake_param_refreshes_and_is_clamped(stored, expected):
+  from types import SimpleNamespace as NS
+
+  values = {
+    'MyDrivingMode': DrivingMode.Normal.value,
+    'MyDrivingModeAuto': 0,
+    'StopDistanceCarrot': 600,
+    'ComfortBrake': stored,
+    'CruiseEcoControl': 2,
+    'AutoNaviSpeedDecelRate': 120,
+    'AChangeCostStarting': 10,
+    'TrafficStopDistanceAdjust': 250,
+  }
+  planner = CarrotPlanner.__new__(CarrotPlanner)
+  planner.params = NS(get_int=values.__getitem__, get_float=values.__getitem__)
+  planner.frame, planner.params_count = 0, 39
+  planner.myDrivingMode_last = planner.myDrivingMode = DrivingMode.Normal
+  planner.myDrivingMode_disable_auto = False
+  planner.comfortBrake = 2.4
+
+  planner._params_update()
+
+  assert planner.comfortBrake == pytest.approx(expected)

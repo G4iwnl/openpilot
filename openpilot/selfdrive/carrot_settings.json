@@ -326,6 +326,7 @@
               "zh": "停车与再起步",
               "params": [
                 "StopDistanceCarrot",
+                "ComfortBrake",
                 "VEgoStopping",
                 "AChangeCostStarting"
               ]
@@ -1267,6 +1268,23 @@
       "default": 600,
       "unit": 10,
       "display_unit": "distanceCm"
+    },
+    {
+      "group": "주행튜닝",
+      "name": "ComfortBrake",
+      "title": "컴포트 브레이크(240)",
+      "descr": "목표 제동거리 계산 기준. 낮추면 더 멀리서 감속하고 차간을 늘리며, 높이면 더 늦게 감속하고 차간을 줄입니다. x0.01m/s²",
+      "egroup": "LONG",
+      "etitle": "Comfort Brake (240)",
+      "edescr": "Reference deceleration for target braking distance. Lower values brake earlier and increase following distance; higher values brake later and reduce it. x0.01 m/s²",
+      "cgroup": "纵向控制",
+      "ctitle": "舒适制动(240)",
+      "cdescr": "目标制动距离的参考减速度。数值越低越早减速并增大跟车距离，数值越高越晚减速并缩短跟车距离。x0.01 m/s²",
+      "min": 200,
+      "max": 300,
+      "default": 240,
+      "unit": 5,
+      "risk": "high"
     },
     {
       "group": "주행튜닝",

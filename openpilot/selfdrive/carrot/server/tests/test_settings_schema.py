@@ -162,6 +162,12 @@ def test_longitudinal_comfort_settings_use_driver_facing_language(params):
   assert "ComfortBrake" not in driving_mode["descr"]
   assert "멀리서부터 천천히 감속" in driving_mode["descr"]
 
+  comfort_brake = by_name["ComfortBrake"]
+  assert (comfort_brake["min"], comfort_brake["max"], comfort_brake["default"], comfort_brake["unit"]) == (200, 300, 240, 5)
+  assert comfort_brake["risk"] == "high"
+  assert "낮추면 더 멀리서 감속" in comfort_brake["descr"]
+  assert '{"ComfortBrake", {PERSISTENT, INT, "240"}}' in params_keys
+
 
 def test_deceleration_gap_margin_defaults_match_registry(params):
   decel_margin = next(p for p in params if p["name"] == "TFollowDecelBoost")

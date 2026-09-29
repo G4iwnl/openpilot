@@ -100,7 +100,7 @@ class CarrotPlanner:
 
     self.stop_distance = 6.0
     self.trafficStopDistanceAdjust = 2.5 #params.get_float("TrafficStopDistanceAdjust") / 100.
-    self.comfortBrake = 2.4
+    self.comfortBrake = float(np.clip(self.params.get_float("ComfortBrake") / 100., 2.0, 3.0))
     self.comfort_brake = self.comfortBrake
 
     self.soft_hold_active = 0
@@ -201,6 +201,7 @@ class CarrotPlanner:
       self.cruiseMaxVals6 = self.params.get_float("CruiseMaxVals6") / 100.
     elif self.params_count == 40:
       self.stop_distance = self.params.get_float("StopDistanceCarrot") / 100.
+      self.comfortBrake = float(np.clip(self.params.get_float("ComfortBrake") / 100., 2.0, 3.0))
       self.eco_over_speed = self.params.get_int("CruiseEcoControl")
       self.autoNaviSpeedDecelRate = float(self.params.get_int("AutoNaviSpeedDecelRate")) * 0.01
       self.aChangeCostStarting = self.params.get_float("AChangeCostStarting")

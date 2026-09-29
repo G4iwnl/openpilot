@@ -91,17 +91,18 @@ Carrot Web 설정 화면에서는 다음 기능을 사용할 수 있습니다.
 | `SteerActuatorDelay` | `30` | 0.30초 |
 | `LateralTorqueAccelFactor x0.001` | `2500` | 2.500 |
 | `StopDistanceCarrot` | `600` | 6.00m(600cm) 기준 값 |
+| `ComfortBrake` | `240` | 2.40m/s² 목표 제동거리 기준 |
 | 비율 `%` | `105` | 105% |
 
 항목 이름과 설명에 적힌 `x0.01`, `x0.001`, `cm`, `km/h`, `%`를 생략하면 값의 크기를 잘못 이해할 수 있습니다.
 
 ## 전체 설정 지도
 
-현재 `g4-2026`의 `carrot_settings.json`에는 **188개 파라미터**가 있으며, 모든 항목이 아래 메뉴에 연결되어 있습니다.
+현재 `g4-2026`의 `carrot_settings.json`에는 **189개 파라미터**가 있으며, 모든 항목이 아래 메뉴에 연결되어 있습니다.
 
 | 대분류 | 항목 수 | 중분류 |
 |---|---:|---|
-| 주행 제어 | 121 | 시작·오토, 버튼·프리셋, 차량 조향, 속도·감속, 크루즈·차간 |
+| 주행 제어 | 122 | 시작·오토, 버튼·프리셋, 차량 조향, 속도·감속, 크루즈·차간 |
 | 차량·하드웨어 | 15 | 현대·기아, CANFD·HDA, 레이더, 운전자 모니터링, 차량 보조, 기기 하드웨어 |
 | 화면 표시 | 37 | 정보 표시, 경로 표시, 밝기·주행화면, 외부 HUD |
 | 시스템 | 12 | 녹화·전원, 카메라, 네트워크·지도, 사운드, 소프트웨어 |
@@ -109,7 +110,7 @@ Carrot Web 설정 화면에서는 다음 기능을 사용할 수 있습니다.
 
 ## 주행 제어
 
-주행 제어는 차량 움직임에 영향을 줄 수 있는 112개 항목입니다. 한 번에 여러 값을 변경하지 마세요.
+주행 제어는 차량 움직임에 영향을 줄 수 있는 113개 항목입니다. 한 번에 여러 값을 변경하지 마세요.
 
 <a id="start-auto"></a>
 ### 시작·오토 — 9개
@@ -180,7 +181,7 @@ Carrot Web 설정 화면에서는 다음 기능을 사용할 수 있습니다.
 
 `TrafficLightDetectMode`는 `0` 미사용, `1` 정지만 감지, `2` 정지와 출발을 모두 감지합니다. 모델 판단에 의존하므로 운전자가 항상 직접 확인해야 합니다.
 
-### 크루즈·차간 — 전체 29개, 현대·기아·제네시스 26개
+### 크루즈·차간 — 전체 30개, 현대·기아·제네시스 27개
 
 아래 표의 **세부 구역 제목을 누르면** 실제 코드 기준의 계산 방식, 값의 방향과 주의사항을 설명한 페이지로 이동합니다.
 
@@ -188,7 +189,7 @@ Carrot Web 설정 화면에서는 다음 기능을 사용할 수 있습니다.
 |---|---|---|
 | [가속 성향·드라이브 모드](cruise-gap.md#driving-mode) | `MyDrivingMode`, `MyDrivingModeAuto` | 연비, 안전, 일반, 고속 모드와 자동 전환 |
 | [가속 성향·속도별 가속값](cruise-gap.md#acceleration-table) | `CruiseMaxVals0`, `CruiseMaxVals1`, `CruiseMaxVals2`, `CruiseMaxVals3`, `CruiseMaxVals4`, `CruiseMaxVals5`, `CruiseMaxVals6` | 속도 구간별 최대 가속 성향 |
-| [정차·재출발](cruise-gap.md#stop-resume) | `StopDistanceCarrot`, `VEgoStopping`, `AChangeCostStarting` | 정지 위치, 정지 진입과 재출발 특성 |
+| [정차·재출발](cruise-gap.md#stop-resume) | `StopDistanceCarrot`, `ComfortBrake`, `VEgoStopping`, `AChangeCostStarting` | 목표 제동거리, 정지 위치, 정지 진입과 재출발 특성 |
 | [가감속 튜닝](cruise-gap.md#longitudinal-tuning) | `LongTuningKpV`, `LongTuningKiV`, `LongTuningKf`, `LongActuatorDelay` | 현기차는 Kp/Ki/Kf `100/0/100` 고정·숨김, 다른 브랜드는 조정 가능 |
 | [차간거리](cruise-gap.md#following-gap) | `TFollowGap1`, `TFollowGap2`, `TFollowGap3`, `TFollowGap4`, `DynamicTFollowLC`, `SpeedTFFactor`, `TFollowDecelBoost` | 차간 단계별 시간, 정상 선택 앞차 기준 차로 변경 완화와 감속 여유(기본 0%) |
 | [추종응답성](cruise-gap.md#lead-response) | `LeadAccelResponse`, `LeadAccelResponseTF1`–`LeadAccelResponseTF4` | 모든 차간 단계의 앞차 출발·가속 추종과 접근 반응 |

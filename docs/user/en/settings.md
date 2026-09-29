@@ -91,17 +91,18 @@ A catalog default is not a recommended tune for every vehicle. Vehicle tuning, e
 | `SteerActuatorDelay` | `30` | 0.30 seconds |
 | `LateralTorqueAccelFactor x0.001` | `2500` | 2.500 |
 | `StopDistanceCarrot` | `600` | 6.00 m (600 cm) base value |
+| `ComfortBrake` | `240` | 2.40 m/s² target braking-distance reference |
 | Percentage `%` | `105` | 105% |
 
 Ignoring `x0.01`, `x0.001`, `cm`, `km/h`, or `%` can make a value appear one hundred or one thousand times larger than it really is.
 
 ## Settings map
 
-The current `carrot_settings.json` contains **188 parameters**. Every entry is assigned to one of these menus:
+The current `carrot_settings.json` contains **189 parameters**. Every entry is assigned to one of these menus:
 
 | Category | Count | Groups |
 |---|---:|---|
-| Driving control | 121 | Startup and auto, buttons and presets, steering, speed and deceleration, cruise and following gap |
+| Driving control | 122 | Startup and auto, buttons and presets, steering, speed and deceleration, cruise and following gap |
 | Vehicle and hardware | 15 | Hyundai/Kia, CAN FD/HDA, radar, driver monitoring, vehicle assistance, device hardware |
 | Display | 37 | Information, path, brightness/on-road view, external HUD |
 | System | 12 | Recording/power, camera, network/map, sound, software |
@@ -109,7 +110,7 @@ The current `carrot_settings.json` contains **188 parameters**. Every entry is a
 
 ## Driving control
 
-These 112 settings can affect vehicle motion. Change one item at a time.
+These 113 settings can affect vehicle motion. Change one item at a time.
 
 <a id="start-auto"></a>
 ### Startup and auto — 9 settings
@@ -178,13 +179,13 @@ While external navigation is connected, deceleration, countdowns, and navigation
 
 `TrafficLightDetectMode` is `0` off, `1` stop detection, or `2` stop and go detection. This is model-based assistance; the driver must always verify the signal.
 
-### Cruise and following gap — 29 settings overall, 26 on Hyundai/Kia/Genesis
+### Cruise and following gap — 30 settings overall, 27 on Hyundai/Kia/Genesis
 
 | Section | Parameters | Purpose |
 |---|---|---|
 | [Driving mode](cruise-gap.md#driving-mode) | `MyDrivingMode`, `MyDrivingModeAuto` | Eco, safe, normal, high-speed modes and automatic selection |
 | [Speed-based acceleration](cruise-gap.md#acceleration-table) | `CruiseMaxVals0` through `CruiseMaxVals6` | Maximum acceleration tendency by speed band |
-| [Stopping and restarting](cruise-gap.md#stop-resume) | `StopDistanceCarrot`, `VEgoStopping`, `AChangeCostStarting` | Stop position, stop entry, and restart behavior |
+| [Stopping and restarting](cruise-gap.md#stop-resume) | `StopDistanceCarrot`, `ComfortBrake`, `VEgoStopping`, `AChangeCostStarting` | Target braking distance, stop position, stop entry, and restart behavior |
 | [Longitudinal tuning](cruise-gap.md#longitudinal-tuning) | `LongTuningKpV`, `LongTuningKiV`, `LongTuningKf`, `LongActuatorDelay` | Hyundai/Kia/Genesis hide fixed `100/0/100` gains; other brands can adjust them |
 | [Following gap](cruise-gap.md#following-gap) | `TFollowGap1` through `TFollowGap4`, `DynamicTFollowLC`, `SpeedTFFactor`, `TFollowDecelBoost` | Gap times, lane-change relief using selected leads, and deceleration margin (default 0%) |
 | [Following responsiveness](cruise-gap.md#lead-response) | `LeadAccelResponse`, `LeadAccelResponseTF1`–`LeadAccelResponseTF4` | Lead-start, acceleration and approach response at every following-distance level |
