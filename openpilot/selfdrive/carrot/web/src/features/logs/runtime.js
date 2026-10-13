@@ -897,10 +897,10 @@ function bindLogsPage() {
       } else if (action === "select-route") {
         const shouldClear = actionEl.dataset.selected === "1";
         toggleDashcamRouteSelectAll(route, shouldClear).catch(() => {});
-      } else if (action === "upload-selected") {
+      } else if (action === "upload-selected" || action === "upload-selected-g4") {
         const entry = dashcamState.routes.find((item) => item.route === route);
         const targets = dashcamSelectedForRoute(entry || { segmentFolders: [] });
-        uploadDashcamSegments(targets).catch(() => {});
+        uploadDashcamSegments(targets, { target: action === "upload-selected-g4" ? "g4" : "web" }).catch(() => {});
       }
     });
     routesHost.addEventListener("change", (ev) => {

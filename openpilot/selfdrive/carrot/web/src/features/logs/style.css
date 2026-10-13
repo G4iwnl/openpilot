@@ -435,6 +435,7 @@
 
 .dashcam-selection-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   overflow-x: auto;
@@ -1259,6 +1260,7 @@
     min-height: 0;
     height: 100%;
     flex-direction: column;
+    flex-wrap: nowrap;
     justify-content: center;
     align-items: center;
     gap: 6px;

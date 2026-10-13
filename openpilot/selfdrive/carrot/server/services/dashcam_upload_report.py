@@ -39,6 +39,8 @@ def _segment_parts(item: dict[str, Any]) -> tuple[str, int] | None:
 
 
 def _item_url(payload: dict[str, Any], item: dict[str, Any]) -> str:
+  if payload.get("target") == "g4":
+    return ""
   remote_path = str(item.get("remotePath") or "").strip()
   if not remote_path:
     base = str(payload.get("remoteBasePath") or "").strip().rstrip("/")
@@ -106,6 +108,7 @@ def upload_message_lines(payload: dict[str, Any], max_results: int | None = None
     "# Carrot Dashcam Upload",
     "### Upload",
     f"- Time: {payload.get('uploadedAt') or ''}",
+    *([f"- Server: {payload.get('serverUrl') or ''}"] if payload.get("target") == "g4" else []),
     f"- Path: {public_upload_url(payload.get('remoteBasePath'))}",
     "### Device",
     f"- Car name: {meta.get('carName') or 'none'}",

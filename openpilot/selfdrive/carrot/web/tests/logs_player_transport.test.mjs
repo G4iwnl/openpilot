@@ -96,7 +96,7 @@ test("dashcam upload confirmation stays compact and uses an explicit send action
   const dialog = read("src/ui/components/dialog/dialog.js");
   const dialogStyle = read("src/ui/components/dialog/style.css");
 
-  assert.match(dashcam, /messageHtml:\s*dashcamUploadConfirmHtml\(uploadStats\)/);
+  assert.match(dashcam, /messageHtml:\s*dashcamUploadConfirmHtml\(uploadStats, serverUrl\)/);
   assert.match(dashcam, /upload_segment_count/);
   assert.match(dashcam, /upload_kind_count/);
   assert.match(dashcam, /confirmLabel:\s*getUIText\("upload_send",\s*"Send"\)/);

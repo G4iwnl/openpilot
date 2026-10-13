@@ -6,7 +6,7 @@ from typing import Any
 from aiohttp import ClientSession, ClientTimeout
 
 from openpilot.system.hardware import HARDWARE
-from openpilot.selfdrive.carrot.web_upload import web_upload_settings
+from openpilot.selfdrive.carrot.web_upload import g4_web_upload_url, web_upload_settings
 
 from ...config import DASHCAM_DEFAULT_DISCORD_KEY, DASHCAM_DEFAULT_DISCORD_WEBHOOK
 from ...services.dashcam_upload_report import (
@@ -138,9 +138,19 @@ async def send_discord_webhook(url: str, payload: dict[str, Any]) -> dict[str, A
     return {"configured": True, "ok": False, "error": str(e)}
 
 
-def upload_target_settings() -> tuple[str, str]:
+def normalize_upload_target(value: Any = "web") -> str:
+  target = str(value or "web").strip().lower()
+  if target not in {"web", "g4"}:
+    raise ValueError("unsupported upload target")
+  return target
+
+
+def upload_target_settings(target: str = "web") -> tuple[str, str]:
+  target = normalize_upload_target(target)
   try:
     settings = read_web_settings()
   except Exception:
     settings = {}
+  if target == "g4":
+    return g4_web_upload_url(settings), ""
   return web_upload_settings(settings)

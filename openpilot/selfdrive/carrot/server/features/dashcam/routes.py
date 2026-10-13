@@ -101,6 +101,19 @@ async def request_upload_segments(request: web.Request) -> list[str]:
   return segments
 
 
+async def request_upload_target(request: web.Request) -> str:
+  try:
+    body = await request.json()
+  except Exception:
+    body = {}
+  if not isinstance(body, dict):
+    raise web.HTTPBadRequest(text="JSON object is required")
+  try:
+    return upload.normalize_upload_target(body.get("target"))
+  except ValueError as exc:
+    raise web.HTTPBadRequest(text=str(exc)) from exc
+
+
 def _realdata_signature() -> tuple | None:
   """Cheap change token for the recording directory (one stat). It changes
   whenever a segment folder is added or removed, because POSIX updates a
@@ -465,7 +478,9 @@ async def api_dashcam_download(request: web.Request) -> web.StreamResponse:
 
 async def api_dashcam_upload_summary(request: web.Request) -> web.Response:
   try:
+    target = await request_upload_target(request)
     segments = await request_upload_segments(request)
+    base_url, _token = upload.upload_target_settings(target)
 
     summaries = []
     for segment in segments:
@@ -480,7 +495,7 @@ async def api_dashcam_upload_summary(request: web.Request) -> web.Response:
         "totalSize": total_size,
         "totalSizeLabel": file_size_label(total_size),
       })
-    return web.json_response({"ok": True, "summaries": summaries})
+    return web.json_response({"ok": True, "target": target, "serverUrl": base_url, "summaries": summaries})
   except web.HTTPException as e:
     return web.json_response({"ok": False, "error": e.text or e.reason}, status=e.status)
   except Exception as e:
@@ -489,8 +504,9 @@ async def api_dashcam_upload_summary(request: web.Request) -> web.Response:
 
 async def api_dashcam_upload(request: web.Request) -> web.Response:
   try:
+    target = await request_upload_target(request)
     segments = await request_upload_segments(request)
-    return web.json_response(await upload_jobs.run_upload_segments(segments))
+    return web.json_response(await upload_jobs.run_upload_segments(segments, target=target))
   except web.HTTPException as e:
     return web.json_response({"ok": False, "error": e.text or e.reason}, status=e.status)
   except Exception as e:
@@ -499,6 +515,7 @@ async def api_dashcam_upload(request: web.Request) -> web.Response:
 
 async def api_dashcam_upload_start(request: web.Request) -> web.Response:
   try:
+    target = await request_upload_target(request)
     segments = await request_upload_segments(request)
     running = upload_jobs.running_job()
     if running:
@@ -508,7 +525,7 @@ async def api_dashcam_upload_start(request: web.Request) -> web.Response:
         "job_id": running.get("id"),
         "job": upload_jobs.snapshot(running),
       }, status=409)
-    job = upload_jobs.create_job(segments)
+    job = upload_jobs.create_job(segments, target=target)
     upload_jobs.start_job(job)
     return web.json_response({"ok": True, "job_id": job["id"], "status": job["status"]})
   except web.HTTPException as e:
@@ -519,13 +536,16 @@ async def api_dashcam_upload_start(request: web.Request) -> web.Response:
 
 async def api_dashcam_upload_test(request: web.Request) -> web.Response:
   try:
-    base_url, token = upload.upload_target_settings()
+    target = await request_upload_target(request)
+    base_url, token = upload.upload_target_settings(target)
     result = await check_web_upload_health(base_url, token)
     if result.get("ok") and not token:
       await create_web_upload_session(base_url, upload.current_upload_metadata(), "test")
       result["session"] = "automatic"
     status = 200 if result.get("ok") else 502
-    return web.json_response({"target": "web", "url": base_url, **result}, status=status)
+    return web.json_response({"target": target, "url": base_url, **result}, status=status)
+  except web.HTTPException as e:
+    return web.json_response({"ok": False, "error": e.text or e.reason}, status=e.status)
   except Exception as e:
     return web.json_response({"ok": False, "error": str(e)}, status=500)
 

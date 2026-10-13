@@ -845,6 +845,7 @@ function dashcamRouteCardHtml(entry, index = 0, options = {}) {
           <span class="dashcam-selection-count">${escapeHtml(getUIText("selected_count", "{count} selected", { count: selected.length }))}</span>
           <button class="smallBtn" type="button" data-action="select-route" data-route="${routeAttr}" data-selected="${allSelected ? "1" : "0"}">${escapeHtml(selectLabel)}</button>
           <button class="smallBtn btn--filled" type="button" data-action="upload-selected" data-route="${routeAttr}" ${selected.length ? "" : "disabled"}>${escapeHtml(getUIText("upload_selected", "Upload selected"))}</button>
+          <button class="smallBtn btn--filled" type="button" data-action="upload-selected-g4" data-route="${routeAttr}" ${selected.length ? "" : "disabled"}>${escapeHtml(getUIText("g4_server_upload", "G4 server upload"))}</button>
           <button class="smallBtn dashcam-group-menu-btn dashcam-group-menu-btn--row" type="button" data-action="route-menu" data-route="${routeAttr}" aria-label="${escapeHtml(getUIText("group_menu", "Group menu"))}" title="${escapeHtml(getUIText("group_menu", "Group menu"))}">
             <svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2m12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2m-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2"/></svg>
           </button>
@@ -954,8 +955,9 @@ function updateDashcamRouteSelectionUi(route) {
       : getUIText("select_all", "Select all");
   }
 
-  const uploadBtn = card.querySelector('[data-action="upload-selected"]');
-  if (uploadBtn) uploadBtn.disabled = selected.length === 0;
+  card.querySelectorAll('[data-action="upload-selected"], [data-action="upload-selected-g4"]').forEach((button) => {
+    button.disabled = selected.length === 0;
+  });
 
   card.querySelectorAll('input[data-action="select-segment"]').forEach((input) => {
     const segment = input.dataset.segment || "";
@@ -1257,7 +1259,13 @@ function dashcamUploadSummaryLabel(stats) {
   return `${fileLabel} · ${sizeLabel}`;
 }
 
-function dashcamUploadConfirmHtml(stats) {
+function dashcamUploadTitle(target) {
+  return target === "g4"
+    ? getUIText("g4_server_upload", "G4 server upload")
+    : getUIText("log_upload", "Upload Logs");
+}
+
+function dashcamUploadConfirmHtml(stats, serverUrl = "") {
   const segmentCountLabel = getUIText("upload_segment_count", "{count} segments", {
     count: Number(stats?.segments || 0),
   });
@@ -1276,6 +1284,7 @@ function dashcamUploadConfirmHtml(stats) {
   const sizeLabel = bytes > 0 ? formatLogBytes(bytes) : getUIText("upload_size_unknown", "size unknown");
   return `<section class="app-dialog__uploadBrief" aria-label="${escapeHtml(getUIText("upload_summary_label", "Upload summary"))}">
     <div class="app-dialog__uploadBriefCopy">
+      ${serverUrl ? `<span class="app-dialog__uploadBriefKinds">${escapeHtml(getUIText("upload_destination", "Destination: {server}", { server: serverUrl }))}</span>` : ""}
       <strong class="app-dialog__uploadBriefTitle">${escapeHtml(segmentCountLabel)}</strong>
       <span class="app-dialog__uploadBriefKinds">${escapeHtml(`${qcameraLabel} · ${rlogLabel}`)}</span>
     </div>
@@ -1323,6 +1332,8 @@ function dashcamUploadResultHtml(result) {
     count: Number(stats.rlog || 0),
   });
   return `<div class="app-dialog__metaList">
+    ${result?.target === "g4" ? `<div class="app-dialog__metaLine">${escapeHtml(getUIText("upload_destination", "Destination: {server}", { server: result.serverUrl }))}</div>
+    <div class="app-dialog__metaLine">${escapeHtml(getUIText("upload_storage_path", "Storage path: {path}", { path: result.remoteBasePath }))}</div>` : ""}
     <div class="app-dialog__metaLine">${escapeHtml(getUIText("upload_complete_count", "Upload complete {uploaded}/{total}", {
       uploaded: Number(result?.uploaded || 0),
       total: Number(result?.total || 0),
@@ -1340,7 +1351,9 @@ async function showDashcamUploadResult(result) {
   const text = String(result?.shareText || result?.message || "").trim();
   await openAppDialog({
     mode: "choice",
-    title: getUIText("log_upload_result", "Upload Result"),
+    title: result?.target === "g4"
+      ? `${dashcamUploadTitle("g4")} · ${getUIText("log_upload_result", "Upload Result")}`
+      : getUIText("log_upload_result", "Upload Result"),
     html: true,
     messageHtml: dashcamUploadResultHtml(result),
     cancelLabel: getUIText("close", "Close"),
@@ -1436,7 +1449,9 @@ function openDashcamUploadProgress(total, stats = null, options = {}) {
     initialState.progressState,
   );
   const dialog = openAppProgressDialog({
-    title: getUIText("log_uploading", "Uploading logs"),
+    title: options.target === "g4"
+      ? getUIText("g4_uploading", "Uploading to G4 server")
+      : getUIText("log_uploading", "Uploading logs"),
     message: initial.message,
     progressState: initial.progressState,
     progressLabel: getUIText("upload_progress_label", "Upload progress"),
@@ -1551,6 +1566,7 @@ async function resumeDashcamUploadJobIfNeeded(options = {}) {
     const total = Number(snapshot.step_total || 0);
     let cancelRequested = false;
     const progress = openDashcamUploadProgress(total, null, {
+      target: snapshot.target,
       onCancel: async () => {
         cancelRequested = true;
         const cancelSnapshot = await cancelDashcamUploadJob(jobId);
@@ -1608,6 +1624,7 @@ async function resumeDashcamUploadJobIfNeeded(options = {}) {
 }
 
 async function uploadDashcamSegments(segments, options = {}) {
+  const target = options.target === "g4" ? "g4" : "web";
   if (dashcamUploadActiveJobId) {
     showAppToast(getUIText("upload_already_running", "Upload already running."), { tone: "error", duration: 3200 });
     return;
@@ -1630,13 +1647,15 @@ async function uploadDashcamSegments(segments, options = {}) {
     rlog: 0,
     bytes: 0,
   };
+  let serverUrl = "";
   if (options.confirm !== false) {
     try {
-      const summary = await postJson("/api/dashcam/upload/summary", { segments: targets });
+      const summary = await postJson("/api/dashcam/upload/summary", { segments: targets, target });
       if (!Array.isArray(summary?.summaries) || summary.summaries.length !== targets.length) {
         throw new Error(getUIText("upload_summary_unavailable", "Upload information is unavailable."));
       }
       uploadStats = dashcamUploadStats(summary.summaries);
+      serverUrl = String(summary.serverUrl || "");
     } catch (error) {
       showAppToast(`${getUIText("log_upload", "Upload Logs")} ${getUIText("error", "Error")}: ${error?.message || error}`, {
         tone: "error",
@@ -1645,9 +1664,9 @@ async function uploadDashcamSegments(segments, options = {}) {
       return;
     }
     const ok = await appConfirm("", {
-      title: getUIText("log_upload", "Upload Logs"),
+      title: dashcamUploadTitle(target),
       html: true,
-      messageHtml: dashcamUploadConfirmHtml(uploadStats),
+      messageHtml: dashcamUploadConfirmHtml(uploadStats, serverUrl),
       confirmLabel: getUIText("upload_send", "Send"),
     });
     if (!ok) return;
@@ -1670,6 +1689,7 @@ async function uploadDashcamSegments(segments, options = {}) {
   const progress = options.showProgress === false
     ? silentProgress
     : openDashcamUploadProgress(targets.length, uploadStats, {
+      target,
       onCancel: async () => {
         cancelRequested = true;
         if (jobId) {
@@ -1697,7 +1717,7 @@ async function uploadDashcamSegments(segments, options = {}) {
       progress: null,
     }, targets.length);
     if (cancelRequested) throw makeDashcamUploadCanceledError();
-    const started = await postJson("/api/dashcam/upload/start", { segments: targets });
+    const started = await postJson("/api/dashcam/upload/start", { segments: targets, target });
     jobId = started.job_id;
     rememberDashcamUploadJob(jobId);
     if (cancelRequested) {
@@ -1789,6 +1809,7 @@ async function showDashcamSegmentMenu(route, segment, options = {}) {
       { label: getUIText("play", "Play"), value: "play" },
       { label: getUIText("drive_replay", "Replay"), value: "drive_replay" },
       { label: getUIText("log_upload", "Upload Logs"), value: "upload" },
+      { label: getUIText("g4_server_upload", "G4 server upload"), value: "upload_g4" },
       { label: `qcamera ${getUIText("download", "Download")}`, value: "download_qcamera" },
       { label: `rlog ${getUIText("download", "Download")}`, value: "download_rlog" },
       { label: `qlog ${getUIText("download", "Download")}`, value: "download_qlog" },
@@ -1799,6 +1820,7 @@ async function showDashcamSegmentMenu(route, segment, options = {}) {
     await openDashcamDriveReplay(route, segment);
   } else if (selected === "play" && typeof options.activePlayerClose !== "function") openDashcamPlayer(route, segment);
   else if (selected === "upload") await uploadDashcamSegments([segment]);
+  else if (selected === "upload_g4") await uploadDashcamSegments([segment], { target: "g4" });
   else if (selected?.startsWith?.("download_")) {
     const kind = selected.replace("download_", "");
     window.open(dashcamApiPath(`download/${encodeURIComponent(segment)}`, kind), "_blank", "noopener");

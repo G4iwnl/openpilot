@@ -317,7 +317,7 @@ def test_dashcam_upload_completion_notifies_web_server_and_discord(monkeypatch):
     return {"configured": True, "ok": True, "status": 204}
 
   monkeypatch.setattr(upload_jobs, "HAS_PARAMS", False)
-  monkeypatch.setattr(upload, "upload_target_settings", lambda: ("https://upload.example", "session-token"))
+  monkeypatch.setattr(upload, "upload_target_settings", lambda target="web": ("https://upload.example", "session-token"))
   monkeypatch.setattr(upload, "upload_metadata", lambda params: {
     "carName": "TEST_CAR",
     "dongleId": "0123456789abcdef",

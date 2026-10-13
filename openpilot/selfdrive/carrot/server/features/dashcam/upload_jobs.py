@@ -181,6 +181,7 @@ def snapshot(job: dict[str, Any]) -> dict[str, Any]:
     "ok": True,
     "id": job["id"],
     "action": job["action"],
+    "target": job.get("target", "web"),
     "status": job["status"],
     "done": job["status"] in ("done", "failed", "canceled"),
     "cancel_requested": bool(job.get("cancel_requested")),
@@ -280,12 +281,14 @@ def prune() -> None:
     _jobs.pop(old["id"], None)
 
 
-def create_job(segments: list[str]) -> dict[str, Any]:
+def create_job(segments: list[str], target: str = "web") -> dict[str, Any]:
+  target = upload.normalize_upload_target(target)
   job_id = uuid.uuid4().hex[:12]
   now = time.time()  # noqa: TID251
   job = {
     "id": job_id,
     "action": "dashcam_upload",
+    "target": target,
     "segments": list(segments),
     "status": "running",
     "log": "",
@@ -332,23 +335,28 @@ def start_job(job: dict[str, Any]) -> asyncio.Task:
   return task
 
 
-async def run_upload_segments(segments: list[str], job: dict[str, Any] | None = None) -> dict[str, Any]:
+async def run_upload_segments(
+  segments: list[str], job: dict[str, Any] | None = None, *, target: str = "web",
+) -> dict[str, Any]:
+  target = upload.normalize_upload_target(job.get("target", target) if job else target)
   params = Params() if HAS_PARAMS else None
-  base_url, token = upload.upload_target_settings()
+  base_url, token = upload.upload_target_settings(target)
   meta = upload.upload_metadata(params)
   device_id = upload_device_id(meta)
   car_selected = meta.get("carName") or "none"
   storage_directory = f"{car_selected} {device_id}".strip()
   if not token:
     token = await create_web_upload_session(base_url, meta, "dashcam")
-  remote_base_path = f"{base_url}/routes/{storage_directory}/".replace("\\", "/")
+  remote_base_path = (
+    f"routes/{storage_directory}/" if target == "g4" else f"{base_url}/routes/{storage_directory}/"
+  ).replace("\\", "/")
   total = len(segments)
   results: list[Any] = [None] * total  # filled by index so order matches input
 
   if job:
     job["upload_meta"] = meta
     job["remote_base_path"] = remote_base_path
-    job["upload_target"] = "web"
+    job["upload_target"] = target
     job["partial_results"] = []
     progress(
       job,
@@ -568,7 +576,8 @@ async def run_upload_segments(segments: list[str], job: dict[str, Any] | None = 
     "uploaded": ok_count,
     "total": len(results),
     "uploadedAt": uploaded_at,
-    "target": "web",
+    "target": target,
+    "serverUrl": base_url,
     "deviceId": device_id,
     "remoteBasePath": remote_base_path,
     "meta": meta,
@@ -605,9 +614,10 @@ async def run_upload_segments(segments: list[str], job: dict[str, Any] | None = 
       phase_current=1,
       phase_total=2,
     )
-  response_payload["discord"] = await upload.send_discord_webhook(
-    upload.discord_webhook_url(params),
-    response_payload,
+  response_payload["discord"] = (
+    {"configured": False, "ok": False, "skipped": True}
+    if target == "g4"
+    else await upload.send_discord_webhook(upload.discord_webhook_url(params), response_payload)
   )
   if job:
     progress(
