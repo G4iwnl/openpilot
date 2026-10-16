@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import time
@@ -8,12 +9,17 @@ from collections.abc import Callable, Mapping, Sequence
 from contextlib import ExitStack
 from typing import Any
 
-from aiohttp import ClientSession, ClientTimeout
+from aiohttp import ClientConnectionError, ClientPayloadError, ClientSession, ClientTimeout
 
 
 DEFAULT_WEB_UPLOAD_URL = "https://upload.shind0.synology.me"
 DEFAULT_TMUX_WEB_UPLOAD_URL = "https://tmux.carrotpilot.app/upload"
 DEFAULT_G4_WEB_UPLOAD_URL = "https://upload.g4nas.my"
+FILE_UPLOAD_ATTEMPTS = 3
+
+
+class RetryableUploadError(RuntimeError):
+  pass
 
 
 def normalize_base_url(value: Any, default: str = "") -> str:
@@ -234,68 +240,86 @@ async def upload_folder_to_web(
       if filename in seen:
         continue
       local_path = os.path.join(local_folder, filename)
-      if not os.path.isfile(local_path):
+      if not await asyncio.to_thread(os.path.isfile, local_path):
         raise RuntimeError(f"upload file not found: {filename}")
       seen.add(filename)
       entries.append(filename)
   if not token:
     raise RuntimeError("upload session is not configured")
+  if not entries:
+    raise RuntimeError("no files to upload")
 
   headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/octet-stream"}
   timeout = ClientTimeout(total=None, connect=20, sock_read=180)
-  async with ClientSession(timeout=timeout, headers=headers) as session:
-    for filename in entries:
-      local_path = os.path.join(local_folder, filename)
-      url = api_url(base_url, "upload", directory, remote_path, filename)
-      file_size = os.path.getsize(local_path)
+  for filename in entries:
+    local_path = os.path.join(local_folder, filename)
+    url = api_url(base_url, "upload", directory, remote_path, filename)
+    if await asyncio.to_thread(os.path.islink, local_path):
+      raise RuntimeError(f"cannot upload a symlink: {filename}")
+    before = await asyncio.to_thread(os.stat, local_path)
+    file_size = before.st_size
+    if file_size <= 0:
+      raise RuntimeError(f"upload file is empty: {filename}")
+    sent = 0
+
+    def check_source(path=local_path, expected=before, name=filename) -> None:
+      current = os.stat(path)
+      if (current.st_ino, current.st_size, current.st_mtime_ns) != (expected.st_ino, expected.st_size, expected.st_mtime_ns):
+        raise RuntimeError(f"file changed during upload: {name}")
+
+    async def send_file(path=local_path, name=filename, size=file_size, verify=check_source):
+      nonlocal sent
       sent = 0
+      if on_progress:
+        on_progress(name, sent, size, 0)
+      check_cancel()
+      with await asyncio.to_thread(open, path, "rb") as f:
+        while sent < size:
+          check_cancel()
+          verify()
+          chunk = await asyncio.to_thread(f.read, min(1024 * 1024, size - sent))
+          if not chunk:
+            raise RuntimeError(f"file truncated during upload: {name}")
+          sent += len(chunk)
+          if on_progress:
+            on_progress(name, sent, size, len(chunk))
+          yield chunk
 
-      async def send_file(
-        path: str = local_path,
-        upload_name: str = filename,
-        upload_size: int = file_size,
-      ):
-        nonlocal sent
-        sent = 0
-        if on_progress:
-          on_progress(upload_name, sent, upload_size, 0)
-        check_cancel()
-        with open(path, "rb") as f:
-          while True:
-            check_cancel()
-            chunk = f.read(1024 * 1024)
-            if not chunk:
-              break
-            sent += len(chunk)
-            if on_progress:
-              on_progress(upload_name, sent, upload_size, len(chunk))
-            yield chunk
-
-      last_error: Exception | None = None
-      for _attempt in range(2):
-        check_cancel()
-        try:
-          async with session.put(url, data=send_file(), headers={"X-File-Size": str(file_size)}) as resp:
+    for attempt in range(FILE_UPLOAD_ATTEMPTS):
+      check_cancel()
+      check_source()
+      try:
+        # Each attempt opens the source at byte zero and gets a new connection.
+        # The receiver atomically replaces completed PUTs; earlier files stay saved.
+        async with ClientSession(timeout=timeout, headers=headers) as session:
+          # aiohttp's automatic PUT replay reuses an exhausted async iterator.
+          # Let this loop rebuild the body instead of waiting with no bytes sent.
+          session._retry_connection = False
+          async with session.put(url, data=send_file(), headers={"X-File-Size": str(file_size), "Content-Length": str(file_size)}) as resp:
             text = await resp.text()
             try:
               body = json.loads(text)
-            except Exception:
+            except (TypeError, ValueError):
               body = None
-            if not 200 <= resp.status < 300 or not (body or {}).get("ok"):
-              error = str((body or {}).get("error") or text or "")[:200]
-              raise RuntimeError(f"HTTP {resp.status}: {error}")
-            raw_size = (body or {}).get("size")
+            if not isinstance(body, dict):
+              body = {}
+            if not 200 <= resp.status < 300 or body.get("ok") is not True:
+              error = str(body.get("error") or text or "")[:200]
+              error_type = RetryableUploadError if resp.status in {502, 503, 504} else RuntimeError
+              raise error_type(f"HTTP {resp.status}: {error}")
+            raw_size = body.get("size")
             remote_size = int(raw_size) if raw_size is not None else -1
-            if remote_size != sent:
-              raise RuntimeError(f"size mismatch for {filename}: sent {sent}, remote {remote_size}")
-          last_error = None
-          break
-        except Exception as e:
-          check_cancel()
-          last_error = e
-      if last_error is not None:
-        raise RuntimeError(f"{filename}: {last_error}") from last_error
-      check_cancel()
+            if remote_size != file_size or sent != file_size:
+              raise RuntimeError(f"size mismatch for {filename}: expected {file_size}, sent {sent}, remote {remote_size}")
+        check_source()
+        break
+      except Exception as e:
+        check_cancel()
+        retryable = isinstance(e, (ClientConnectionError, ClientPayloadError, TimeoutError, RetryableUploadError))
+        if not retryable or attempt + 1 == FILE_UPLOAD_ATTEMPTS:
+          raise RuntimeError(f"{remote_path}/{filename}: failed after {attempt + 1} attempt(s): {e}") from e
+        await asyncio.sleep(1 + attempt * 2)
+    check_cancel()
   return True
 
 
@@ -311,7 +335,11 @@ async def send_web_upload_complete(base_url: str, token: str, payload: dict[str,
         headers={"Authorization": f"Bearer {token}"},
       ) as resp:
         text = await resp.text()
-        if 200 <= resp.status < 300:
+        try:
+          body = json.loads(text)
+        except (TypeError, ValueError):
+          body = None
+        if 200 <= resp.status < 300 and isinstance(body, dict) and body.get("ok") is True:
           return {"ok": True, "status": resp.status}
         return {"ok": False, "status": resp.status, "error": text[:300]}
   except Exception as e:

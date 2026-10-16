@@ -541,7 +541,7 @@ class FakeRequestContext:
     async for chunk in self.data:
       content.extend(chunk)
     self.session.requests.append((self.url, bytes(content), self.headers))
-    size_delta = self.session.size_deltas.pop(0) if self.session.size_deltas else 0
+    size_delta = FakeSession.size_deltas.pop(0) if FakeSession.size_deltas else 0
     return FakeResponse(200, {"ok": True, "size": len(content) + size_delta})
 
   async def __aexit__(self, exc_type, exc, tb):
@@ -555,7 +555,6 @@ class FakeSession:
   def __init__(self, *args, headers=None, **kwargs):
     self.headers = headers or {}
     self.requests = []
-    self.size_deltas = list(type(self).size_deltas)
     type(self).instances.append(self)
 
   async def __aenter__(self):
@@ -583,14 +582,16 @@ def test_dashcam_web_upload_streams_and_verifies_every_file(tmp_path: Path, monk
     "token",
   ))
 
-  session = FakeSession.instances[-1]
-  assert session.headers["Authorization"] == "Bearer token"
-  assert [request[0] for request in session.requests] == [
+  assert all(session.headers["Authorization"] == "Bearer token" for session in FakeSession.instances)
+  requests = [request for session in FakeSession.instances for request in session.requests]
+  assert [request[0] for request in requests] == [
     "https://upload.example/api/v1/upload/car%20name%20dongle%2Fid/2026-07-20--00-00-00%7C0/fcamera.hevc",
     "https://upload.example/api/v1/upload/car%20name%20dongle%2Fid/2026-07-20--00-00-00%7C0/qlog.zst",
   ]
-  assert [request[1] for request in session.requests] == [b"camera-data", b"log-data"]
-  assert [request[2]["X-File-Size"] for request in session.requests] == ["11", "8"]
+  assert [request[1] for request in requests] == [b"camera-data", b"log-data"]
+  assert [request[2]["X-File-Size"] for request in requests] == ["11", "8"]
+  assert [request[2]["Content-Length"] for request in requests] == ["11", "8"]
+  assert len(FakeSession.instances) == 2
 
 
 def test_dashcam_web_upload_reports_chunk_progress(tmp_path: Path, monkeypatch):
@@ -664,27 +665,25 @@ def test_dashcam_web_upload_honors_explicit_file_selection(tmp_path: Path, monke
     filenames=("qcamera.ts", "rlog.zst"),
   ))
 
-  session = FakeSession.instances[-1]
-  assert [request[0].rsplit("/", 1)[-1] for request in session.requests] == [
+  requests = [request for session in FakeSession.instances for request in session.requests]
+  assert [request[0].rsplit("/", 1)[-1] for request in requests] == [
     "qcamera.ts",
     "rlog.zst",
   ]
 
 
-def test_dashcam_web_upload_retries_size_mismatch(tmp_path: Path, monkeypatch):
+def test_dashcam_web_upload_rejects_size_mismatch_without_retransmitting(tmp_path: Path, monkeypatch):
   (tmp_path / "qlog.zst").write_bytes(b"retry-me")
   FakeSession.instances = []
   FakeSession.size_deltas = [1, 0]
   monkeypatch.setattr(web_upload, "ClientSession", FakeSession)
 
-  assert asyncio.run(web_upload.upload_folder_to_web(
-    str(tmp_path),
-    "device",
-    "route|0",
-    "https://upload.example",
-    "token",
-  ))
-  assert len(FakeSession.instances[-1].requests) == 2
+  with pytest.raises(RuntimeError, match="size mismatch"):
+    asyncio.run(web_upload.upload_folder_to_web(
+      str(tmp_path), "device", "route|0", "https://upload.example", "token",
+    ))
+  assert len(FakeSession.instances) == 1
+  assert len(FakeSession.instances[0].requests) == 1
 
 
 def test_dashcam_web_upload_requires_session_before_network(tmp_path: Path, monkeypatch):

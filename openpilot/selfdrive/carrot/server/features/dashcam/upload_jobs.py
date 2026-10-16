@@ -603,6 +603,12 @@ async def run_upload_segments(
     token,
     response_payload,
   )
+  if not response_payload["webComplete"].get("ok"):
+    response_payload["ok"] = False
+    response_payload["filesSaved"] = ok_count > 0
+    response_payload["error"] = f"Files uploaded, but completion record failed: {response_payload['webComplete'].get('error') or 'unknown error'}"
+    response_payload["message"] = response_payload["error"]
+    response_payload["shareText"] = upload.upload_share_text(response_payload)
   if job:
     progress(
       job,
