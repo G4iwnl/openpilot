@@ -1,14 +1,14 @@
 services:
   carrot-upload:
     build: .
-    image: carrot-upload:1.0.3
+    image: carrot-upload:1.0.4
     restart: unless-stopped
     init: true
     environment:
       CARROT_UPLOAD_ROOT: /data/openpilot
       CARROT_UPLOAD_DB: /data/openpilot/tmux/.state/uploads.sqlite3
-      CARROT_DAILY_DEVICE_QUOTA_BYTES: "1073741824"
-      CARROT_DAILY_IP_QUOTA_BYTES: "8589934592"
+      CARROT_DAILY_DEVICE_QUOTA_BYTES: "0"
+      CARROT_DAILY_IP_QUOTA_BYTES: "0"
       CARROT_MAX_FILE_BYTES: "536870912"
       CARROT_MIN_FREE_BYTES: "10737418240"
       CARROT_SESSION_TTL_SECONDS: "14400"
@@ -16,11 +16,11 @@ services:
       CARROT_CONCURRENT_GLOBAL: "16"
     ports:
       - "127.0.0.1:18080:8080"
-    user: "1026:100"
+    user: "1038:100"
     group_add:
       - "101"
     volumes:
-      - /volume1/openpilot:/data/openpilot
+      - /volume1/sorento:/data/openpilot
     read_only: true
     tmpfs:
       - /tmp:size=64m

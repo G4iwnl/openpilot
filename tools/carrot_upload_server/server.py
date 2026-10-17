@@ -39,6 +39,16 @@ def _env_int(name: str, default: int, minimum: int = 0) -> int:
     return default
 
 
+def _env_quota(name: str, default: int) -> int:
+  # Zero explicitly disables a daily quota. Missing/invalid values retain
+  # the default, while transfer accounting continues even without a cap.
+  try:
+    value = int(os.environ.get(name, str(default)))
+    return value if value >= 0 else default
+  except ValueError:
+    return default
+
+
 @dataclass(frozen=True)
 class Config:
   storage_root: Path
@@ -61,8 +71,8 @@ class Config:
     return cls(
       storage_root=root,
       db_path=Path(os.environ.get("CARROT_UPLOAD_DB", "/data/state/uploads.sqlite3")),
-      daily_device_quota=_env_int("CARROT_DAILY_DEVICE_QUOTA_BYTES", GIB, MIB),
-      daily_ip_quota=_env_int("CARROT_DAILY_IP_QUOTA_BYTES", 8 * GIB, MIB),
+      daily_device_quota=_env_quota("CARROT_DAILY_DEVICE_QUOTA_BYTES", GIB),
+      daily_ip_quota=_env_quota("CARROT_DAILY_IP_QUOTA_BYTES", 8 * GIB),
       max_file_bytes=_env_int("CARROT_MAX_FILE_BYTES", 512 * MIB, MIB),
       max_tmux_bytes=_env_int("CARROT_MAX_TMUX_BYTES", 16 * MIB, MIB),
       min_free_bytes=_env_int("CARROT_MIN_FREE_BYTES", 10 * GIB),
@@ -264,6 +274,9 @@ class UploadService:
       "expiresAt": expires,
       "expiresIn": self.config.session_ttl_seconds,
       "dailyQuotaBytes": self.config.daily_device_quota,
+      "dailyQuotaUnlimited": self.config.daily_device_quota == 0,
+      "dailyIpQuotaBytes": self.config.daily_ip_quota,
+      "dailyIpQuotaUnlimited": self.config.daily_ip_quota == 0,
       "maxFileBytes": self.config.max_file_bytes,
     })
 
@@ -313,7 +326,7 @@ class UploadService:
             "SELECT committed_bytes, reserved_bytes FROM daily_usage WHERE usage_day=? AND scope=? AND scope_id=?",
             (day, scope, scope_id),
           ).fetchone()
-          if int(row["committed_bytes"]) + int(row["reserved_bytes"]) + amount > quota:
+          if quota > 0 and int(row["committed_bytes"]) + int(row["reserved_bytes"]) + amount > quota:
             raise web.HTTPRequestEntityTooLarge(max_size=quota, actual_size=int(row["committed_bytes"]) + amount)
         for scope, scope_id, _quota in (("device", device, 0), ("ip", source_ip, 0)):
           connection.execute(
@@ -358,6 +371,9 @@ class UploadService:
       "ok": ready,
       "service": "carrot-upload",
       "dailyQuotaBytes": self.config.daily_device_quota,
+      "dailyQuotaUnlimited": self.config.daily_device_quota == 0,
+      "dailyIpQuotaBytes": self.config.daily_ip_quota,
+      "dailyIpQuotaUnlimited": self.config.daily_ip_quota == 0,
       "maxFileBytes": self.config.max_file_bytes,
       "bandwidthLimit": None,
     }, status=200 if ready else 507)

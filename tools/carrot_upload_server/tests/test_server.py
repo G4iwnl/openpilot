@@ -1,10 +1,12 @@
 import asyncio
+from dataclasses import replace
 from pathlib import Path
 
+import pytest
 from aiohttp import FormData
 from aiohttp.test_utils import TestClient, TestServer
 
-from ..server import UPLOAD_SERVICE_KEY, Config, create_app
+from ..server import GIB, UPLOAD_SERVICE_KEY, Config, create_app
 
 
 DEVICE = "0123456789abcdef"
@@ -155,6 +157,46 @@ def test_quota_and_file_validation(tmp_path: Path):
       assert not list((tmp_path / "uploads").rglob("*.part"))
 
   asyncio.run(run())
+
+
+@pytest.mark.parametrize(("device_quota", "ip_quota", "status"), [(0, 0, 200), (0, 8, 413), (8, 0, 413)])
+def test_daily_caps_can_be_disabled_independently_with_historical_usage(tmp_path, device_quota, ip_quota, status):
+  async def run():
+    cfg = replace(config(tmp_path), daily_device_quota=device_quota, daily_ip_quota=ip_quota)
+    app = create_app(cfg, start_cleanup=False)
+    service = app[UPLOAD_SERVICE_KEY]
+    with service._connect() as connection:
+      for scope, scope_id in [("device", DEVICE), ("ip", CLIENT_IP)]:
+        connection.execute("INSERT INTO daily_usage(usage_day,scope,scope_id,committed_bytes,reserved_bytes) VALUES(?,?,?,?,0)",
+                           (service._usage_day(), scope, scope_id, 2 * GIB))
+    async with TestClient(TestServer(app)) as client:
+      health = await (await client.get("/api/v1/health")).json()
+      assert health["dailyQuotaUnlimited"] == (device_quota == 0)
+      assert health["dailyIpQuotaUnlimited"] == (ip_quota == 0)
+      token = await session(client)
+      headers = {"Authorization": f"Bearer {token}", "X-Forwarded-For": CLIENT_IP, "X-File-Size": "4"}
+      response = await client.put(f"/api/v1/upload/{DEVICE}/route--0/rlog.zst", data=b"data", headers=headers)
+      assert response.status == status
+      if status == 200:
+        too_large = await client.put(f"/api/v1/upload/{DEVICE}/route--0/rlog.zst", data=b"x",
+                                    headers={**headers, "X-File-Size": str(cfg.max_file_bytes + 1)})
+        assert too_large.status == 413
+        wrong_ip = await client.put(f"/api/v1/upload/{DEVICE}/route--1/rlog.zst", data=b"data",
+                                   headers={**headers, "X-Forwarded-For": "203.0.113.99"})
+        assert wrong_ip.status == 403
+        with service._connect() as connection:
+          usage = connection.execute("SELECT committed_bytes FROM daily_usage WHERE scope='device'").fetchone()[0]
+        assert usage == 2 * GIB + 4
+  asyncio.run(run())
+
+
+@pytest.mark.parametrize("value", ["0", "-1", "invalid"])
+def test_zero_env_value_explicitly_disables_daily_caps(monkeypatch, value):
+  monkeypatch.setenv("CARROT_DAILY_DEVICE_QUOTA_BYTES", value)
+  monkeypatch.setenv("CARROT_DAILY_IP_QUOTA_BYTES", value)
+  cfg = Config.from_env()
+  assert cfg.daily_device_quota == (0 if value == "0" else GIB)
+  assert cfg.daily_ip_quota == (0 if value == "0" else 8 * GIB)
 
 
 def test_tmux_multipart_upload(tmp_path: Path):
